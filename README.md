@@ -99,7 +99,7 @@ cluster_name and host_group are placeholders for tags for better manageability. 
 
 In section [TSDB] you should set correct backend and uri. 
 
-OpenTSDB (Enable chinked requests in OpenTSDB )
+OpenTSDB: Enable chunked requests in OpenTSDB 
 
 opentsdb.conf
 
