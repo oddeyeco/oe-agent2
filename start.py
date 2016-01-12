@@ -43,7 +43,7 @@ class App():
 
     def __init__(self):
         self.stdin_path = '/dev/null'
-        self.stdout_path = '/dev/tty'
+        self.stdout_path = log_file
         self.stderr_path = log_file
         self.pidfile_path = pid_file
         self.pidfile_timeout = 5
