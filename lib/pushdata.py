@@ -64,9 +64,9 @@ class JonSon(object):
             self.data.append((cluster_name+'.'+host_group+'.'+path+'.'+name, (timestamp, value)))
         elif tsdb_type == 'InfluxDB':
             if type(value) is int:
-                value=str(value)+'1i'
+                value=str(value)+'i'
             else:
-                value=str(value)+'1'
+                value=str(value)
             self.data.append(name+',host='+tag_hostname+',cluster='+cluster_name+',group='+host_group+' value='+value+'\n')
         else:
             print 'Please set TSDB type'
