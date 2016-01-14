@@ -36,12 +36,20 @@ if tsdb_type == 'Carbon':
     carbon_host=carbon_server.split(':')[0]
     carbon_port=int(carbon_server.split(':')[1])
     host_group= config.get('SelfConfig', 'host_group')
-    #hostname = hostname.split('.')
-    #hostname.reverse()
-    #path=".".join(hostname)
     path=hostname.replace('.' , '_')
 else:
     tsd_carbon = False
+
+if tsdb_type == 'InfluxDB':
+    tsd_influx = True
+    influx_server = config.get('TSDB', 'address')
+    influx_db=config.get('TSDB', 'database')
+    influx_url=influx_server+'/write?db='+influx_db
+    host_group= config.get('SelfConfig', 'host_group')
+    curl_auth = config.getboolean('TSDB', 'auth')
+    influx_auth = config.get('TSDB', 'user')+':'+config.get('TSDB', 'pass')
+else:
+    tsd_influx = False
 
 
 class JonSon(object):
@@ -54,6 +62,12 @@ class JonSon(object):
             print 'BlueFlood is not supported yet'
         elif tsdb_type == 'Carbon':
             self.data.append((cluster_name+'.'+host_group+'.'+path+'.'+name, (timestamp, value)))
+        elif tsdb_type == 'InfluxDB':
+            if type(value) is int:
+                value=str(value)+'1i'
+            else:
+                value=str(value)+'1'
+            self.data.append(name+',host='+tag_hostname+',cluster='+cluster_name+',group='+host_group+' value='+value+'\n')
         else:
             print 'Please set TSDB type'
 
@@ -62,6 +76,8 @@ class JonSon(object):
             self.data = {'metric': []}
         if tsd_carbon is True:
             self.data = []
+        if tsd_influx is True:
+            self.data = []
 
     def truncate_data(self):
         if tsd_rest is True:
@@ -69,6 +85,9 @@ class JonSon(object):
             self.data = {'metric': []}
         if tsd_carbon is True:
             self.data.__delitem__
+        if tsd_influx is True:
+            self.data.__delitem__
+
 
     def put_json(self):
         if tsd_rest is True:
@@ -84,9 +103,6 @@ class JonSon(object):
             c.setopt(pycurl.NOSIGNAL, 5)
             c.perform()
             c.close()
-            #print len(json_data)
-            #print " \n "
-            #print json_data
         if tsd_carbon is True:
             payload = pickle.dumps(self.data, protocol=2)
             header = struct.pack("!L", len(payload))
@@ -96,7 +112,18 @@ class JonSon(object):
             s.connect((carbon_host, carbon_port))
             s.send(message)
             s.close()
-            #print message
+        if tsd_influx is True:
+            line_data = '%s' % ''.join(map(str, self.data))
+            c = pycurl.Curl()
+            c.setopt(pycurl.URL, influx_url)
+            c.setopt(pycurl.POST, 0)
+            c.setopt(pycurl.POSTFIELDS, line_data)
+            c.setopt(pycurl.VERBOSE, 0)
+            c.setopt(pycurl.TIMEOUT, 10)
+            c.setopt(pycurl.NOSIGNAL, 5)
+            c.perform()
+            c.close()
+            #print line_data
 
 
 
