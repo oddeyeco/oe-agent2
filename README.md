@@ -5,6 +5,9 @@ PuyPuy is python2 metrics collection daemon, which works with KairosDB, OpenTSDB
 Main idea behind PuyPuy is simplicity and less as possible dependencies, it is tested on Debian and Ubuntu systems, but should work on any Linux system.   
 
 To install PuyPuy just clone our repository, make sure that you have few python dependency modules (pycurl, psutil v1+, daemon) for base program.
+On Debian/Ubuntu systems following will do the trick 
+
+	apt-get install python-psutil python-daemon python-pycurl 
 
 Special note for Debian 7 users: psutil in Debian 7 is very old, please uses pip to install psutils or get it from our repository: 
 
