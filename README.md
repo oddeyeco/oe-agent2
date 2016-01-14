@@ -134,3 +134,18 @@ Graphite Carbon: (PuyPuy uses Carbon pickle, default port is 2004)
 	auth: false
 	tsdtype: Carbon
 
+InfluxDB: (Authentication is not supported yet, You must create database manually before sending to it metrics)
+
+	[TSDB]
+	user: netangels
+	pass: bololo
+	auth: False
+	address: http://green.netangels.net:8086
+	database: netangels
+	tsdtype: InfluxDB
+
+
+	user: netangels
+	pass: bololo
+	auth: false
+	tsdtype: Carbon
