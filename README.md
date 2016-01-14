@@ -143,9 +143,3 @@ InfluxDB: (Authentication is not supported yet, You must create database manuall
 	address: http://green.netangels.net:8086
 	database: netangels
 	tsdtype: InfluxDB
-
-
-	user: netangels
-	pass: bololo
-	auth: false
-	tsdtype: Carbon
