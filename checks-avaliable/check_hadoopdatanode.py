@@ -48,7 +48,7 @@ def run_hadoopdatanode():
         timestamp = int(datetime.datetime.now().strftime("%s"))
 
         stats_keys = hadoop_datanode_stats['beans']
-        node_stack_keys=('NonHeapMemoryUsage','HeapMemoryUsage', 'Capacity', 'DfsUsed', 'OpenFileDescriptorCount', 'LastGcInfo')
+        node_stack_keys=('NonHeapMemoryUsage','HeapMemoryUsage', 'Capacity', 'DfsUsed', 'Remaining', 'OpenFileDescriptorCount', 'LastGcInfo')
         node_rated_keys=('BytesRead', 'BytesWritten', 'TotalReadTime', 'TotalWriteTime')
         mon_values={}
 
@@ -69,6 +69,8 @@ def run_hadoopdatanode():
                         mon_values.update({'datanode_dfsused': stats_keys[stats_index][values]})
                     if values == 'OpenFileDescriptorCount':
                         mon_values.update({'datanode_openfiles': stats_keys[stats_index][values]})
+                    if values == 'Remaining':
+                        mon_values.update({'datanode_space_remaining': stats_keys[stats_index][values]})
                     if values == 'LastGcInfo':
                         if type(stats_keys[stats_index][values]) is dict:
                             mon_values.update({'datanode_lastgc_duration': stats_keys[stats_index][values]['duration']})
