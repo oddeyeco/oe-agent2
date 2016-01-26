@@ -31,7 +31,7 @@ def run_memcached():
         raw_data = s.recv(buffer_size)
         s.close()
         timestamp = int(datetime.datetime.now().strftime("%s"))
-        metrics_stuck=('curr_connections', 'curr_items', 'limit_maxbytes', 'rusage_user', 'rusage_system')
+        metrics_stuck=('curr_connections', 'curr_items', 'rusage_user', 'rusage_system')
         metrics_rated=('cmd_get', 'cmd_set', 'get_hits', 'set_hits', 'delete_misses', 'delete_hits', 'bytes')
         for line in raw_data.split('\n'):
             for searchitem in  metrics_stuck:
