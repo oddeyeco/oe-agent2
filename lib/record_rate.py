@@ -20,6 +20,8 @@ class ValueRate(object):
             last_value.update({mytype:myvalue})
             ValueRate.metrics_value_rate = mytype+'_timestamp'
             last_value.update({ValueRate.metrics_value_rate:timestamp})
+            if metrics_rate < 0:
+                metrics_rate = 1
             return metrics_rate
 
 
