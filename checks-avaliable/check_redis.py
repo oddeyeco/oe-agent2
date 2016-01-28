@@ -39,7 +39,7 @@ def run_redis():
             for searchitem in  metrics:
                 if searchitem in line:
                     key=line.split(':')[0]
-                    value=line.split(':')[1].rstrip('\r')
+                    value=int(line.split(':')[1].rstrip('\r'))
                     if searchitem == 'total_commands_processed':
                         value=rate.record_value_rate('redis_commands_processed', value, timestamp)
                         key='commands_rate'
