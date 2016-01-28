@@ -34,7 +34,7 @@ def run_redis():
         raw_data = s.recv(buffer_size)
         s.close()
         timestamp = int(datetime.datetime.now().strftime("%s"))
-        metrics=('connected_clients', 'used_memory:', 'used_memory_rss:', 'used_memory_peak:', 'changes_since_last_save', 'keyspace_', 'uptime_in_seconds', 'total_commands_processed')
+        metrics=('connected_clients', 'used_memory:', 'used_memory_rss:', 'used_memory_peak:', 'changes_since_last_save', 'keyspace_hits', 'keyspace_misses', 'uptime_in_seconds', 'total_commands_processed')
         for line in raw_data.split('\n'):
             for searchitem in  metrics:
                 if searchitem in line:
@@ -43,6 +43,10 @@ def run_redis():
                     if searchitem == 'total_commands_processed':
                         value=rate.record_value_rate('redis_commands_processed', value, timestamp)
                         key='commands_rate'
+                    if searchitem == 'keyspace_hits':
+                        value=rate.record_value_rate('redis_keyspace_hits', value, timestamp)
+                    if searchitem == 'keyspace_misses':
+                        value=rate.record_value_rate('redis_keyspace_misses', value, timestamp)
                     jsondata.gen_data('redis_'+key, timestamp, value, push.hostname, check_type, cluster_name)
         jsondata.put_json()
         jsondata.truncate_data()
