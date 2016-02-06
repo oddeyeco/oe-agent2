@@ -35,8 +35,8 @@ def run_scripts():
         run = 'run_'+module_name.split('_')[1]
         run_method = getattr(module, run)
         run_method()
-        logger.debug (threading.current_thread())
-
+        message="Module_name: "+ module_name + ': execution time ' + str(time.clock()) + ' seconds'
+        logger.debug(message)
 
 class App():
 
@@ -56,9 +56,9 @@ class App():
 
 
 app = App()
-logger = logging.getLogger("TSD Client")
+logger = logging.getLogger("PuyPuy")
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(message)s")
 handler = logging.FileHandler(log_file)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
