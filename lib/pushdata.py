@@ -127,9 +127,9 @@ class JonSon(object):
 
 
 
-def print_error(e):
+def print_error(module, e):
     log_file = config.get('SelfConfig', 'log_file')
     logging.basicConfig(filename=log_file, level=logging.DEBUG)
     logger = logging.getLogger("PuyPuy")
     logger.setLevel(logging.DEBUG)
-    logging.critical(" %s : " % str(e) + os.path.realpath(__file__))
+    logging.critical(" %s : " % module + str(e))

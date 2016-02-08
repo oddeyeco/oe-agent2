@@ -8,7 +8,7 @@ config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
 cluster_name = config.get('SelfConfig', 'cluster_name')
 
 
-def run_load():
+def run_load_average():
     try:
         proc_loadavg=open('/proc/loadavg', "r")
     except IOError as e:
@@ -36,5 +36,5 @@ def run_load():
         jsondata.truncate_data()
     except Exception as e:
         push = __import__('pushdata')
-        push.print_error(e)
+        push.print_error(__name__ , (e))
         pass

@@ -72,7 +72,7 @@ def run_nginx():
         jsondata.truncate_data()
     except Exception as e:
         push = __import__('pushdata')
-        push.print_error(e)
+        push.print_error(__name__ , (e))
         pass
 
 

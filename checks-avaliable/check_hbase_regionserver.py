@@ -15,7 +15,7 @@ cluster_name = config.get('SelfConfig', 'cluster_name')
 check_type = 'hbase'
 
 
-def run_hbase():
+def run_hbase_regionserver():
     try:
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
         hbase_region_stats = urllib2.urlopen(hbase_region_url, timeout=5).read()
@@ -55,5 +55,5 @@ def run_hbase():
         jsondata.truncate_data()
     except Exception as e:
         push = __import__('pushdata')
-        push.print_error(e)
+        push.print_error(__name__ , (e))
         pass
