@@ -24,17 +24,9 @@ def run_scripts():
     module_name, ext = os.path.splitext(checklist)
     module = __import__(module_name)
     library_list.append(module)
-    run = 'run_'+module_name.split('_')[1]
+    run = 'run_'+module_name.rsplit('.')[0].rsplit('check_')[1]
     run_method = getattr(module, run)
     run_method()
-'''
-logger = logging.getLogger("TSD Client")
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-handler = logging.FileHandler(log_file)
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-'''
 
 def do_every (interval, worker_func, iterations=1):
   if iterations != 1:
