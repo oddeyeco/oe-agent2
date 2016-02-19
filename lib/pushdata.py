@@ -115,6 +115,8 @@ class JonSon(object):
         if tsd_influx is True:
             line_data = '%s' % ''.join(map(str, self.data))
             c = pycurl.Curl()
+            if curl_auth is True:
+                c.setopt(pycurl.USERPWD, influx_auth)
             c.setopt(pycurl.URL, influx_url)
             c.setopt(pycurl.POST, 0)
             c.setopt(pycurl.POSTFIELDS, line_data)
