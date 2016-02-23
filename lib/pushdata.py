@@ -20,6 +20,7 @@ hostname = socket.getfqdn()
 
 tsdb_type= config.get('TSDB', 'tsdtype')
 
+c = pycurl.Curl()
 
 if (tsdb_type == 'KairosDB' or tsdb_type == 'OpenTSDB'):
     tsdb_url = config.get('TSDB', 'address') + config.get('TSDB', 'datapoints')
@@ -51,8 +52,9 @@ if tsdb_type == 'InfluxDB':
 else:
     tsd_influx = False
 
-
+#c = pycurl.Curl()
 class JonSon(object):
+
     def gen_data(self, name,timestamp, value, tag_hostname, tag_type, cluster_name):
         if tsdb_type == 'KairosDB':
             self.data['metric'].append({"name":name,"timestamp":timestamp*1000, "value":value, "tags":{"host":tag_hostname,"type":tag_type, "cluster":cluster_name, "group":host_group} })
@@ -92,7 +94,6 @@ class JonSon(object):
     def put_json(self):
         if tsd_rest is True:
             json_data = json.dumps(self.data['metric'])
-            c = pycurl.Curl()
             if curl_auth is True:
                 c.setopt(pycurl.USERPWD, tsdb_auth)
             c.setopt(pycurl.URL, tsdb_url)
@@ -102,7 +103,6 @@ class JonSon(object):
             c.setopt(pycurl.TIMEOUT, 10)
             c.setopt(pycurl.NOSIGNAL, 5)
             c.perform()
-            c.close()
         if tsd_carbon is True:
             payload = pickle.dumps(self.data, protocol=2)
             header = struct.pack("!L", len(payload))
@@ -114,7 +114,6 @@ class JonSon(object):
             s.close()
         if tsd_influx is True:
             line_data = '%s' % ''.join(map(str, self.data))
-            c = pycurl.Curl()
             if curl_auth is True:
                 c.setopt(pycurl.USERPWD, influx_auth)
             c.setopt(pycurl.URL, influx_url)
@@ -124,10 +123,6 @@ class JonSon(object):
             c.setopt(pycurl.TIMEOUT, 10)
             c.setopt(pycurl.NOSIGNAL, 5)
             c.perform()
-            c.close()
-            #print line_data
-
-
 
 def print_error(module, e):
     log_file = config.get('SelfConfig', 'log_file')
