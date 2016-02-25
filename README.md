@@ -1,6 +1,6 @@
 **PuyPuy**
 ---------
-PuyPuy is python2 metrics collection daemon, which works with KairosDB, OpenTSDB, Graphite and soon with BlueFlood, For KairosDB and OpenTSDB it uses REST interface, for Graphite Pickle.
+PuyPuy is python2 metrics collection daemon, which works with KairosDB, OpenTSDB, Graphite and InfluxDB, For InfluxDB, KairosDB and OpenTSDB it uses REST interface, for Graphite Pickle.
 
 Main idea behind PuyPuy is simplicity and less as possible dependencies, it is tested on Debian and Ubuntu systems, but should work on any Linux system.   
 
