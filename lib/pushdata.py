@@ -69,7 +69,7 @@ class JonSon(object):
                 value=str(value)+'i'
             else:
                 value=str(value)
-            self.data.append(name+',host='+tag_hostname+',cluster='+cluster_name+',group='+host_group+' value='+value+'\n')
+            self.data.append(name+',host='+tag_hostname+',cluster='+cluster_name+',group='+host_group+',type='+tag_type+' value='+value+'\n')
         else:
             print 'Please set TSDB type'
 

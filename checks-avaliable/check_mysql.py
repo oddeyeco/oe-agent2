@@ -1,3 +1,10 @@
+'''
+This check required Python MySQLDB, On Debian like systems do
+apt-get install python-mysqldb
+or
+pip install MySQL-python
+'''
+
 import MySQLdb
 import datetime
 import ConfigParser
