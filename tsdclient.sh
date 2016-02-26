@@ -12,6 +12,7 @@
 
 SCRIPT_DIR="$(cd $(dirname $0) && pwd)"
 PYTHON=`which python`
+
 cd $SCRIPT_DIR
 
     case "$1" in
