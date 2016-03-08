@@ -121,7 +121,7 @@ config.ini
 KairosDB : Enable or disable auth: in accordance to your KairosDB setup 
 
 	[TSDB]
-	address: http://kairossb_address:8088
+	address: http://kairosdb_address:8088
 	datapoints: /api/v1/datapoints
 	user: netangels
 	pass: bololo
