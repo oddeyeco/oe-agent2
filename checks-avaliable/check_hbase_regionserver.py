@@ -22,7 +22,7 @@ def run_hbase_regionserver():
         stats_json = json.loads(hbase_region_stats)
         stats_keys = stats_json['beans']
         node_rated_keys=('totalRequestCount','readRequestCount','writeRequestCount', 'Delete_num_ops', 'Mutate_num_ops', 'FlushTime_num_ops','GcTimeMillis')
-        node_stuck_keys=('GcCount','HeapMemoryUsage')
+        node_stuck_keys=('GcCount','HeapMemoryUsage', 'OpenFileDescriptorCount')
         mon_values={}
         push = __import__('pushdata')
         value_rate= __import__('record_rate')
