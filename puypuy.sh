@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 ### BEGIN INIT INFO
-# Provides: tsdclient.sh
+# Provides: puypuy.sh
 # Required-Start: $local_fs $network
 # Should-Start: ypbind nscd ldap ntpd xntpd
 # Required-Stop: $network
@@ -10,23 +10,28 @@
 # Description: TSD Client
 ### END INIT INFO#
 
+# apt-get install  python-setproctitle
+
 SCRIPT_DIR="$(cd $(dirname $0) && pwd)"
 PYTHON=`which python`
-
 cd $SCRIPT_DIR
+RUNUSER=nobody
 
     case "$1" in
 
     start)
-    $PYTHON start.py start
+    su $RUNUSER -s /bin/bash -c "$PYTHON puypuy.py start"
     ;;
 
     stop)
-    $PYTHON start.py stop
+    su $RUNUSER -s /bin/bash -c "$PYTHON puypuy.py stop"
+    rm -f checks-enabled/*.pyc
     ;;
 
     restart)
-    $PYTHON start.py restart
+    su $RUNUSER -s /bin/bash -c "$PYTHON puypuy.py stop"
+    sleep 1
+    su $RUNUSER -s /bin/bash -c "$PYTHON puypuy.py start"
     ;;
     *)
     echo "Usage: `basename $0` start | stop | restart"

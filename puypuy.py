@@ -55,6 +55,12 @@ class App():
             run_shell_scripts()
             time.sleep(cron_interval)
 
+try:
+  import setproctitle
+  setproctitle.setproctitle('puypuy-mukik')
+except:
+  pass
+
 
 app = App()
 logger = logging.getLogger("PuyPuy")

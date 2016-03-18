@@ -16,7 +16,7 @@ http://apt.netangels.net/pool/main/p/python-psutil/python-psutil_2.1.1-1_amd64.d
 If you use specific checks like check_mysql, MySQLdb should also be installed.
 Make your changes if needed in config.ini and run 
 
-    ./tsdclient.sh start
+    ./puypuy.sh start
      
 Python daemon process will start, run all python scripts from checks_avaliable directory as well as all check_* files scripts_available directory. 
 
