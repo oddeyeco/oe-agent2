@@ -20,6 +20,9 @@ def run_kafka():
         push = __import__('pushdata')
         jsondata=push.JonSon()
         jsondata.create_data()
+        push = __import__('pushdata')
+        value_rate= __import__('record_rate')
+        rate=value_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
         jolo_mbeans=('java.lang:type=Memory',
@@ -54,15 +57,23 @@ def run_kafka():
             elif beans == 'kafka.server:type=Fetch':
                 value= jolo_keys['queue-size']
                 name = 'kafka_'+beans.split('=')[1]
-                jsondata.gen_data(name, timestamp, value, push.hostname, check_type, cluster_name)
+                values_rate = rate.record_value_rate(name, value, timestamp)
+                if values_rate >= 0:
+                    jsondata.gen_data(name, timestamp, values_rate, push.hostname, check_type, cluster_name)
+
             elif beans == 'kafka.server:type=Produce':
                 value= jolo_keys['queue-size']
                 name = 'kafka_'+beans.split('=')[1]
-                jsondata.gen_data(name, timestamp, value, push.hostname, check_type, cluster_name)
+                values_rate = rate.record_value_rate(name, value, timestamp)
+                if values_rate >= 0:
+                    jsondata.gen_data(name, timestamp, values_rate, push.hostname, check_type, cluster_name)
+#                    jsondata.gen_data(name, timestamp, value, push.hostname, check_type, cluster_name)
             else:
                 value= jolo_keys['Count']
                 name = 'kafka_'+beans.split('=')[2].split(',')[0]
-                jsondata.gen_data(name, timestamp, value, push.hostname, check_type, cluster_name)
+                values_rate = rate.record_value_rate(name, value, timestamp)
+                if values_rate >= 0:
+                    jsondata.gen_data(name, timestamp, values_rate, push.hostname, check_type, cluster_name)
         jsondata.put_json()
         jsondata.truncate_data()
 
@@ -70,4 +81,5 @@ def run_kafka():
         push = __import__('pushdata')
         push.print_error(__name__ , (e))
         pass
+
 
