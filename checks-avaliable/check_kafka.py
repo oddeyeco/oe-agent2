@@ -35,7 +35,9 @@ def run_kafka():
                      'kafka.server:type=BrokerTopicMetrics,name=TotalFetchRequestsPerSec',
                      'kafka.server:type=BrokerTopicMetrics,name=TotalProduceRequestsPerSec',
                      'kafka.server:type=Fetch',
-                     'kafka.server:type=Produce'
+                     'kafka.server:type=Produce',
+                     'kafka.network:name=RequestsPerSec,request=FetchConsumer,type=RequestMetrics',
+                     'kafka.network:name=RequestsPerSec,request=Produce,type=RequestMetrics'
                      )
         for beans in jolo_mbeans:
             jolo_url=urllib2.urlopen(jolokia_url+'/'+beans, timeout=15).read()
@@ -68,6 +70,18 @@ def run_kafka():
                 if values_rate >= 0:
                     jsondata.gen_data(name, timestamp, values_rate, push.hostname, check_type, cluster_name)
 #                    jsondata.gen_data(name, timestamp, value, push.hostname, check_type, cluster_name)
+
+            elif beans == 'kafka.network:name=RequestsPerSec,request=FetchConsumer,type=RequestMetrics':
+                minute_value = jolo_keys['OneMinuteRate']
+                value = minute_value / 60
+                key = 'kafka_RequestMetrics_FetchConsumer'
+                jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name)
+            elif beans == 'kafka.network:name=RequestsPerSec,request=Produce,type=RequestMetrics':
+                minute_value = jolo_keys['OneMinuteRate']
+                value = minute_value / 60
+                key = 'kafka_RequestMetrics_Produce'
+                jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name)
+
             else:
                 value= jolo_keys['Count']
                 name = 'kafka_'+beans.split('=')[2].split(',')[0]
