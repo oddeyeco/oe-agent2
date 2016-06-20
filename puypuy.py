@@ -38,6 +38,10 @@ def run_scripts():
         message=module_name, time.clock()
         logger.debug(message)
 
+def upload_cache():
+    uploadcache = __import__('upload_cached')
+    uploadcache.cache_uploader()
+
 
 class App():
 
@@ -50,17 +54,44 @@ class App():
         self.pidfile_timeout = 5
 
     def run(self):
-        while True:
-            run_scripts()
-            run_shell_scripts()
-            time.sleep(cron_interval)
+        tsdb_type = config.get('TSDB', 'tsdtype')
+        if (tsdb_type == 'OddEye') or (tsdb_type == 'InfluxDB') or (tsdb_type == 'KairosDB') or (tsdb_type == 'OpenTSDB'):
+            def run_normal():
+                while True:
+                    run_scripts()
+                    run_shell_scripts()
+                    time.sleep(cron_interval)
+
+            def run_cache():
+                while True:
+                    upload_cache()
+                    time.sleep(cron_interval)
+
+            from multiprocessing import Process
+
+
+            p1 = Process(target=run_normal)
+            p1.daemon = True
+            p1.start()
+
+            p2 = Process(target=run_cache())
+            if not p2.is_alive():
+                p2.daemon = True
+                p2.start()
+                p2.join()
+            p1.join()
+        else:
+            while True:
+                run_scripts()
+                run_shell_scripts()
+                time.sleep(cron_interval)
+
 
 try:
   import setproctitle
   setproctitle.setproctitle('puypuy-mukik')
 except:
   pass
-
 
 app = App()
 logger = logging.getLogger("PuyPuy")
@@ -73,3 +104,5 @@ logger.addHandler(handler)
 daemon_runner = runner.DaemonRunner(app)
 daemon_runner.daemon_context.files_preserve=[handler.stream]
 daemon_runner.do_action()
+
+

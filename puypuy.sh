@@ -15,11 +15,20 @@
 SCRIPT_DIR="$(cd $(dirname $0) && pwd)"
 PYTHON=`which python`
 cd $SCRIPT_DIR
-RUNUSER=nobody
+RUNUSER=pastor
+
+TMPDIR=`grep tmpdir conf/config.ini|  awk '{print $NF}'`
 
     case "$1" in
 
     start)
+    if [ ! -d  $TMPDIR ];
+        then
+            mkdir $TMPDIR
+            chown $RUNUSER $TMPDIR
+            chmod 755 $TMPDIR
+    fi
+
     su $RUNUSER -s /bin/bash -c "$PYTHON puypuy.py start"
     ;;
 
