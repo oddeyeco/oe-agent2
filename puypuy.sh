@@ -15,7 +15,7 @@
 SCRIPT_DIR="$(cd $(dirname $0) && pwd)"
 PYTHON=`which python`
 cd $SCRIPT_DIR
-RUNUSER=pastor
+RUNUSER=nobody
 
 TMPDIR=`grep tmpdir conf/config.ini|  awk '{print $NF}'`
 
