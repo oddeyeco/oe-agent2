@@ -125,8 +125,7 @@ class JonSon(object):
                     pass
                 else:
                     push = __import__('pushdata')
-                    push.print_error(c.getinfo(pycurl.RESPONSE_CODE),
-                                     'Got non ubnormal response code, started to cache')
+                    push.print_error(c.getinfo(pycurl.RESPONSE_CODE), 'Got non ubnormal response code, started to cache')
                     import uuid
                     tmpdir = config.get('SelfConfig', 'tmpdir')
                     filename = tmpdir + '/' + str(uuid.uuid4()) + '.cached'
@@ -153,11 +152,11 @@ class JonSon(object):
             c.setopt(pycurl.NOSIGNAL, 5)
             c.setopt(pycurl.WRITEFUNCTION, lambda x: None)
             c.setopt(pycurl.USERAGENT, 'PuyPuy v.01')
-
             self.data["data"] = self.metrics
             json_data = json.dumps(self.data)
             barlus_style = 'UUID=' + oddeye_uuid + '&data='
             send_data = barlus_style + json_data
+            c.setopt(pycurl.POSTFIELDS, send_data)
             upload_data(send_data)
 
         if tsd_rest is True:
@@ -172,6 +171,7 @@ class JonSon(object):
             c.setopt(pycurl.NOSIGNAL, 5)
             #c.perform()
             upload_data(json_data)
+
 
         if tsd_carbon is True:
             payload = pickle.dumps(self.data, protocol=2)
