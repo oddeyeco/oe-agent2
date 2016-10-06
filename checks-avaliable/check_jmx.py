@@ -91,6 +91,17 @@ def run_jmx():
             GcTime_rate = rate.record_value_rate('jmx_CMSGcTime', ColTime.value, timestamp)
             jsondata.gen_data('jmx_CMSGcTime', timestamp, GcTime_rate, push.hostname, check_type, cluster_name)
 
+            object = 'java.lang:type=GarbageCollector,name=ParNew'
+            PnGcCount = 'CollectionCount'
+            PnColCount = connection.getAttribute(javax.management.ObjectName(object), PnGcCount)
+
+            PnGcTime = 'CollectionTime'
+            PnColTime = connection.getAttribute(javax.management.ObjectName(object), PnGcTime)
+            jsondata.gen_data('jmx_' + 'ParNewGcCount', timestamp, PnColCount, push.hostname, check_type, cluster_name)
+            GcTime_rate = rate.record_value_rate('jmx_ParNewGcTime', PnColTime.value, timestamp)
+            jsondata.gen_data('jmx_ParNewGcTime', timestamp, GcTime_rate, push.hostname, check_type, cluster_name)
+
+
             #print  'CMSGcCount', ColCount
             #print  'CMSGcTime', ColTime
 
