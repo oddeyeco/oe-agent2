@@ -13,7 +13,7 @@ jolokia_url = config.get('Cassandra', 'jolokia')
 hostname = socket.getfqdn()
 cluster_name = config.get('SelfConfig', 'cluster_name')
 check_type = 'cassandra'
-
+alert_level=-3
 
 def run_cassandra3():
     try:
@@ -39,6 +39,7 @@ def run_cassandra3():
             jolo_url=urllib2.urlopen(jolokia_url+'/'+beans, timeout=5).read()
             jolo_json = json.loads(jolo_url)
             jolo_keys = jolo_json['value']
+            #print jolo_keys
             if beans == 'java.lang:type=Memory':
                 metr_name=('used', 'committed')
                 heap_type=('NonHeapMemoryUsage', 'HeapMemoryUsage')
@@ -47,24 +48,33 @@ def run_cassandra3():
                         if heap == 'NonHeapMemoryUsage':
                             key='cassa_nonheap_'+ metr
                             mon_values=jolo_keys[heap][metr]
-                            jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
+                            if key == 'cassa_nonheap_committed':
+                                jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, alert_level)
+                            else:
+                                jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
                         else:
                             key='cassa_heap_'+ metr
                             mon_values=jolo_keys[heap][metr]
-                            jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
+                            if key == 'cassa_heap_committed':
+                                jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, alert_level)
+                            else:
+                                jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
+
             elif beans == 'org.apache.cassandra.metrics:name=PreparedStatementsCount,type=CQL':
                 value= jolo_keys['Value']
                 name = 'cassa_cql_PreparedStatements'
-                if value is 0:
-                    jsondata.gen_data(name, timestamp, value, push.hostname, check_type, cluster_name)
-                else:
-                    value_rate=rate.record_value_rate(name, value, timestamp)
-                    jsondata.gen_data(name, timestamp, value_rate, push.hostname, check_type, cluster_name)
+                if value:
+                    if value is 0:
+                        jsondata.gen_data(name, timestamp, value, push.hostname, check_type, cluster_name)
+                    else:
+                        value_rate=rate.record_value_rate(name, value, timestamp)
+                        jsondata.gen_data(name, timestamp, value_rate, push.hostname, check_type, cluster_name)
             elif beans == 'org.apache.cassandra.metrics:type=CQL,name=RegularStatementsExecuted':
+                #print name, value, timestamp
+                name = 'cassa_cql_RegularStatement'
+                value = jolo_keys['Count']
                 value_rate=rate.record_value_rate(name, value, timestamp)
                 jsondata.gen_data(name, timestamp, value_rate, push.hostname, check_type, cluster_name)
-                value= jolo_keys['Count']
-                name = 'cassa_cql_RegularStatement'
             similars=('org.apache.cassandra.metrics:type=Cache,scope=KeyCache,name=Hits',
                       'org.apache.cassandra.metrics:type=Cache,scope=KeyCache,name=Requests',
                       'org.apache.cassandra.metrics:type=Cache,scope=RowCache,name=Hits',
@@ -82,4 +92,3 @@ def run_cassandra3():
         push = __import__('pushdata')
         push.print_error(__name__ , (e))
         pass
-
