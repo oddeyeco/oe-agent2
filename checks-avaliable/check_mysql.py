@@ -5,6 +5,7 @@ or
 pip install MySQL-python
 '''
 
+
 import MySQLdb
 import datetime
 import ConfigParser
@@ -41,9 +42,10 @@ def run_mysql():
                             "OR Variable_name='Qcache_hits' "
                             "OR Variable_name='Open_files' "
                             "OR Variable_name='Max_used_connections' "
+                            "OR Variable_name='Threads_connected' "
                             "")
         timestamp = int(datetime.datetime.now().strftime("%s"))
-        non_rate_metrics=('Max_used_connections', 'Slow_queries', 'Open_files')
+        non_rate_metrics=('Max_used_connections', 'Slow_queries', 'Open_files', 'Threads_connected')
         for row in cur.fetchall():
             mytype = row[0]
             myvalue = row[1]
