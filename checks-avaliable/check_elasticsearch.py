@@ -49,8 +49,8 @@ def run_elasticsearch():
                     'get_time':stats_json['nodes'][node_keys]['indices']['get']['time_in_millis'],
                     'gc_young_time_ms':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['young']['collection_time_in_millis'],
                     'gc_old_time_ms':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['old']['collection_time_in_millis'],
-                    'elasticsearch_gc_young_count':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['young']['collection_count'],
-                    'elasticsearch_gc_old_count':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['old']['collection_count']
+                    'gc_young_count':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['young']['collection_count'],
+                    'gc_old_count':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['old']['collection_count']
                             })
         #print rated_stats
 
