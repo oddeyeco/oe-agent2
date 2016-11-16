@@ -5,6 +5,7 @@ import ConfigParser
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
 cluster_name = config.get('SelfConfig', 'cluster_name')
+alert_level = -3
 
 
 def run_ipconntrack():
@@ -17,7 +18,7 @@ def run_ipconntrack():
         push = __import__('pushdata')
         jsondata=push.JonSon()
         jsondata.create_data()
-        jsondata.gen_data('conntrack_max', timestamp, max, push.hostname, check_type, cluster_name)
+        jsondata.gen_data('conntrack_max', timestamp, max, push.hostname, check_type, cluster_name, alert_level)
         jsondata.gen_data('conntrack_cur', timestamp, cur, push.hostname, check_type, cluster_name)
         jsondata.put_json()
         jsondata.truncate_data()

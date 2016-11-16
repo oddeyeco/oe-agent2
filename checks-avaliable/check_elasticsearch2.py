@@ -13,7 +13,7 @@ elastic_url = config.get('ElasticSearch', 'stats')
 hostname = socket.getfqdn()
 cluster_name = config.get('SelfConfig', 'cluster_name')
 check_type = 'elasticsearch'
-
+alert_level = -3
 
 def run_elasticsearch2():
     try:
@@ -48,7 +48,9 @@ def run_elasticsearch2():
                     'query_cache_evictions':stats_json['nodes'][node_keys]['indices']['query_cache']['evictions'],
                     'get_time':stats_json['nodes'][node_keys]['indices']['get']['time_in_millis'],
                     'gc_young_time_ms':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['young']['collection_time_in_millis'],
-                    'gc_old_time_ms':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['old']['collection_time_in_millis']
+                    'gc_old_time_ms':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['old']['collection_time_in_millis'],
+                    'elasticsearch_gc_old_count':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['old']['collection_count'],
+                    'elasticsearch_gc_young_count':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['young']['collection_count'],
                     })
         #print rated_stats
 
@@ -64,13 +66,15 @@ def run_elasticsearch2():
                     'elasticsearch_non_heap_commited':stats_json['nodes'][node_keys]['jvm']['mem']['non_heap_committed_in_bytes'],
                     'elasticsearch_non_heap_used':stats_json['nodes'][node_keys]['jvm']['mem']['non_heap_used_in_bytes'],
                     'elasticsearch_open_files':stats_json['nodes'][node_keys]['process']['open_file_descriptors'],
-                    'elasticsearch_http_connections':stats_json['nodes'][node_keys]['http']['current_open'],
-                    'elasticsearch_gc_young_count':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['young']['collection_count'],
-                    'elasticsearch_gc_old_count':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['old']['collection_count']
+                    'elasticsearch_http_connections':stats_json['nodes'][node_keys]['http']['current_open']
                      })
         for key, value in data.iteritems():
-            #timestamp = int(datetime.datetime.now().strftime("%s"))
-            jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name)
+            if key == 'elasticsearch_non_heap_used' or key == 'elasticsearch_heap_used' or key == 'elasticsearch_non_heap_committed' or key == 'elasticsearch_heap_committed':
+                jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name, alert_level)
+            else:
+                jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name)
+                #timestamp = int(datetime.datetime.now().strftime("%s"))
+                #jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name)
         jsondata.put_json()
         jsondata.truncate_data()
     except Exception as e:

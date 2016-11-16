@@ -43,9 +43,15 @@ def run_mongodb():
         for key, value in connections_dict['metrics']['operation'].iteritems():
             reqrate=rate.record_value_rate('mongo_operation_'+key, value, timestamp)
             jsondata.gen_data('mongo_operation_'+key, timestamp, reqrate, push.hostname, check_type, cluster_name)
+
         for key, value in connections_dict['opcounters'].iteritems():
             reqrate=rate.record_value_rate('mongo_opcounters_'+key, value, timestamp)
             jsondata.gen_data('mongo_opcounters_'+key, timestamp, reqrate, push.hostname, check_type, cluster_name)
+        '''
+        for key, value in connections_dict['indexCounters'].iteritems():
+            reqrate=rate.record_value_rate('mongo_indexcounters_'+key, value, timestamp)
+            jsondata.gen_data('mongo_indexcounters_'+key, timestamp, reqrate, push.hostname, check_type, cluster_name)
+        '''
         for key, value in connections_dict['connections'].iteritems():
             jsondata.gen_data('mongo_connections_'+key, timestamp, value, push.hostname, check_type, cluster_name)
 

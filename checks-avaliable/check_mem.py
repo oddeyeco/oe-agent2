@@ -1,5 +1,7 @@
 import psutil, os, sys
 import datetime
+alert_level = -3
+
 
 import ConfigParser
 
@@ -23,7 +25,10 @@ def run_mem():
             timestamp = int(datetime.datetime.now().strftime("%s"))
             mytype = mem_list[index].split('=')[0]
             myvalue = mem_list[index].split('=')[1].rstrip('L')
-            jsondata.gen_data('mem_'+mytype, timestamp, myvalue, push.hostname, check_type, cluster_name)
+            if mytype == 'percent':
+                jsondata.gen_data('mem_'+mytype, timestamp, myvalue, push.hostname, check_type, cluster_name)
+            else:
+                jsondata.gen_data('mem_' + mytype, timestamp, myvalue, push.hostname, check_type, cluster_name, alert_level)
         jsondata.put_json()
         jsondata.truncate_data()
     except Exception as e:

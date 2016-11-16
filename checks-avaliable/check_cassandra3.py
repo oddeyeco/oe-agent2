@@ -13,7 +13,7 @@ jolokia_url = config.get('Cassandra', 'jolokia')
 hostname = socket.getfqdn()
 cluster_name = config.get('SelfConfig', 'cluster_name')
 check_type = 'cassandra'
-
+alert_level=-3
 
 def run_cassandra3():
     try:
@@ -48,17 +48,17 @@ def run_cassandra3():
                         if heap == 'NonHeapMemoryUsage':
                             key='cassa_nonheap_'+ metr
                             mon_values=jolo_keys[heap][metr]
-                            if key == 'cassa_nonheap_committed':
-                                jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
-                            else:
-                                jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
+                            #if key == 'cassa_nonheap_committed':
+                            jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, alert_level)
+                            #else:
+                            #    jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
                         else:
                             key='cassa_heap_'+ metr
                             mon_values=jolo_keys[heap][metr]
-                            if key == 'cassa_heap_committed':
-                                jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name )
-                            else:
-                                jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
+                            #if key == 'cassa_heap_committed':
+                            jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, alert_level)
+                            #else:
+                            #    jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
 
             elif beans == 'org.apache.cassandra.metrics:name=PreparedStatementsCount,type=CQL':
                 value= jolo_keys['Value']

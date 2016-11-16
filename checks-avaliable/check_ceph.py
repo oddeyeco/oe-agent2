@@ -24,10 +24,12 @@ def run_ceph():
         timestamp = int(datetime.datetime.now().strftime("%s"))
 
         command='ceph -n ' + ceph_client +' --keyring='+ ceph_keyring + ' pg stat -f json'
+        #command='cat' + ' /tmp/rados.json'
 
         p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
         output, err = p.communicate()
         stats=json.loads(output)
+
 
         jsondata.gen_data('ceph_num_bytes', timestamp, stats['num_bytes'], push.hostname, check_type, cluster_name)
         jsondata.gen_data('ceph_num_pgs', timestamp, stats['num_pgs'], push.hostname, check_type, cluster_name)

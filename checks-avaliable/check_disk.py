@@ -6,7 +6,8 @@ config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
 cluster_name = config.get('SelfConfig', 'cluster_name')
 check_type = 'system'
-
+alert_level = -3
+warn_percent = 80
 
 def run_disk():
     sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
@@ -23,15 +24,15 @@ def run_disk():
             if disk == '/':
                 diskname='_root'
                 roottuple=tuple(psutil.disk_usage(disk))
-                jsondata.gen_data('drive'+diskname+'_used_bytes', timestamp, roottuple[1], push.hostname, check_type, cluster_name)
-                jsondata.gen_data('drive'+diskname+'_free_bytes', timestamp, roottuple[2], push.hostname, check_type, cluster_name)
-                jsondata.gen_data('drive'+diskname+'_pecent', timestamp, roottuple[3], push.hostname, check_type, cluster_name)
+                jsondata.gen_data('drive'+diskname+'_used_bytes', timestamp, roottuple[1], push.hostname, check_type, cluster_name, alert_level)
+                jsondata.gen_data('drive'+diskname+'_free_bytes', timestamp, roottuple[2], push.hostname, check_type, cluster_name, alert_level)
+                jsondata.gen_data('drive'+diskname+'_pecent', timestamp, roottuple[3], push.hostname, check_type, cluster_name, warn_percent)
             else:
                 diskname=disk.replace("/", "_")
                 disktuple=tuple(psutil.disk_usage(disk))
-                jsondata.gen_data('drive'+diskname+'_used_bytes', timestamp, disktuple[1], push.hostname, check_type, cluster_name)
-                jsondata.gen_data('drive'+diskname+'_free_bytes', timestamp, disktuple[2], push.hostname, check_type, cluster_name)
-                jsondata.gen_data('drive'+diskname+'_pecent', timestamp, disktuple[3], push.hostname, check_type, cluster_name)
+                jsondata.gen_data('drive'+diskname+'_used_bytes', timestamp, disktuple[1], push.hostname, check_type, cluster_name, alert_level)
+                jsondata.gen_data('drive'+diskname+'_free_bytes', timestamp, disktuple[2], push.hostname, check_type, cluster_name, alert_level)
+                jsondata.gen_data('drive'+diskname+'_pecent', timestamp, disktuple[3], push.hostname, check_type, cluster_name, alert_level)
 
 
         proc_stats=open('/proc/diskstats')
@@ -43,7 +44,7 @@ def run_disk():
                 reqrate=rate.record_value_rate(name, value, timestamp)
                 if isinstance( reqrate, int ):
                     diskrate=reqrate/10
-                    jsondata.gen_data(name, timestamp, diskrate, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data(name, timestamp, diskrate, push.hostname, check_type, cluster_name, warn_percent)
 
         disks=psutil.disk_io_counters(perdisk=True)
         for key, value in disks.iteritems():
@@ -52,8 +53,8 @@ def run_disk():
             write_name='drive_'+key+'_write_bytes'
             readrate=rate.record_value_rate(read_name, tvalue[2], timestamp)
             writerate=rate.record_value_rate(write_name, tvalue[3], timestamp)
-            jsondata.gen_data(read_name, timestamp, readrate, push.hostname, check_type, cluster_name)
-            jsondata.gen_data(write_name, timestamp, writerate, push.hostname, check_type, cluster_name)
+            jsondata.gen_data(read_name, timestamp, readrate, push.hostname, check_type, cluster_name, alert_level)
+            jsondata.gen_data(write_name, timestamp, writerate, push.hostname, check_type, cluster_name, alert_level)
         jsondata.put_json()
         jsondata.truncate_data()
     except Exception as e:
