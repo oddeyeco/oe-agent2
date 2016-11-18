@@ -39,12 +39,12 @@ def run_disk():
         for line in proc_stats:
             if "loop" not  in line:
                 fields = line.strip().split()
-                name='drive_'+(fields)[2]+'_percent'
+                name='drive_io_'+(fields)[2]+'_percent'
                 value=(fields)[12]
                 reqrate=rate.record_value_rate(name, value, timestamp)
                 if isinstance( reqrate, int ):
                     diskrate=reqrate/10
-                    jsondata.gen_data(name, timestamp, diskrate, push.hostname, check_type, cluster_name, warn_percent)
+                    jsondata.gen_data(name, timestamp, diskrate, push.hostname, check_type, cluster_name)
 
         disks=psutil.disk_io_counters(perdisk=True)
         for key, value in disks.iteritems():
