@@ -9,18 +9,24 @@ config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
 
 jolokia_url = config.get('Jolokia', 'jolokia')
-TYPE= config.get('Jolokia', 'gctype')
 hostname = socket.getfqdn()
 cluster_name = config.get('SelfConfig', 'cluster_name')
 check_type = 'Jolokia'
 
 
-if TYPE == 'G1':
-    CMS=False
-    G1=True
-if TYPE == 'CMS':
+
+data_dict=json.loads(urllib2.urlopen(jolokia_url+'/java.lang:type=GarbageCollector,name=*', timeout=5).read())
+ConcurrentMarkSweep='java.lang:name=ConcurrentMarkSweep,type=GarbageCollector'
+G1Gc='java.lang:name=G1 Young Generation,type=GarbageCollector'
+
+if ConcurrentMarkSweep in data_dict['value']:
     CMS=True
     G1=False
+
+if G1Gc in data_dict['value']:
+    CMS=False
+    G1=True
+
 
 def run_jolokia():
     try:
