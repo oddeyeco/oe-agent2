@@ -13,8 +13,6 @@ hostname = socket.getfqdn()
 cluster_name = config.get('SelfConfig', 'cluster_name')
 check_type = 'Jolokia'
 
-
-
 data_dict=json.loads(urllib2.urlopen(jolokia_url+'/java.lang:type=GarbageCollector,name=*', timeout=5).read())
 ConcurrentMarkSweep='java.lang:name=ConcurrentMarkSweep,type=GarbageCollector'
 G1Gc='java.lang:name=G1 Young Generation,type=GarbageCollector'
@@ -26,7 +24,6 @@ if ConcurrentMarkSweep in data_dict['value']:
 if G1Gc in data_dict['value']:
     CMS=False
     G1=True
-
 
 def run_jolokia():
     try:
@@ -102,11 +99,17 @@ def run_jolokia():
                     type='_old_'
                 if k is 1:
                     type = '_young_'
-
-                for keyname in metr_keys:
-                    value = j['value'][keyname]
-                    v = check_null(value)
-                    jsondata.gen_data('jolokia_G1'+ type+ keyname, timestamp, v, push.hostname, check_type, cluster_name)
+                for ky, vl in enumerate(metr_keys):
+                    if ky is 0:
+                        value = j['value'][vl]
+                        v = check_null(value)
+                        rate_key=vl+type
+                        CollectionTime_rate = rate.record_value_rate('jolokia_' + rate_key, v, timestamp)
+                        jsondata.gen_data('jolokia_G1'+ type+ vl, timestamp, CollectionTime_rate, push.hostname, check_type, cluster_name)
+                    if ky is 1:
+                        value = j['value'][vl]
+                        v = check_null(value)
+                        jsondata.gen_data('jolokia_G1' + type + vl, timestamp, v, push.hostname, check_type, cluster_name)
 
         jsondata.put_json()
         jsondata.truncate_data()
