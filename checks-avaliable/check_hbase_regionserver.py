@@ -31,6 +31,18 @@ def run_hbase_regionserver():
         jsondata.create_data()
         timestamp = int(datetime.datetime.now().strftime("%s"))
 
+        for stats_x in range(0, len(stats_keys)):
+            for k, v in enumerate(('java.lang:type=GarbageCollector,name=ConcurrentMarkSweep', 'java.lang:type=GarbageCollector,name=ParNew')):
+                if v in stats_keys[stats_x]['name']:
+                    if k is 0:
+                        cms_key='hregion_heap_CMS_LastGcInfo'
+                        cms_value=stats_keys[stats_x]['LastGcInfo']['duration']
+                        mon_values.update({cms_key: cms_value})
+                    if k is 1:
+                        parnew_key='hregion_heap_ParNew_LastGcInfo'
+                        parnew_value=stats_keys[stats_x]['LastGcInfo']['duration']
+                        mon_values.update({parnew_key: parnew_value})
+
         for stats_index in range(0, len(stats_keys)):
             for values in node_rated_keys:
                 if values in stats_keys[stats_index]:
