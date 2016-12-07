@@ -28,7 +28,6 @@ def run_cpustats():
     timestamp = int(datetime.datetime.now().strftime("%s"))
     raw_cpustats=" ".join(open("/proc/stat", "r").readline().split())
     cpu_stats = []
-    cputimes = {}
 
     cpucount = 0
     for line in open("/proc/stat", "r").xreadlines():

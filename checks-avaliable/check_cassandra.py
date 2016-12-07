@@ -37,7 +37,6 @@ def run_cassandra():
             jolo_json = json.loads(jolo_url)
             jolo_keys = jolo_json['value']
             if beans == 'java.lang:type=Memory':
-                #metr_name=('max', 'init', 'used', 'committed')
                 metr_name=('used', 'committed')
                 heap_type=('NonHeapMemoryUsage', 'HeapMemoryUsage')
                 for heap in heap_type:
@@ -45,17 +44,11 @@ def run_cassandra():
                         if heap == 'NonHeapMemoryUsage':
                             key='cassa_nonheap_'+ metr
                             mon_values=jolo_keys[heap][metr]
-                            #if key == 'cassa_nonheap_committed':
                             jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, alert_level)
-                            #else:
-                            #    jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
                         else:
                             key='cassa_heap_'+ metr
                             mon_values=jolo_keys[heap][metr]
-                            #if key == 'cassa_heap_committedwww':
                             jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, alert_level)
-                            #else:
-                            #    jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
             elif beans == 'org.apache.cassandra.db:type=Caches':
                 needed_stats=('RowCacheHits','KeyCacheHits','RowCacheRequests','KeyCacheRequests')
                 for my_name in jolo_keys:
@@ -67,8 +60,7 @@ def run_cassandra():
             similars=('org.apache.cassandra.transport:type=Native-Transport-Requests',
                       'org.apache.cassandra.request:type=RequestResponseStage',
                       'org.apache.cassandra.request:type=ReadStage',
-                      'org.apache.cassandra.request:type=MutationStage',
-                      'org.apache.cassandra.internal:type=GossipStage'
+                      'org.apache.cassandra.request:type=MutationStage'
                       )
             if beans in similars:
                 name = 'cassa_'+beans.split('=')[1]

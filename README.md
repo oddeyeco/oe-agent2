@@ -140,12 +140,12 @@ KairosDB: Enable or disable auth: in accordance to your KairosDB setup
 InfluxDB: Enable or disable auth, but do not delete user/pass config params 
 
     [TSDB]
-    address = http://influxdb_address:8086
-    auth = False
-    user = netangels
-    pass = bololo
-    database = test
-    tsdtype = InfluxDB
+    address: http://influxdb_address:8086
+    auth: False
+    user: netangels
+    pass: bololo
+    database: test
+    tsdtype: InfluxDB
 
 Graphite Carbon: (PuyPuy uses Carbon pickle, default port is 2004)
 

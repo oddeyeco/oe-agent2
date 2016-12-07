@@ -14,6 +14,8 @@ hadoop_datanode_url = config.get('Hadoop-Datanode', 'jmx')
 hostname = socket.getfqdn()
 cluster_name = config.get('SelfConfig', 'cluster_name')
 check_type = 'hdfs'
+alert_level = -3
+warn_level = 20
 
 class buffer:
    def __init__(self):
@@ -81,7 +83,10 @@ def run_hadoop_datanode():
                     mon_values.update({'datanode_'+values: reqrate})
 
         for key in mon_values.keys():
-            jsondata.gen_data(key, timestamp, mon_values[key], push.hostname, check_type, cluster_name)
+            if key is 'datanode_dfsused' or key is 'datanode_space_remaining':
+                jsondata.gen_data(key, timestamp, mon_values[key], push.hostname, check_type, cluster_name, alert_level)
+            else:
+                jsondata.gen_data(key, timestamp, mon_values[key], push.hostname, check_type, cluster_name)
         jsondata.put_json()
         jsondata.truncate_data()
         #print mon_values
