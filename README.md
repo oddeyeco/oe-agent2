@@ -128,7 +128,7 @@ OpenTSDB: OpenTSD does not supports authentication, but if you put it behind pro
 	tsdtype: OpenTSDB
 
 KairosDB: Enable or disable auth: in accordance to your KairosDB setup 
-
+ 
 	[TSDB]
 	address: http://kairosdb_address:8088
 	datapoints: /api/v1/datapoints
