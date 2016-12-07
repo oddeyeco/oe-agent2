@@ -1,23 +1,30 @@
 **PuyPuy**
 ---------
-PuyPuy is python2 metrics collection daemon, which works with KairosDB, OpenTSDB, Graphite and InfluxDB, For InfluxDB, KairosDB and OpenTSDB it uses REST interface, for Graphite Pickle.
+
+PuyPuy is python2 metrics collection daemon, which works with KairosDB, OpenTDB, Graphite and InfluxDB, For InfluxDB, KairosDB and OpenTSDB it uses REST interface, for Graphite Pickle.
 
 Main idea behind PuyPuy is simplicity and less as possible dependencies, it is tested on Debian and Ubuntu systems, but should work on any Linux system.   
 
-To install PuyPuy just clone our repository, make sure that you have few python dependency modules (pycurl, psutil v1+, daemon) for base program.
-On Debian/Ubuntu systems following will do the trick 
-
-	apt-get install python-psutil python-daemon python-pycurl 
-
-Special note for Debian 7 users: psutil in Debian 7 is very old, please uses pip to install psutils or get it from our repository: 
-
-http://apt.netangels.net/pool/main/p/python-psutil/python-psutil_2.1.1-1_amd64.deb
+To install PuyPuy just clone our repository, make sure that you have few python dependency modules (pycurl, daemon) for base program.
 
 If you use specific checks like check_mysql, MySQLdb should also be installed.
+If you are going to use JMX check you will need module called python-jpype. 
+
+Standard python-jpype which comes with Debian has dependency of default-jre, so apt-get install python-jpype will install lots of unwanted software, especially if you use Host-Spot JVM. 
+To avoid that we have recreated python-jpype and removed default-jre dependency. You can download and use it. 
+
+    wget http://apt.netangels.net/pool/main/p/python-jpype/python-jpype_0.5.4.2-3_amd64.deb
+    dpkg -i python-jpype_0.5.4.2-3_amd64.deb
+
+Tested on Debian 7 and 8, most likely will work for Ubuntu 
+
+If you like python pip, then :
+ 
+    pip install jpype 
+    
 Make your changes if needed in config.ini and run 
 
     ./puypuy.sh start
-     
 Python daemon process will start, run all python scripts from checks_avaliable directory as well as all check_* files scripts_available directory. 
 
 **Create own python module :**
@@ -93,8 +100,8 @@ Section [SelfConfig] contains base config parameters like checks interval, log/p
 
     [SelfConfig]
     check_period_seconds: 5
-    log_file: /tmp/testdaemon.log
-    pid_file: /tmp/tsdclient.pid
+    log_file: /tmp/puypuy.log
+    pid_file: /tmp/puypuy.pid
     cluster_name: netangels
     host_group: testing
 
@@ -102,13 +109,15 @@ cluster_name and host_group are placeholders for tags for better manageability. 
 
 In section [TSDB] you should set correct backend and uri. 
 
-OpenTSDB: Enable chunked requests in OpenTSDB 
+OpenTSDB (Enable chinked requests in OpenTSDB )
 
 opentsdb.conf
 
 	tsd.http.request.enable_chunked = true
 
 config.ini
+
+OpenTSDB: OpenTSD does not supports authentication, but if you put it behind proxy and set basic auth everything will be fine  
 
 	[TSDB]
 	address: http://opentsdb_address:4242
@@ -118,7 +127,7 @@ config.ini
 	auth: False
 	tsdtype: OpenTSDB
 
-KairosDB : Enable or disable auth: in accordance to your KairosDB setup 
+KairosDB: Enable or disable auth: in accordance to your KairosDB setup 
 
 	[TSDB]
 	address: http://kairosdb_address:8088
@@ -127,6 +136,16 @@ KairosDB : Enable or disable auth: in accordance to your KairosDB setup
 	pass: bololo
 	auth: True
 	tsdtype: KairosDB
+
+InfluxDB: Enable or disable auth, but do not delete user/pass config params 
+
+    [TSDB]
+    address = http://influxdb_address:8086
+    auth = False
+    user = netangels
+    pass = bololo
+    database = test
+    tsdtype = InfluxDB
 
 Graphite Carbon: (PuyPuy uses Carbon pickle, default port is 2004)
 
@@ -137,12 +156,7 @@ Graphite Carbon: (PuyPuy uses Carbon pickle, default port is 2004)
 	auth: false
 	tsdtype: Carbon
 
-InfluxDB: (Authentication is not supported yet, You must create database manually before sending to it metrics)
-
-	[TSDB]
-	user: netangels
-	pass: bololo
-	auth: False
-	address: http://influxdb_host:8086
-	database: netangels
-	tsdtype: InfluxDB
+PuyPuy can work with only one backend at a time, so make sure that config file contains information about only one backend server/service.
+PuyPuy is copletely stateless, so if you want to scale Backend, you can use any load balancing mechanism including DNS Round Robin.  
+For all types of REST Backens (OpenTSDB, KairosDB, InfluxDB) config fiellds user/pass are mandatory even if you do not user authentication at backend.
+So keep default paramaters as placeholders. 
