@@ -15,7 +15,7 @@ def run_load_average():
         if 'cpu' in line:
             cpucount += 1
     cpucount -=1
-    load_start_worry_about = format(float(cpucount)/3, '.3g')
+    load_start_worry_about = format(float(cpucount)/5, '.3g')
 
     hostname = socket.getfqdn()
     check_type = 'system'
