@@ -3,7 +3,6 @@ import time
 import ConfigParser
 import logging
 from daemon import runner
-import threading
 
 sys.path.append(os.path.dirname(os.path.realpath("__file__"))+'/checks-enabled')
 sys.path.append(os.path.dirname(os.path.realpath("__file__"))+'/lib')
@@ -21,21 +20,25 @@ os.chdir("checks-enabled")
 
 checklist = glob.glob("check_*.py")
 
-
 def run_shell_scripts():
     runbash = __import__('run_bash')
     runbash.run_shell_scripts()
 
+def run_scriptos(methon):
+    methon()
 
 def run_scripts():
-    for checks in checklist:
+   for checks in checklist:
+        start_time = time.time()
+
         module_name, ext = os.path.splitext(checks)
         module = __import__(module_name)
         library_list.append(module)
-        run = 'run_'+module_name.rsplit('.')[0].rsplit('check_')[1]
+        run = 'run_' + module_name.rsplit('.')[0].rsplit('check_')[1]
         run_method = getattr(module, run)
         run_method()
-        message=module_name, time.clock()
+        time_elapsed="Time %s sec " % (time.time() - start_time)
+        message = module_name, time_elapsed
         logger.debug(message)
 
 def upload_cache():
