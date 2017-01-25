@@ -26,65 +26,44 @@ def run_cassandra3():
         timestamp = int(datetime.datetime.now().strftime("%s"))
 
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        jolo_mbeans=('java.lang:type=Memory', 'org.apache.cassandra.db:type=Caches',
-                     'org.apache.cassandra.metrics:name=PreparedStatementsCount,type=CQL',
-                     'org.apache.cassandra.metrics:type=CQL,name=RegularStatementsExecuted',
-                     'org.apache.cassandra.metrics:type=Cache,scope=KeyCache,name=Hits',
-                     'org.apache.cassandra.metrics:type=Cache,scope=KeyCache,name=Requests',
-                     'org.apache.cassandra.metrics:type=Cache,scope=RowCache,name=Hits',
-                     'org.apache.cassandra.metrics:type=Cache,scope=RowCache,name=Requests'
-                    )
+        java_lang_metrics=json.loads(urllib2.urlopen(jolokia_url+'/java.lang:type=Memory', timeout=5).read())
+        cassa_cql_metrics=json.loads(urllib2.urlopen(jolokia_url+'/org.apache.cassandra.metrics:type=CQL,name=*', timeout=5).read())
+        cassa_cache_metrics=json.loads(urllib2.urlopen(jolokia_url+'/org.apache.cassandra.metrics:type=Cache,scope=*,name=*', timeout=5).read())
+        cassa_copmaction=json.loads(urllib2.urlopen(jolokia_url+'/org.apache.cassandra.metrics:type=Compaction,name=*', timeout=5).read())
 
-        for beans in jolo_mbeans:
-            jolo_url=urllib2.urlopen(jolokia_url+'/'+beans, timeout=5).read()
-            jolo_json = json.loads(jolo_url)
-            jolo_keys = jolo_json['value']
-            #print jolo_keys
-            if beans == 'java.lang:type=Memory':
-                metr_name=('used', 'committed')
-                heap_type=('NonHeapMemoryUsage', 'HeapMemoryUsage')
-                for heap in heap_type:
-                    for metr in metr_name:
-                        if heap == 'NonHeapMemoryUsage':
-                            key='cassa_nonheap_'+ metr
-                            mon_values=jolo_keys[heap][metr]
-                            #if key == 'cassa_nonheap_committed':
-                            jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, alert_level)
-                            #else:
-                            #    jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
-                        else:
-                            key='cassa_heap_'+ metr
-                            mon_values=jolo_keys[heap][metr]
-                            #if key == 'cassa_heap_committed':
-                            jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, alert_level)
-                            #else:
-                            #    jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
+        jmetr_name = ('used', 'committed')
+        jheap_type = ('NonHeapMemoryUsage', 'HeapMemoryUsage')
+        for heap in jheap_type:
+            for metr in jmetr_name:
+                if heap == 'NonHeapMemoryUsage':
+                    key = 'cassa_nonheap_' + metr
+                    mon_values = java_lang_metrics['value'][heap][metr]
+                    jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, alert_level)
+                else:
+                    key = 'cassa_heap_' + metr
+                    mon_values = java_lang_metrics['value'][heap][metr]
+                    jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, alert_level)
 
-            elif beans == 'org.apache.cassandra.metrics:name=PreparedStatementsCount,type=CQL':
-                value= jolo_keys['Value']
-                name = 'cassa_cql_PreparedStatements'
-                if value:
-                    if value is 0:
-                        jsondata.gen_data(name, timestamp, value, push.hostname, check_type, cluster_name)
-                    else:
-                        value_rate=rate.record_value_rate(name, value, timestamp)
-                        jsondata.gen_data(name, timestamp, value_rate, push.hostname, check_type, cluster_name)
-            elif beans == 'org.apache.cassandra.metrics:type=CQL,name=RegularStatementsExecuted':
-                #print name, value, timestamp
-                name = 'cassa_cql_RegularStatement'
-                value = jolo_keys['Count']
-                value_rate=rate.record_value_rate(name, value, timestamp)
-                jsondata.gen_data(name, timestamp, value_rate, push.hostname, check_type, cluster_name)
-            similars=('org.apache.cassandra.metrics:type=Cache,scope=KeyCache,name=Hits',
-                      'org.apache.cassandra.metrics:type=Cache,scope=KeyCache,name=Requests',
-                      'org.apache.cassandra.metrics:type=Cache,scope=RowCache,name=Hits',
-                      'org.apache.cassandra.metrics:type=Cache,scope=RowCache,name=Requests'
-                      )
-            if beans in similars:
-                name = 'cassa_'+beans.split('=')[2].split(',')[0]+'_'+beans.split('=')[3]
-                value= jolo_keys['Count']
-                value_rate=rate.record_value_rate(name, value, timestamp)
-                jsondata.gen_data(name, timestamp, value_rate, push.hostname, check_type, cluster_name)
+        cql_statemets = ('PreparedStatementsExecuted', 'RegularStatementsExecuted')
+        for cql_statement in cql_statemets:
+            mon_value = cassa_cql_metrics['value']['org.apache.cassandra.metrics:name=' + cql_statement + ',type=CQL']['Count']
+            mon_name='cassa_cql_'+cql_statement
+            if mon_value is not None:
+                if mon_value is 0:
+                    jsondata.gen_data(mon_name, timestamp, mon_value, push.hostname, check_type, cluster_name)
+                else:
+                    value_rate=rate.record_value_rate('cql_'+mon_name, mon_value, timestamp)
+                    jsondata.gen_data(mon_name, timestamp, value_rate, push.hostname, check_type, cluster_name)
+
+        cache_metrics = ('Hits,scope=KeyCache', 'Requests,scope=KeyCache', 'Requests,scope=RowCache', 'Hits,scope=RowCache')
+        for cache_metric in cache_metrics:
+            mon_value = cassa_cache_metrics['value']['org.apache.cassandra.metrics:name=' + cache_metric + ',type=Cache']['OneMinuteRate']
+            mon_name= 'cassa_'+ str(cache_metric).replace(',scope=', '_')
+            jsondata.gen_data(mon_name, timestamp, mon_value, push.hostname, check_type, cluster_name)
+
+        copaction_tasks=cassa_copmaction['value']['org.apache.cassandra.metrics:name=PendingTasks,type=Compaction']['Value']
+        jsondata.gen_data('cassa_compaction_pending', timestamp, copaction_tasks, push.hostname, check_type, cluster_name)
+
         jsondata.put_json()
         jsondata.truncate_data()
 
