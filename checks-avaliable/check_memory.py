@@ -15,9 +15,11 @@ def run_memory():
     jsondata=push.JonSon()
     jsondata.create_data()
     timestamp = int(datetime.datetime.now().strftime("%s"))
-    memory_stats = ('MemTotal:', 'MemAvailable:', 'Buffers:', 'Cached:', 'Active:', 'Inactive:')
-    memorytimes = {}
     try:
+        memory_stats = ('MemTotal:', 'MemAvailable:', 'Cached:', 'Active:', 'Inactive:')
+        #memory_stats = ('MemTotal:', 'MemAvailable:', 'Buffers:', 'Cached:', 'Active:', 'Inactive:')
+        memorytimes = {}
+
         raw_memorystats="\n".join(open("/proc/meminfo", "r").read().split('\n'))
         for i in raw_memorystats.split("\n"):
             for stat in memory_stats:
@@ -28,9 +30,9 @@ def run_memory():
 
         for key, value in memorytimes.iteritems():
             jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name, alert_level)
-
-        mem_used_percent = 100 - ((memorytimes['mem_available'] * 100) / memorytimes['mem_total'])
-        jsondata.gen_data('mem_used_percent', timestamp, mem_used_percent, push.hostname, check_type, cluster_name)
+        if 'mem_available' in memorytimes:
+            mem_used_percent = 100 - ((memorytimes['mem_available'] * 100) / memorytimes['mem_total'])
+            jsondata.gen_data('mem_used_percent', timestamp, mem_used_percent, push.hostname, check_type, cluster_name)
 
         jsondata.put_json()
         jsondata.truncate_data()

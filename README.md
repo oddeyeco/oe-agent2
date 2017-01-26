@@ -20,7 +20,7 @@ Tested on Debian 7 and 8, most likely will work for Ubuntu
 
 If you like python pip, then :
  
-    pip install jpype1 
+    pip install jpype 
     
 Make your changes if needed in config.ini and run 
 

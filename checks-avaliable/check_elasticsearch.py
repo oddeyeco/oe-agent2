@@ -9,9 +9,12 @@ import json
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
 
-elastic_url = config.get('ElasticSearch', 'stats')
 hostname = socket.getfqdn()
 cluster_name = config.get('SelfConfig', 'cluster_name')
+host_group = config.get('SelfConfig', 'host_group')
+host = config.get('ElasticSearch', 'host')
+stats = config.get('ElasticSearch', 'stats')
+elastic_url = host + stats
 check_type = 'elasticsearch'
 alert_level = -3
 
@@ -28,9 +31,40 @@ def run_elasticsearch():
         node_keys = stats_json['nodes'].keys()[0]
         data = {}
         rated_stats = {}
-        #gc_young_time_ms=stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['young']['collection_time_in_millis']
-        #gc_old_time_ms=stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['old']['collection_time_in_millis']
         timestamp = int(datetime.datetime.now().strftime("%s"))
+
+        # -------------------------------------------------------------------------------------------------------------------- #
+        def send_special():
+            eshealth_status = host + '/_cluster/health'
+            eshealth_stat = urllib2.urlopen(eshealth_status, timeout=2)
+            eshealth_stats = eshealth_stat.read()
+            eshealth_json = json.loads(eshealth_stats)
+
+            status_code = eshealth_stat.getcode()
+            if status_code != 200:
+                eshealth_message = "Something is very bad, exited with status:", status_code
+                health_value = 16
+            else:
+                status = eshealth_json['status']
+                active_shards = eshealth_json['active_shards']
+                relocating_shards = eshealth_json['relocating_shards']
+                initializing_shards = eshealth_json['initializing_shards']
+                cluster_name = eshealth_json['cluster_name']
+
+                eshealth_message = 'Cluster: ' + cluster_name + ', Status: ' + status + ', Shards Active: ' + str(active_shards) + ', Relocating: ' + str(relocating_shards) + ', Initializing: ' + str(initializing_shards)
+
+                if status == 'green':
+                    health_value = 0
+                    err_type = 'OK'
+                elif status == 'yellow':
+                    health_value = 8
+                    err_type = 'WARNING'
+                else:
+                    health_value = 16
+                    err_type = 'ERROR'
+            jsondata.send_special("ElasticSearch-Health", timestamp, health_value, eshealth_message, err_type)
+        send_special()
+        # -------------------------------------------------------------------------------------------------------------------- #
 
         rated_stats.update({''
                     'search_total':stats_json['nodes'][node_keys]['indices']['search']['query_total'],
@@ -52,10 +86,8 @@ def run_elasticsearch():
                     'gc_young_count':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['young']['collection_count'],
                     'gc_old_count':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['old']['collection_count']
                             })
-        #print rated_stats
 
         for key, value in rated_stats.iteritems():
-            #jsondata.gen_data('es_'+key, timestamp, value, push.hostname, check_type, cluster_name)
             reqrate=rate.record_value_rate('es_'+key, value, timestamp)
             if reqrate >=0:
                 data.update({'elasticsearch_'+key: reqrate})
@@ -70,11 +102,9 @@ def run_elasticsearch():
                      })
         for key, value in data.iteritems():
             if key =='elasticsearch_non_heap_used' or key=='elasticsearch_heap_used' or key=='elasticsearch_non_heap_committed' or key=='elasticsearch_heap_committed':
-                #print key, value , alert_level
                 jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name, alert_level)
             else:
                 jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name)
-                #print key, value
         jsondata.put_json()
         jsondata.truncate_data()
     except Exception as e:

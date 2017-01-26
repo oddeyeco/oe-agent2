@@ -34,7 +34,6 @@ os.environ['JAVA_HOME'] = JAVA
 
 def run_jmx():
     JAVA = config.get('JMX', 'java_home')
-
     #jpype.startJVM(jpype.getDefaultJVMPath())
 
     def init_jvm(jvmpath=None):
@@ -45,8 +44,6 @@ def run_jmx():
     init_jvm()
     try:
         os.environ['JAVA_HOME'] = JAVA
-        #print os.environ['JAVA_HOME']
-
         jhash = java.util.HashMap()
         jarray = jpype.JArray(java.lang.String)([USER, PASS])
         jhash.put(javax.management.remote.JMXConnector.CREDENTIALS, jarray);
@@ -57,10 +54,11 @@ def run_jmx():
         object = 'java.lang:type=Memory'
         attribute = 'HeapMemoryUsage'
         attr = connection.getAttribute(javax.management.ObjectName(object), attribute)
-        HeapUsed = attr.contents.get('used')
-        HeapCommited = attr.contents.get('committed')
-        HeapInit =  attr.contents.get('init')
-        HeapMax =  attr.contents.get('max')
+
+        HeapUsed = str(attr.contents.get('used'))
+        HeapCommited = str(attr.contents.get('committed'))
+        HeapInit =  str(attr.contents.get('init'))
+        HeapMax =  str(attr.contents.get('max'))
 
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
         push = __import__('pushdata')
@@ -75,15 +73,10 @@ def run_jmx():
         jsondata.gen_data('jmx_' + 'HeapInit', timestamp, HeapInit, push.hostname, check_type, cluster_name)
         jsondata.gen_data('jmx_' + 'HeapMax', timestamp, HeapMax, push.hostname, check_type, cluster_name)
 
-        #print 'HeapUsed', HeapUsed
-        #print 'HeapCommited', HeapCommited
-        #print 'HeapInit', HeapInit
-        #print 'HeapMax', HeapMax
-
         if CMS is True:
             object = 'java.lang:type=GarbageCollector,name=ConcurrentMarkSweep'
             GcCount = 'CollectionCount'
-            ColCount = connection.getAttribute(javax.management.ObjectName(object), GcCount)
+            ColCount = str(connection.getAttribute(javax.management.ObjectName(object), GcCount))
 
             GcTime = 'CollectionTime'
             ColTime = connection.getAttribute(javax.management.ObjectName(object), GcTime)
@@ -97,25 +90,23 @@ def run_jmx():
 
             PnGcTime = 'CollectionTime'
             PnColTime = connection.getAttribute(javax.management.ObjectName(object), PnGcTime)
-            jsondata.gen_data('jmx_' + 'ParNewGcCount', timestamp, PnColCount, push.hostname, check_type, cluster_name)
-            GcTime_rate = rate.record_value_rate('jmx_ParNewGcTime', PnColTime.value, timestamp)
+            PnColTime_value=str(PnColTime.value)
+            strPnColCount=str(PnColCount)
+            jsondata.gen_data('jmx_' + 'ParNewGcCount', timestamp, strPnColCount, push.hostname, check_type, cluster_name)
+            GcTime_rate = rate.record_value_rate('jmx_ParNewGcTime', PnColTime_value, timestamp)
             jsondata.gen_data('jmx_ParNewGcTime', timestamp, GcTime_rate, push.hostname, check_type, cluster_name)
-
-
-            #print  'CMSGcCount', ColCount
-            #print  'CMSGcTime', ColTime
 
         if G1 is True:
             object = 'java.lang:type=GarbageCollector,name=G1 Old Generation'
             OldGcCount = 'CollectionCount'
-            OldColCount = connection.getAttribute(javax.management.ObjectName(object), OldGcCount)
+            OldColCount = str(connection.getAttribute(javax.management.ObjectName(object), OldGcCount))
 
             OldGcTime = 'CollectionTime'
             OldColTime = connection.getAttribute(javax.management.ObjectName(object), OldGcTime)
 
-            jsondata.gen_data('jmx_' + 'OldGcCount', timestamp, OldColCount, push.hostname, check_type, cluster_name)
-            OldGcTime_rate = rate.record_value_rate('jmx_OldGcTime', OldColTime.value, timestamp)
-            jsondata.gen_data('jmx_OldGcTime', timestamp, OldGcTime_rate, push.hostname, check_type, cluster_name)
+            jsondata.gen_data('jmx_G1_' + 'OldGcCount', timestamp, OldColCount, push.hostname, check_type, cluster_name)
+            OldGcTime_rate = rate.record_value_rate('jmx_G1_OldGcTime', OldColTime.value, timestamp)
+            jsondata.gen_data('jmx_G1_OldGcTime', timestamp, str(OldGcTime_rate), push.hostname, check_type, cluster_name)
 
             object = 'java.lang:type=GarbageCollector,name=G1 Young Generation'
             YoungGcCount = 'CollectionCount'
@@ -124,15 +115,9 @@ def run_jmx():
             YoungGcTime = 'CollectionTime'
             YoungColTime = connection.getAttribute(javax.management.ObjectName(object), YoungGcTime)
 
-            jsondata.gen_data('jmx_' + 'YoungGcCount', timestamp, YoungColCount, push.hostname, check_type, cluster_name)
-            YoungColTime_rate = rate.record_value_rate('jmx_YoungColTime', YoungColTime.value, timestamp)
-            jsondata.gen_data('jmx_YoungGcTime', timestamp, YoungColTime_rate, push.hostname, check_type, cluster_name)
-
-            #print YoungColTime.value
-            #print  'YoungGcCount', YoungColCount
-            #print  'YoungGcTime', YoungColTime
-            #print  'OldGcCount', OldColCount
-            #print  'OldGcTime', OldColTime
+            jsondata.gen_data('jmx_G1_' + 'YoungGcCount', timestamp, str(YoungColCount), push.hostname, check_type, cluster_name)
+            YoungColTime_rate = rate.record_value_rate('jmx_G1_YoungColTime', YoungColTime.value, timestamp)
+            jsondata.gen_data('jmx_G1_YoungGcTime', timestamp, YoungColTime_rate, push.hostname, check_type, cluster_name)
 
         jsondata.put_json()
         jsondata.truncate_data()
@@ -141,3 +126,5 @@ def run_jmx():
         push = __import__('pushdata')
         push.print_error(__name__ , (e))
         pass
+
+

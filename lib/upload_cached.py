@@ -35,7 +35,7 @@ def cache_uploader():
                 c.setopt(pycurl.TIMEOUT, 10)
                 c.setopt(pycurl.NOSIGNAL, 5)
                 c.setopt(pycurl.WRITEFUNCTION, lambda x: None)
-                c.setopt(pycurl.USERAGENT, 'PuyPuy v.01')
+                c.setopt(pycurl.USERAGENT, 'Cacher PuyPuy v.0.2')
                 c.setopt(pycurl.POSTFIELDS, content)
                 c.perform()
                 try:
@@ -49,4 +49,5 @@ def cache_uploader():
                 push = __import__('pushdata')
                 push.print_error(e, 'from cache uploader')
                 pass
+
 

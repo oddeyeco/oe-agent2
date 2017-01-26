@@ -10,7 +10,6 @@ sys.path.append(os.path.dirname(os.path.realpath("__file__"))+'/lib')
 config = ConfigParser.RawConfigParser()
 config.read(os.getcwd()+'/conf/config.ini')
 cron_interval = int(config.get('SelfConfig', 'check_period_seconds'))
-proc_count = int(config.get('SelfConfig', 'parallels_count'))
 log_file = config.get('SelfConfig', 'log_file')
 pid_file = config.get('SelfConfig', 'pid_file')
 
@@ -37,17 +36,15 @@ def run_scripts():
         run = 'run_' + module_name.rsplit('.')[0].rsplit('check_')[1]
         run_method = getattr(module, run)
         run_method()
-        time_elapsed="Time %s sec " % (time.time() - start_time)
+        time_elapsed="%s seconds " % (time.time() - start_time)
         message = module_name, time_elapsed
-        logger.debug(message)
+        logger.info(message)
 
 def upload_cache():
     uploadcache = __import__('upload_cached')
     uploadcache.cache_uploader()
 
-
 class App():
-
 
     def __init__(self):
         self.stdin_path = '/dev/null'
@@ -98,7 +95,7 @@ except:
 
 app = App()
 logger = logging.getLogger("PuyPuy")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 handler = logging.FileHandler(log_file)
 handler.setFormatter(formatter)

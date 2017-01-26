@@ -22,10 +22,12 @@ def run_network():
     try:
         for index in range(0, len(net_list)):
             timestamp = int(datetime.datetime.now().strftime("%s"))
-            mytype = 'net_'+net_list[index].split('=')[0]
-            myvalue = net_list[index].split('=')[1]
-            net_rate=rate.record_value_rate(mytype, myvalue, timestamp)
-            jsondata.gen_data(mytype, timestamp, net_rate, push.hostname, check_type, cluster_name)
+            ruzan=net_list[index].split('=')[0]
+            if ruzan == 'bytes_sent' or ruzan == 'bytes_recv':
+                mytype = 'net_'+net_list[index].split('=')[0]
+                myvalue = net_list[index].split('=')[1]
+                net_rate=rate.record_value_rate(mytype, myvalue, timestamp)
+                jsondata.gen_data(mytype, timestamp, net_rate, push.hostname, check_type, cluster_name)
         jsondata.put_json()
         jsondata.truncate_data()
     except Exception as e:

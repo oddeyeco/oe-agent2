@@ -12,21 +12,22 @@ jolokia_url = config.get('Jolokia', 'jolokia')
 hostname = socket.getfqdn()
 cluster_name = config.get('SelfConfig', 'cluster_name')
 check_type = 'Jolokia'
-
-data_dict=json.loads(urllib2.urlopen(jolokia_url+'/java.lang:type=GarbageCollector,name=*', timeout=5).read())
-ConcurrentMarkSweep='java.lang:name=ConcurrentMarkSweep,type=GarbageCollector'
-G1Gc='java.lang:name=G1 Young Generation,type=GarbageCollector'
-
-if ConcurrentMarkSweep in data_dict['value']:
-    CMS=True
-    G1=False
-
-if G1Gc in data_dict['value']:
-    CMS=False
-    G1=True
+alert_level = -3
 
 def run_jolokia():
     try:
+        data_dict = json.loads(urllib2.urlopen(jolokia_url + '/java.lang:type=GarbageCollector,name=*', timeout=5).read())
+        ConcurrentMarkSweep = 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector'
+        G1Gc = 'java.lang:name=G1 Young Generation,type=GarbageCollector'
+
+        if ConcurrentMarkSweep in data_dict['value']:
+            CMS = True
+            G1 = False
+
+        if G1Gc in data_dict['value']:
+            CMS = False
+            G1 = True
+
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
         push = __import__('pushdata')
         jsondata=push.JonSon()
@@ -47,11 +48,17 @@ def run_jolokia():
                 if heap == 'NonHeapMemoryUsage':
                     key='jolokia_nonheap_'+ metr
                     mon_values=jolo_keys[heap][metr]
-                    jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
+                    if metr == 'used':
+                        jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
+                    else:
+                        jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, alert_level)
                 else:
                     key='jolokia_heap_'+ metr
                     mon_values=jolo_keys[heap][metr]
-                    jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
+                    if metr == 'used':
+                        jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
+                    else:
+                        jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, alert_level)
         if CMS is True:
             collector = ('java.lang:name=ParNew,type=GarbageCollector', 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector')
             for coltype in collector:
@@ -110,6 +117,15 @@ def run_jolokia():
                         value = j['value'][vl]
                         v = check_null(value)
                         jsondata.gen_data('jolokia_G1' + type + vl, timestamp, v, push.hostname, check_type, cluster_name)
+        jolo_threads='java.lang:type=Threading'
+        jolo_turl=urllib2.urlopen(jolokia_url+'/'+jolo_threads, timeout=5).read()
+        jolo_tjson = json.loads(jolo_turl)
+        thread_metrics=('TotalStartedThreadCount','PeakThreadCount','ThreadCount','DaemonThreadCount')
+        for thread_metric in thread_metrics:
+            name='jolokia_'+thread_metric
+            vlor=jolo_tjson['value'][thread_metric]
+            jsondata.gen_data(name, timestamp, vlor, push.hostname, check_type, cluster_name)
+
 
         jsondata.put_json()
         jsondata.truncate_data()

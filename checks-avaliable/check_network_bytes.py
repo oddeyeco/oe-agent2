@@ -6,7 +6,7 @@ config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
 cluster_name = config.get('SelfConfig', 'cluster_name')
 
 check_localhost = False
-rated = False
+rated = True
 
 
 def run_network_bytes():

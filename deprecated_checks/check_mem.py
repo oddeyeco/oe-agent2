@@ -25,6 +25,7 @@ def run_mem():
             timestamp = int(datetime.datetime.now().strftime("%s"))
             mytype = mem_list[index].split('=')[0]
             myvalue = mem_list[index].split('=')[1].rstrip('L')
+            print mytype, myvalue
             if mytype == 'percent':
                 jsondata.gen_data('mem_'+mytype, timestamp, myvalue, push.hostname, check_type, cluster_name)
             else:

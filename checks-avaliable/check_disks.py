@@ -7,9 +7,13 @@ config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
 cluster_name = config.get('SelfConfig', 'cluster_name')
 check_type = 'system'
+
+# ------------------------ #
 alert_level = -3
 warn_percent = 80
 rated = True
+io_warning_percent = 40
+# ------------------------ #
 
 def run_disks():
     sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
