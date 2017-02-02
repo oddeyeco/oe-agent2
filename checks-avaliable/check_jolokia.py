@@ -90,8 +90,12 @@ def run_jolokia():
                 j=json.load(urllib2.urlopen(jolokia_url + v, timeout=5))
                 name='LastGcInfo'
                 if k is 0:
-                    value = j['value'][name]
-                    v = check_null(value)
+                    try:
+                        value = j['value'][name]['duration']
+                        v = check_null(value)
+                    except:
+                        v=0
+                        pass
                     m_name='jolokia_G1_old_LastGcInfo'
                 if k is 1:
                     value = j['value'][name]['duration']
