@@ -9,7 +9,7 @@ cluster_name = config.get('SelfConfig', 'cluster_name')
 check_type = 'system'
 
 # ------------------------ #
-alert_level = -3
+reaction = -3
 warn_percent = 80
 rated = True
 io_warning_percent = 40
@@ -39,11 +39,11 @@ def run_disks():
                 read_rate = rate.record_value_rate(reads, read_bytes, timestamp)
                 write_rate = rate.record_value_rate(writes, write_bytes, timestamp)
 
-                jsondata.gen_data(reads,  timestamp, read_rate, push.hostname, check_type, cluster_name, alert_level)
-                jsondata.gen_data(writes, timestamp, write_rate, push.hostname, check_type, cluster_name, alert_level)
+                jsondata.gen_data(reads,  timestamp, read_rate, push.hostname, check_type, cluster_name, reaction)
+                jsondata.gen_data(writes, timestamp, write_rate, push.hostname, check_type, cluster_name, reaction)
             else:
-                jsondata.gen_data(reads,  timestamp, read_bytes, push.hostname, check_type, cluster_name, alert_level)
-                jsondata.gen_data(writes, timestamp, write_bytes, push.hostname, check_type, cluster_name, alert_level)
+                jsondata.gen_data(reads,  timestamp, read_bytes, push.hostname, check_type, cluster_name, reaction)
+                jsondata.gen_data(writes, timestamp, write_bytes, push.hostname, check_type, cluster_name, reaction)
 
         command = 'df'
         p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
@@ -51,8 +51,8 @@ def run_disks():
         for i in output.split("\n"):
             if i.startswith('/'):
                 u = re.sub(' +', ' ', i).split(" ")
-                jsondata.gen_data('drive' + u[0].replace('/dev/', '_') + '_bytes_used', timestamp, u[2], push.hostname, check_type, cluster_name, alert_level)
-                jsondata.gen_data('drive' + u[0].replace('/dev/', '_') + '_bytes_available', timestamp, u[3], push.hostname, check_type, cluster_name, alert_level)
+                jsondata.gen_data('drive' + u[0].replace('/dev/', '_') + '_bytes_used', timestamp, u[2], push.hostname, check_type, cluster_name, reaction)
+                jsondata.gen_data('drive' + u[0].replace('/dev/', '_') + '_bytes_available', timestamp, u[3], push.hostname, check_type, cluster_name, reaction)
                 jsondata.gen_data('drive' + u[0].replace('/dev/', '_') + '_percent_used', timestamp, u[4].replace('%', ''), push.hostname, check_type, cluster_name, warn_percent)
 
         proc_stats=open('/proc/diskstats')

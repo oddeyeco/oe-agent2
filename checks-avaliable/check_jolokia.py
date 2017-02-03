@@ -12,7 +12,7 @@ jolokia_url = config.get('Jolokia', 'jolokia')
 hostname = socket.getfqdn()
 cluster_name = config.get('SelfConfig', 'cluster_name')
 check_type = 'Jolokia'
-alert_level = -3
+reaction = -3
 
 def run_jolokia():
     try:
@@ -51,14 +51,14 @@ def run_jolokia():
                     if metr == 'used':
                         jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
                     else:
-                        jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, alert_level)
+                        jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, reaction)
                 else:
                     key='jolokia_heap_'+ metr
                     mon_values=jolo_keys[heap][metr]
                     if metr == 'used':
                         jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
                     else:
-                        jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, alert_level)
+                        jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, reaction)
         if CMS is True:
             collector = ('java.lang:name=ParNew,type=GarbageCollector', 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector')
             for coltype in collector:

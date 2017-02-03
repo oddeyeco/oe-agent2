@@ -16,7 +16,7 @@ host = config.get('ElasticSearch', 'host')
 stats = config.get('ElasticSearch', 'stats')
 elastic_url = host + stats
 check_type = 'elasticsearch'
-alert_level = -3
+reaction = -3
 
 def run_elasticsearch():
     try:
@@ -102,7 +102,7 @@ def run_elasticsearch():
                      })
         for key, value in data.iteritems():
             if key =='elasticsearch_non_heap_used' or key=='elasticsearch_heap_used' or key=='elasticsearch_non_heap_committed' or key=='elasticsearch_heap_committed':
-                jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name, alert_level)
+                jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name, reaction)
             else:
                 jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name)
         jsondata.put_json()

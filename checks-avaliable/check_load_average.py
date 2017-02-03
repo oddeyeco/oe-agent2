@@ -8,7 +8,7 @@ config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
 cluster_name = config.get('SelfConfig', 'cluster_name')
 host_group = config.get('SelfConfig', 'host_group')
 
-alert_level = -3
+reaction = -3
 warn_level = 80
 crit_level = 100
 
@@ -47,8 +47,8 @@ def run_load_average():
         send_special()
         '''
         jsondata.gen_data('sys_load_1', timestamp, proc_loadavg[0], hostname, check_type, cluster_name)
-        jsondata.gen_data('sys_load_5', timestamp, proc_loadavg[1], hostname, check_type, cluster_name, alert_level)
-        jsondata.gen_data('sys_load_15', timestamp, proc_loadavg[2], hostname, check_type, cluster_name, alert_level)
+        jsondata.gen_data('sys_load_5', timestamp, proc_loadavg[1], hostname, check_type, cluster_name, reaction)
+        jsondata.gen_data('sys_load_15', timestamp, proc_loadavg[2], hostname, check_type, cluster_name, reaction)
 
         jsondata.put_json()
         jsondata.truncate_data()

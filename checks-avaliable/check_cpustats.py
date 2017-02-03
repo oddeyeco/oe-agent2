@@ -9,7 +9,7 @@ host_group = config.get('SelfConfig', 'host_group')
 
 # ---------------------- #
 rated = True
-alert_level = -3
+reaction = -3
 
 warn_level = 90
 crit_level = 100

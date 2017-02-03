@@ -64,7 +64,7 @@ else:
 
 class JonSon(object):
 
-    def gen_data(self, name, timestamp, value, tag_hostname, tag_type, cluster_name, alert_level=0):
+    def gen_data(self, name, timestamp, value, tag_hostname, tag_type, cluster_name, reaction=0):
         if tsdb_type == 'KairosDB':
             self.data['metric'].append({"name": name, "timestamp": timestamp * 1000, "value": value, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group}})
         elif tsdb_type == 'OpenTSDB':
@@ -83,7 +83,7 @@ class JonSon(object):
                 value = str(value)
             self.data.append(name + ',host=' + tag_hostname + ',cluster=' + cluster_name + ',group=' + host_group + ',type=' + tag_type + ' value=' + value + ' ' + str_nano + '\n')
         elif tsd_oddeye is True:
-            self.data['metric'].append({"metric": name, "timestamp": timestamp, "value": value, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "alert_level": alert_level}})
+            self.data['metric'].append({"metric": name, "timestamp": timestamp, "value": value, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "reaction": reaction}})
 
         else:
             print 'Please set TSDB type'
