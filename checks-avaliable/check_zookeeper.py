@@ -5,6 +5,8 @@ import socket
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/hadoop.ini')
+
 
 zk_host = config.get('ZooKeeper', 'host')
 zk_port = int(config.get('ZooKeeper', 'port'))
@@ -39,11 +41,16 @@ def run_zookeeper():
                 if searchitem in line:
                     key=line.split('\t')[0]
                     value=int(line.split('\t')[1])
-                    if searchitem == 'zk_packets_received':
-                        value=rate.record_value_rate('zk_packets_received', value, timestamp)
-                    if searchitem == 'zk_packets_sent':
-                        value=rate.record_value_rate('zk_packets_sent', value, timestamp)
-                    jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name)
+                    #if searchitem == 'zk_packets_received':
+                    #    value=rate.record_value_rate('zk_packets_received', value, timestamp)
+                    #if searchitem == 'zk_packets_sent':
+                    #    value=rate.record_value_rate('zk_packets_sent', value, timestamp)
+
+                    if searchitem == 'zk_packets_received' or searchitem == 'zk_packets_sent':
+                        value_rate=rate.record_value_rate(searchitem, value, timestamp)
+                        jsondata.gen_data(searchitem, timestamp, value_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
+                    else:
+                        jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name)
         jsondata.put_json()
         jsondata.truncate_data()
     except Exception as e:

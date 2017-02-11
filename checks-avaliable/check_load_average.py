@@ -9,7 +9,7 @@ cluster_name = config.get('SelfConfig', 'cluster_name')
 host_group = config.get('SelfConfig', 'host_group')
 
 reaction = -3
-warn_level = 80
+warn_level = 90
 crit_level = 100
 
 def run_load_average():
@@ -30,7 +30,7 @@ def run_load_average():
 
     try:
         proc_loadavg=open("/proc/loadavg", "r").readline().split()
-        '''
+
         def send_special():
             curr_level = float(proc_loadavg[0]) * 100 / cpucount
             if curr_level < warn_level:
@@ -45,7 +45,7 @@ def run_load_average():
             health_message = err_type + ': System Load average is at ' + str(curr_level) + ' percent of available  resources'
             jsondata.send_special("Load-Average", timestamp, health_value, health_message, err_type)
         send_special()
-        '''
+
         jsondata.gen_data('sys_load_1', timestamp, proc_loadavg[0], hostname, check_type, cluster_name)
         jsondata.gen_data('sys_load_5', timestamp, proc_loadavg[1], hostname, check_type, cluster_name, reaction)
         jsondata.gen_data('sys_load_15', timestamp, proc_loadavg[2], hostname, check_type, cluster_name, reaction)

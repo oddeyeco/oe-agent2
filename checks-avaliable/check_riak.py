@@ -8,6 +8,8 @@ import json
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/bigdata.ini')
+
 
 riak_url = config.get('Riak', 'stats')
 hostname = socket.getfqdn()

@@ -6,15 +6,18 @@ import socket
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/webservers.ini')
 
 haproxy_url = config.get('HAProxy', 'url')
 
 hostname = socket.getfqdn()
 
 haproxy_auth = config.get('HAProxy', 'user')+':'+config.get('HAProxy', 'pass')
-haproxy_upstream = config.get('HAProxy', 'upstream')
+#haproxy_upstream = config.get('HAProxy', 'upstream')
 curl_auth = config.getboolean('HAProxy', 'auth')
 cluster_name = config.get('SelfConfig', 'cluster_name')
+
+haproxy_upstream = config.get('HAProxy', 'upstream').split(',')
 
 
 class buffer:
@@ -48,13 +51,14 @@ def run_haproxy():
         lazy_totals=("FRONTEND", "BACKEND")
         timestamp = int(datetime.datetime.now().strftime("%s"))
         for line in t.contents.split('\n'):
-            if haproxy_upstream in line:
-                if not any(s in line for s in lazy_totals):
-                    upstream=line.split(',')[1]
-                    sessions=line.split(',')[4]
-                    connrate=line.split(',')[33]
-                    jsondata.gen_data('haproxy_connrate_'+upstream, timestamp, connrate, push.hostname, check_type, cluster_name)
-                    jsondata.gen_data('haproxy_sessions_'+upstream, timestamp, sessions, push.hostname, check_type, cluster_name)
+            for application in haproxy_upstream:
+                if application in line:
+                    if not any(s in line for s in lazy_totals):
+                        upstream=line.split(',')[1]
+                        sessions=line.split(',')[4]
+                        connrate=line.split(',')[33]
+                        jsondata.gen_data('haproxy_connrate_'+upstream, timestamp, connrate, push.hostname, check_type, cluster_name)
+                        jsondata.gen_data('haproxy_sessions_'+upstream, timestamp, sessions, push.hostname, check_type, cluster_name)
         jsondata.put_json()
         jsondata.truncate_data()
     except Exception as e:

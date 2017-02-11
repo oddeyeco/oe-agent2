@@ -6,6 +6,7 @@ import socket
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/webservers.ini')
 
 nginx_url = config.get('NginX', 'address') + config.get('NginX', 'stats')
 
@@ -61,9 +62,9 @@ def run_nginx():
         acceptrate=rate.record_value_rate('nginx_accept', accept, timestamp)
 
         jsondata.gen_data('nginx_connections', timestamp, connections, push.hostname, check_type, cluster_name)
-        jsondata.gen_data('nginx_requests', timestamp, reqrate, push.hostname, check_type, cluster_name)
-        jsondata.gen_data('nginx_handled', timestamp, handelerate, push.hostname, check_type, cluster_name)
-        jsondata.gen_data('nginx_accept', timestamp, acceptrate, push.hostname, check_type, cluster_name)
+        jsondata.gen_data('nginx_requests', timestamp, reqrate, push.hostname, check_type, cluster_name, 0, 'Rate')
+        jsondata.gen_data('nginx_handled', timestamp, handelerate, push.hostname, check_type, cluster_name, 0, 'Rate')
+        jsondata.gen_data('nginx_accept', timestamp, acceptrate, push.hostname, check_type, cluster_name, 0, 'Rate')
         jsondata.gen_data('nginx_reading', timestamp, reading, push.hostname, check_type, cluster_name)
         jsondata.gen_data('nginx_writing', timestamp, writing, push.hostname, check_type, cluster_name)
         jsondata.gen_data('nginx_waiting', timestamp, waiting, push.hostname, check_type, cluster_name)

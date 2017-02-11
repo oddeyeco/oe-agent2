@@ -10,6 +10,7 @@ from jpype import javax
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/java.ini')
 
 HOST= config.get('JMX', 'host')
 PORT= config.get('JMX', 'port')
@@ -111,7 +112,7 @@ def run_jmx():
                     strPnColCount=str(PnColCount)
                     jsondata.gen_data('jmx_' + 'ParNewGcCount', timestamp, strPnColCount, push.hostname, check_type, cluster_name)
                     GcTime_rate = rate.record_value_rate('jmx_ParNewGcTime', PnColTime_value, timestamp)
-                    jsondata.gen_data('jmx_ParNewGcTime', timestamp, GcTime_rate, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data('jmx_ParNewGcTime', timestamp, GcTime_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
 
                 except Exception as e:
                     push = __import__('pushdata')
@@ -127,7 +128,7 @@ def run_jmx():
 
                 jsondata.gen_data('jmx_G1_' + 'OldGcCount', timestamp, OldColCount, push.hostname, check_type, cluster_name)
                 OldGcTime_rate = rate.record_value_rate('jmx_G1_OldGcTime', OldColTime.value, timestamp)
-                jsondata.gen_data('jmx_G1_OldGcTime', timestamp, str(OldGcTime_rate), push.hostname, check_type, cluster_name)
+                jsondata.gen_data('jmx_G1_OldGcTime', timestamp, str(OldGcTime_rate), push.hostname, check_type, cluster_name, 0, 'Rate')
 
                 object = 'java.lang:type=GarbageCollector,name=G1 Young Generation'
                 YoungGcCount = 'CollectionCount'
@@ -138,7 +139,7 @@ def run_jmx():
 
                 jsondata.gen_data('jmx_G1_' + 'YoungGcCount', timestamp, str(YoungColCount), push.hostname, check_type, cluster_name)
                 YoungColTime_rate = rate.record_value_rate('jmx_G1_YoungColTime', YoungColTime.value, timestamp)
-                jsondata.gen_data('jmx_G1_YoungGcTime', timestamp, YoungColTime_rate, push.hostname, check_type, cluster_name)
+                jsondata.gen_data('jmx_G1_YoungGcTime', timestamp, YoungColTime_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
 
             jsondata.put_json()
             jsondata.truncate_data()

@@ -39,11 +39,11 @@ def run_network_bytes():
                 if rated is True:
                     txrate = rate.record_value_rate(txname, tx, timestamp)
                     rxrate = rate.record_value_rate(rxname, rx, timestamp)
-                    jsondata.gen_data(txname, timestamp, txrate, push.hostname, check_type, cluster_name)
-                    jsondata.gen_data(rxname, timestamp, rxrate, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data(txname, timestamp, txrate, push.hostname, check_type, cluster_name, 0, 'Rate')
+                    jsondata.gen_data(rxname, timestamp, rxrate, push.hostname, check_type, cluster_name, 0, 'Rate')
                 else:
-                    jsondata.gen_data(txname, timestamp, tx, push.hostname, check_type, cluster_name)
-                    jsondata.gen_data(rxname, timestamp, rx, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data(txname, timestamp, tx, push.hostname, check_type, cluster_name, 0, 'Counter')
+                    jsondata.gen_data(rxname, timestamp, rx, push.hostname, check_type, cluster_name, 0, 'Counter')
 
 
         jsondata.put_json()

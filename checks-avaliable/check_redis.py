@@ -8,6 +8,7 @@ import socket
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/sql_cache.ini')
 
 redis_host = config.get('Redis', 'host')
 redis_port = int(config.get('Redis', 'port'))

@@ -6,6 +6,7 @@ import socket
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/webservers.ini')
 
 phpfpm_url = config.get('PhpFPM', 'address') + config.get('PhpFPM', 'stats')
 
@@ -54,7 +55,7 @@ def run_phpfpm():
         rate=value_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
         conns_per_sec=rate.record_value_rate('phpfpm_connections', connections, timestamp)
-        jsondata.gen_data('phpfpm_conns_per_sec', timestamp, conns_per_sec, push.hostname, check_type, cluster_name)
+        jsondata.gen_data('phpfpm_conns_per_sec', timestamp, conns_per_sec, push.hostname, check_type, cluster_name, 0, 'Rate')
         jsondata.gen_data('phpfpm_proc_idle', timestamp, proc_idle, push.hostname, check_type, cluster_name)
         jsondata.gen_data('phpfpm_proc_active', timestamp, proc_active, push.hostname, check_type, cluster_name)
         jsondata.gen_data('phpfpm_proc_total', timestamp, proc_total, push.hostname, check_type, cluster_name)

@@ -9,8 +9,8 @@ host_group = config.get('SelfConfig', 'host_group')
 
 # ---------------------- #
 rated = True
-reaction = -3
-
+#reaction = -3
+values_type = 'Percent'
 warn_level = 90
 crit_level = 100
 # ---------------------- #
@@ -66,7 +66,6 @@ def run_cpustats():
         else:
             utilisation = 0
     except Exception as e:
-        #push = __import__('pushdata')
         push.print_error(__name__ , (e))
 
 
@@ -88,10 +87,9 @@ def run_cpustats():
 
             health_message = err_type + ': CPU Usage is ' + str(d) + ' percent'
             jsondata.send_special("CPU-Percent", timestamp, health_value, health_message, err_type)
-            jsondata.gen_data('cpu_percent', timestamp, d, push.hostname, check_type, cluster_name)
+            jsondata.gen_data('cpu_percent', timestamp, d, push.hostname, check_type, cluster_name, 0 , values_type)
         send_special()
     except Exception as e:
-        #push = __import__('pushdata')
         push.print_error(__name__, (e))
 
 
@@ -100,17 +98,20 @@ def run_cpustats():
         for index in range(0, 7):
             name = metrinames[index]
             value = cpu_stats[index]
+            if name == 'cpu_user' or name == 'cpu_iowait':
+                reaction = 0
+            else:
+                reaction = -3
             if rated is True:
                 values_rate = rate.record_value_rate(name, value, timestamp)/cpucount
-                jsondata.gen_data(name, timestamp, values_rate, push.hostname, check_type, cluster_name)
+                jsondata.gen_data(name, timestamp, values_rate, push.hostname, check_type, cluster_name, reaction, values_type)
             else:
-                jsondata.gen_data(name, timestamp, int(value)/cpucount, push.hostname, check_type, cluster_name)
+                jsondata.gen_data(name, timestamp, int(value)/cpucount, push.hostname, check_type, cluster_name, reaction, values_type)
 
 
         jsondata.put_json()
         jsondata.truncate_data()
     except Exception as e:
-        #push = __import__('pushdata')
         push.print_error(__name__ , (e))
         pass
 

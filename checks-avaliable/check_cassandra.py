@@ -8,6 +8,7 @@ import json
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/bigdata.ini')
 
 jolokia_url = config.get('Cassandra', 'jolokia')
 hostname = socket.getfqdn()
@@ -60,19 +61,19 @@ def run_cassandra():
                     if my_name in needed_stats and my_value > 0:
                         name='cassa_'+my_name
                         value_rate=rate.record_value_rate(name, my_value, timestamp)
-                        jsondata.gen_data(name, timestamp, value_rate, push.hostname, check_type, cluster_name)
+                        jsondata.gen_data(name, timestamp, value_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
             request_keys=('RequestResponseStage','ReadStage','MutationStage')
             if beans == 'org.apache.cassandra.request:type=*':
                 for key in request_keys:
                     name = 'cassa_' + key
                     value = jolo_keys['org.apache.cassandra.request:type='+key]['CompletedTasks']
                     value_rate=rate.record_value_rate(name, value, timestamp)
-                    jsondata.gen_data(name, timestamp, value_rate, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data(name, timestamp, value_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
             if beans == 'org.apache.cassandra.transport:type=Native-Transport-Requests':
                 name = 'cassa_Native-Transport-Requests'
                 value = jolo_json['value']['CompletedTasks']
                 value_rate = rate.record_value_rate(name, value, timestamp)
-                jsondata.gen_data(name, timestamp, value_rate, push.hostname, check_type, cluster_name)
+                jsondata.gen_data(name, timestamp, value_rate, push.hostname, check_type, cluster_name, 0, 'Rate' )
         jsondata.put_json()
         jsondata.truncate_data()
 

@@ -8,6 +8,7 @@ import json
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/bigdata.ini')
 
 
 hostname = socket.getfqdn()
@@ -89,7 +90,7 @@ def run_elasticsearch2():
         for key, value in rated_stats.iteritems():
             reqrate=rate.record_value_rate('es_'+key, value, timestamp)
             if reqrate >=0:
-                data.update({'elasticsearch_'+key: reqrate})
+                jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name, 0, 'Rate')
 
         data.update({''
                     'elasticsearch_heap_commited':stats_json['nodes'][node_keys]['jvm']['mem']['heap_committed_in_bytes'],

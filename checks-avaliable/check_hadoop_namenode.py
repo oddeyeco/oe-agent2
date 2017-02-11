@@ -9,6 +9,7 @@ import json
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/hadoop.ini')
 
 hadoop_namenode_url = config.get('Hadoop-NameNode', 'jmx')
 hostname = socket.getfqdn()
@@ -78,7 +79,7 @@ def run_hadoop_namenode():
                 if values in stats_keys[stats_index]:
                     stack_value=stats_keys[stats_index][values]
                     reqrate=rate.record_value_rate('namenode_'+values, stack_value, timestamp)
-                    mon_values.update({'namenode_'+values: reqrate})
+                    jsondata.gen_data('namenode_'+values, timestamp, reqrate, push.hostname, check_type, cluster_name, 0, 'Rate')
 
         for key in mon_values.keys():
             jsondata.gen_data(key, timestamp, mon_values[key], push.hostname, check_type, cluster_name)

@@ -6,6 +6,7 @@ import socket
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/webservers.ini')
 
 apache_url = config.get('Apache', 'url')
 
@@ -56,11 +57,13 @@ def run_apache():
                     value=line.split(' ')[1]
                     jsondata.gen_data('apache_'+key, timestamp, value, push.hostname, check_type, cluster_name)
             for searchitem in  metrics_rated:
+                reaction = 0
+                metr_type='Rate'
                 if searchitem in line:
                     key=line.split(' ')[0]+line.split(' ')[1].replace(':', '')
                     value=line.split(' ')[2]
                     value_rate=rate.record_value_rate(key, value, timestamp)
-                    jsondata.gen_data('apache_'+key, timestamp, value_rate, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data('apache_'+key, timestamp, value_rate, push.hostname, check_type, cluster_name, reaction, metr_type)
 
         jsondata.put_json()
         jsondata.truncate_data()

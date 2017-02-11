@@ -53,7 +53,7 @@ def run_disks():
                 u = re.sub(' +', ' ', i).split(" ")
                 jsondata.gen_data('drive' + u[0].replace('/dev/', '_') + '_bytes_used', timestamp, u[2], push.hostname, check_type, cluster_name, reaction)
                 jsondata.gen_data('drive' + u[0].replace('/dev/', '_') + '_bytes_available', timestamp, u[3], push.hostname, check_type, cluster_name, reaction)
-                jsondata.gen_data('drive' + u[0].replace('/dev/', '_') + '_percent_used', timestamp, u[4].replace('%', ''), push.hostname, check_type, cluster_name, warn_percent)
+                jsondata.gen_data('drive' + u[0].replace('/dev/', '_') + '_percent_used', timestamp, u[4].replace('%', ''), push.hostname, check_type, cluster_name, warn_percent, 'Percent')
 
         proc_stats=open('/proc/diskstats')
         for line in proc_stats:
@@ -66,7 +66,7 @@ def run_disks():
                     reqrate=rate.record_value_rate(name, value, timestamp)
                     if isinstance( reqrate, int ):
                         diskrate=reqrate/10
-                        jsondata.gen_data(name, timestamp, diskrate, push.hostname, check_type, cluster_name)
+                        jsondata.gen_data(name, timestamp, diskrate, push.hostname, check_type, cluster_name,0 ,'Percent')
 
         jsondata.put_json()
         jsondata.truncate_data()

@@ -9,6 +9,7 @@ import json
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/hadoop.ini')
 
 hadoop_datanode_url = config.get('Hadoop-Datanode', 'jmx')
 hostname = socket.getfqdn()
@@ -80,13 +81,19 @@ def run_hadoop_datanode():
                 if values in stats_keys[stats_index]:
                     stack_value=stats_keys[stats_index][values]
                     reqrate=rate.record_value_rate('datanode_'+values, stack_value, timestamp)
-                    mon_values.update({'datanode_'+values: reqrate})
+                    #mon_values.update({'datanode_'+values: reqrate})
+                    jsondata.gen_data('datanode_'+values, timestamp, reqrate, push.hostname, check_type, cluster_name, 0, 'Rate')
 
         for key in mon_values.keys():
             if key is 'datanode_dfsused' or key is 'datanode_space_remaining':
                 jsondata.gen_data(key, timestamp, mon_values[key], push.hostname, check_type, cluster_name, reaction)
             else:
                 jsondata.gen_data(key, timestamp, mon_values[key], push.hostname, check_type, cluster_name)
+
+        #du_total=mon_values['datanode_dfsused']+mon_values['datanode_space_remaining']
+        data_du_percent=mon_values['datanode_dfsused']*100/(mon_values['datanode_dfsused']+mon_values['datanode_space_remaining'])
+        jsondata.gen_data('datanode_du_percent', timestamp, data_du_percent, push.hostname, check_type, cluster_name, warn_level, 'Percent')
+
         jsondata.put_json()
         jsondata.truncate_data()
         #print mon_values

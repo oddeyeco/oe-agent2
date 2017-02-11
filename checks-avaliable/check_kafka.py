@@ -7,6 +7,8 @@ import json
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/mq.ini')
+
 
 jolokia_url = config.get('Kafka', 'jolokia')
 TYPE= config.get('Kafka', 'gctype')
@@ -48,7 +50,7 @@ def run_kafka():
                 if name == 'CollectionTime':
                     values_rate = rate.record_value_rate(name, value, timestamp)
                     key = 'kafka_gc_old_' + name
-                    jsondata.gen_data(key, timestamp, values_rate, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data(key, timestamp, values_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
                 else:
                     key = 'kafka_gc_old_' + name
                     jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name)
@@ -65,7 +67,7 @@ def run_kafka():
                         vl = 0
                     key = 'kafka_gc_young_' + name
                     vl_rate = rate.record_value_rate(key, vl, timestamp)
-                    jsondata.gen_data(key, timestamp, vl_rate, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data(key, timestamp, vl_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
                 if name == 'CollectionCount':
                     vl = gc_young_json['value'][name]
                     if vl is None:
@@ -95,14 +97,14 @@ def run_kafka():
                 name = 'kafka_'+beans.split('=')[1]
                 values_rate = rate.record_value_rate(name, value, timestamp)
                 if values_rate >= 0:
-                    jsondata.gen_data(name, timestamp, values_rate, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data(name, timestamp, values_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
 
             elif beans == 'kafka.server:type=Produce':
                 value= jolo_keys['queue-size']
                 name = 'kafka_'+beans.split('=')[1]
                 values_rate = rate.record_value_rate(name, value, timestamp)
                 if values_rate >= 0:
-                    jsondata.gen_data(name, timestamp, values_rate, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data(name, timestamp, values_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
 
             elif beans == 'kafka.network:name=RequestsPerSec,request=FetchConsumer,type=RequestMetrics':
                 minute_value = jolo_keys['OneMinuteRate']

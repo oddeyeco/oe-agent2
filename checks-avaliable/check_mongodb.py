@@ -10,6 +10,7 @@ import os, sys
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/sql_cache.ini')
 cluster_name = config.get('SelfConfig', 'cluster_name')
 
 mongo_host = config.get('MongoDB', 'host')
@@ -39,18 +40,18 @@ def run_mongodb():
 
         for key, value in connections_dict['metrics']['document'].iteritems():
             reqrate=rate.record_value_rate('mongo_document_'+key, value, timestamp)
-            jsondata.gen_data('mongo_document_'+key, timestamp, reqrate, push.hostname, check_type, cluster_name)
+            jsondata.gen_data('mongo_document_'+key, timestamp, reqrate, push.hostname, check_type, cluster_name, 0, 'Rate')
         for key, value in connections_dict['metrics']['operation'].iteritems():
             reqrate=rate.record_value_rate('mongo_operation_'+key, value, timestamp)
-            jsondata.gen_data('mongo_operation_'+key, timestamp, reqrate, push.hostname, check_type, cluster_name)
+            jsondata.gen_data('mongo_operation_'+key, timestamp, reqrate, push.hostname, check_type, cluster_name, 0, 'Rate')
 
         for key, value in connections_dict['opcounters'].iteritems():
             reqrate=rate.record_value_rate('mongo_opcounters_'+key, value, timestamp)
-            jsondata.gen_data('mongo_opcounters_'+key, timestamp, reqrate, push.hostname, check_type, cluster_name)
+            jsondata.gen_data('mongo_opcounters_'+key, timestamp, reqrate, push.hostname, check_type, cluster_name, 0, 'Rate')
         '''
         for key, value in connections_dict['indexCounters'].iteritems():
             reqrate=rate.record_value_rate('mongo_indexcounters_'+key, value, timestamp)
-            jsondata.gen_data('mongo_indexcounters_'+key, timestamp, reqrate, push.hostname, check_type, cluster_name)
+            jsondata.gen_data('mongo_indexcounters_'+key, timestamp, reqrate, push.hostname, check_type, cluster_name, 0, 'Rate')
         '''
         for key, value in connections_dict['connections'].iteritems():
             jsondata.gen_data('mongo_connections_'+key, timestamp, value, push.hostname, check_type, cluster_name)

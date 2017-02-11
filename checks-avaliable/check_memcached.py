@@ -5,6 +5,7 @@ import socket
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/sql_cache.ini')
 
 memcached_host = config.get('Memcached', 'host')
 memcached_port = int(config.get('Memcached', 'port'))
@@ -44,7 +45,7 @@ def run_memcached():
                     key=line.split(' ')[1]
                     value=line.split(' ')[2].rstrip('\r')
                     value_rate=rate.record_value_rate(key, value, timestamp)
-                    jsondata.gen_data('memcached_'+key, timestamp, value_rate, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data('memcached_'+key, timestamp, value_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
         jsondata.put_json()
         jsondata.truncate_data()
     except Exception as e:

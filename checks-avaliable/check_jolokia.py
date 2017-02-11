@@ -7,6 +7,7 @@ import json
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/java.ini')
 
 jolokia_url = config.get('Jolokia', 'jolokia')
 hostname = socket.getfqdn()
@@ -70,7 +71,7 @@ def run_jolokia():
                     jsondata.gen_data('jolokia_'+preffix+'_LastGcInfo', timestamp, LastGcInfo, push.hostname, check_type, cluster_name)
                     jsondata.gen_data('jolokia_'+preffix+'_CollectionCount', timestamp, CollectionCount, push.hostname, check_type, cluster_name)
                     CollectionTime_rate = rate.record_value_rate('jolokia_'+preffix+'_CollectionTime', CollectionTime, timestamp)
-                    jsondata.gen_data('jolokia_'+preffix+'_CollectionTime', timestamp, CollectionTime_rate, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data('jolokia_'+preffix+'_CollectionTime', timestamp, CollectionTime_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
                 if coltype=='java.lang:name=ConcurrentMarkSweep,type=GarbageCollector':
                     push_metrics(preffix='CMS')
                 if coltype == 'java.lang:name=ParNew,type=GarbageCollector':
@@ -116,7 +117,7 @@ def run_jolokia():
                         v = check_null(value)
                         rate_key=vl+type
                         CollectionTime_rate = rate.record_value_rate('jolokia_' + rate_key, v, timestamp)
-                        jsondata.gen_data('jolokia_G1'+ type+ vl, timestamp, CollectionTime_rate, push.hostname, check_type, cluster_name)
+                        jsondata.gen_data('jolokia_G1'+ type+ vl, timestamp, CollectionTime_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
                     if ky is 1:
                         value = j['value'][vl]
                         v = check_null(value)

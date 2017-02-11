@@ -8,6 +8,7 @@ import json
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/bigdata.ini')
 
 jolokia_url = config.get('Cassandra', 'jolokia')
 hostname = socket.getfqdn()
@@ -53,7 +54,7 @@ def run_cassandra3():
                     jsondata.gen_data(mon_name, timestamp, mon_value, push.hostname, check_type, cluster_name)
                 else:
                     value_rate=rate.record_value_rate('cql_'+mon_name, mon_value, timestamp)
-                    jsondata.gen_data(mon_name, timestamp, value_rate, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data(mon_name, timestamp, value_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
 
         cache_metrics = ('Hits,scope=KeyCache', 'Requests,scope=KeyCache', 'Requests,scope=RowCache', 'Hits,scope=RowCache')
         for cache_metric in cache_metrics:

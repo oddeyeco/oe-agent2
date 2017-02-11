@@ -7,6 +7,7 @@ import json
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/mq.ini')
 
 rabbit_url = config.get('RabbitMQ', 'stats')
 rabbit_user = config.get('RabbitMQ', 'user')
@@ -34,7 +35,7 @@ def run_rabbitmq():
         for stats in message_stats:
             stats_name='rabbitmq_'+stats+'_rate'
             stats_value=stats_json['message_stats'][stats+'_details']['rate']
-            jsondata.gen_data(stats_name, timestamp, stats_value, push.hostname, check_type, cluster_name)
+            jsondata.gen_data(stats_name, timestamp, stats_value, push.hostname, check_type, cluster_name, 0, 'Rate')
         for queue in queue_totals:
             queue_name='rabbitmq_'+queue
             queue_value=stats_json['queue_totals'][queue]

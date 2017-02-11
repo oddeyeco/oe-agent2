@@ -13,6 +13,7 @@ import os, sys
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/sql_cache.ini')
 cluster_name = config.get('SelfConfig', 'cluster_name')
 
 mysql_host = config.get('MySQL', 'host')
@@ -30,7 +31,7 @@ def run_mysql():
         jsondata=push.JonSon()
         jsondata.create_data()
         rate=value_rate.ValueRate()
-        raw_mysqlstats =cur.execute("SHOW GLOBAL STATUS WHERE Variable_name='Connections'"
+        raw_mysqlstats = cur.execute("SHOW GLOBAL STATUS WHERE Variable_name='Connections'"
                             "OR Variable_name='Com_select' "
                             "OR Variable_name='Com_delete_multi' "
                             "OR Variable_name='Com_delete' "
@@ -51,7 +52,9 @@ def run_mysql():
             myvalue = row[1]
             if mytype not in non_rate_metrics:
                 myvalue=rate.record_value_rate('mysql_'+mytype, myvalue, timestamp)
-            jsondata.gen_data('mysql_'+mytype, timestamp, myvalue, push.hostname, check_type, cluster_name)
+                jsondata.gen_data('mysql_' + mytype, timestamp, myvalue, push.hostname, check_type, cluster_name, 0, 'Rate')
+            else:
+                jsondata.gen_data('mysql_'+mytype, timestamp, myvalue, push.hostname, check_type, cluster_name)
         jsondata.put_json()
         jsondata.truncate_data()
     except Exception as e:
