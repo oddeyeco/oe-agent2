@@ -69,8 +69,6 @@ else:
     tsd_oddeye = False
 
 
-
-
 class JonSon(object):
     def gen_data(self, name, timestamp, value, tag_hostname, tag_type, cluster_name, reaction=0, metric_type='None'):
         if tsdb_type == 'KairosDB':
@@ -118,13 +116,10 @@ class JonSon(object):
         if tsd_oddeye is True:
             self.data.__delitem__('metric')
             self.data = {'metric': []}
-            # self.data.__delitem__
-            # self.metrics.clear()
 
     def send_oddeye_data(self, data):
         c.setopt(pycurl.URL, tsdb_url)
         c.setopt(pycurl.POST, 0)
-        #send_data = barlus_style + data
         c.setopt(pycurl.POSTFIELDS, data)
         c.setopt(pycurl.VERBOSE, 0)
         c.setopt(pycurl.TIMEOUT, 3)
@@ -132,7 +127,6 @@ class JonSon(object):
         c.setopt(pycurl.USERAGENT, 'PuyPuy v.02')
         c.setopt(pycurl.ENCODING, "gzip,deflate")
         c.setopt(pycurl.WRITEFUNCTION, lambda x: None)
-        #logging.critical(" %s : " % str(send_data))
 
     def upload_it(self, data):
         http_response_codes = [100, 101, 102, 200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]
@@ -172,73 +166,12 @@ class JonSon(object):
                 pass
 
     def put_json(self):
-        '''
-        http_response_codes = [100, 101, 102, 200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]
-        def upload_data(data):
-            try:
-                c.perform()
-                try:
-                    response_code = int(c.getinfo(pycurl.RESPONSE_CODE))
-                    response_exists = True
-                except:
-                    response_exists = False
-                    pass
-
-                def start_cache(data):
-                    push = __import__('pushdata')
-                    push.print_error(c.getinfo(pycurl.RESPONSE_CODE), 'Got non ubnormal response code, started to cache')
-                    import uuid
-                    tmpdir = config.get('SelfConfig', 'tmpdir')
-                    filename = tmpdir + '/' + str(uuid.uuid4()) + '.cached'
-                    file = open(filename, "w")
-                    file.write(data)
-                    file.close()
-
-                if response_code not in http_response_codes and response_exists is True:
-                    start_cache(data)
-
-            except Exception as e:
-                push = __import__('pushdata')
-                push.print_error(__name__, (e))
-                try:
-                    import uuid
-                    tmpdir = config.get('SelfConfig', 'tmpdir')
-                    filename = tmpdir + '/' + str(uuid.uuid4()) + '.cached'
-                    file = open(filename, "w")
-                    file.write(data)
-                    file.close()
-                except:
-                    pass
-        '''
         if tsd_oddeye is True:
             json_data = json.dumps(self.data['metric'])
-            #c.setopt(pycurl.URL, tsdb_url)
-            #c.setopt(pycurl.POST, 0)
-            #if sandbox is True:
-            #    barlus_style = 'UUID=' + oddeye_uuid + '&sandbox=true&data='
-            #else:
-            #    barlus_style = 'UUID=' + oddeye_uuid + '&data='
-
-            #barlus_style = 'UUID=' + oddeye_uuid + '&data='
             send_data = barlus_style + json_data
-            #c.setopt(pycurl.POSTFIELDS, send_data)
-            #c.setopt(pycurl.VERBOSE, 0)
-            #c.setopt(pycurl.TIMEOUT, 3)
-            #c.setopt(pycurl.NOSIGNAL, 5)
-            #c.setopt(pycurl.USERAGENT, 'PuyPuy v.08')
-            #c.setopt(pycurl.ENCODING, "gzip,deflate")
-            #c.setopt(pycurl.WRITEFUNCTION, lambda x: None)
-
-            #zdata = zlib.compress(send_data)
-            #print send_data
             jonson=JonSon()
             jonson.send_oddeye_data(send_data)
             jonson.upload_it(send_data)
-            #upload_data(send_data)
-
-            #jonson=JonSon()
-            #jonson.send_oddeye_data()
-            #jonson.upload_it(send_data)
 
         if tsd_rest is True:
             json_data = json.dumps(self.data['metric'])
@@ -250,8 +183,6 @@ class JonSon(object):
             c.setopt(pycurl.VERBOSE, 0)
             c.setopt(pycurl.TIMEOUT, 10)
             c.setopt(pycurl.NOSIGNAL, 5)
-            # c.perform()
-            #upload_data(json_data)
             JonSon.upload_it(self, json_data)
 
         if tsd_carbon is True:
@@ -265,7 +196,6 @@ class JonSon(object):
             s.close()
         if tsd_influx is True:
             line_data = '%s' % ''.join(map(str, self.data))
-            #print_error(self, line_data)
             if curl_auth is True:
                 c.setopt(pycurl.USERPWD, influx_auth)
             c.setopt(pycurl.URL, influx_url)
@@ -274,8 +204,6 @@ class JonSon(object):
             c.setopt(pycurl.VERBOSE, 0)
             c.setopt(pycurl.TIMEOUT, 10)
             c.setopt(pycurl.NOSIGNAL, 5)
-            # c.perform()
-            #upload_data(line_data)
             JonSon.upload_it(self, line_data)
 
 # ------------------------------------------------------------------------------- #
@@ -292,32 +220,11 @@ class JonSon(object):
                                    "reaction": reaction, \
                                    "tags": {"host": hostname,"cluster": cluster_name, "group": host_group}})
                 send_err_msg = json.dumps(error_data)
-                #c.setopt(pycurl.URL, tsdb_url)
-                #c.setopt(pycurl.POST, 0)
-                #if sandbox is True:
-                #    barlus_style = 'UUID=' + oddeye_uuid + '&sandbox=true&data='
-                #else:
-                #    barlus_style = 'UUID=' + oddeye_uuid + '&data='
-
                 send_error_data = barlus_style + send_err_msg
-                #c.setopt(pycurl.POSTFIELDS, send_error_data)
-                #c.setopt(pycurl.VERBOSE, 0)
-                #c.setopt(pycurl.TIMEOUT, 3)
-                #c.setopt(pycurl.NOSIGNAL, 5)
-                #c.setopt(pycurl.USERAGENT, 'PuyPuy v.0.2')
-                #c.setopt(pycurl.ENCODING, "gzip,deflate")
-                #c.setopt(pycurl.WRITEFUNCTION, lambda x: None)
                 jonson = JonSon()
                 jonson.send_oddeye_data(send_error_data)
                 jonson.upload_it(send_error_data)
-
-                #JonSon.send_oddeye_data(self)
-                #JonSon.upload_it(self, send_error_data)
-                #c.perform()
-                #logging.critical(" %s : " % module + str(send_err_msg))
         except:
-                #import traceback
-                #traceback.print_exc()
                 logging.critical(" %s : " % module + str(send_err_msg))
 # ------------------------------------------------------------------------------- #
 
@@ -348,23 +255,11 @@ def print_error(module, e):
 
             send_error_data = barlus_style + send_err_msg
 
-            # c.setopt(pycurl.URL, tsdb_url)
-            # c.setopt(pycurl.POST, 0)
-            # c.setopt(pycurl.VERBOSE, 0)
-            # c.setopt(pycurl.TIMEOUT, 3)
-            # c.setopt(pycurl.NOSIGNAL, 5)
-            # c.setopt(pycurl.USERAGENT, 'PuyPuy v.0.2')
-            # c.setopt(pycurl.ENCODING, "gzip,deflate")
-            # c.setopt(pycurl.WRITEFUNCTION, lambda x: None)
-            # c.setopt(pycurl.POSTFIELDS, send_error_data)
-            # c.perform()
-
             jonson=JonSon()
             jonson.send_oddeye_data(send_error_data)
             c.setopt(pycurl.POSTFIELDS, send_error_data)
             c.perform()
             logging.critical(" %s : " % module + str(e))
-            #logging.critical(" %s : " % module + str(send_error_data))
         else:
             logging.critical(" %s : " % module + str(e))
             logging.critical(" status code: %s : " % str(c.getinfo(pycurl.HTTP_CODE))+ str(e))

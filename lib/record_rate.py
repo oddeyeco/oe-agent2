@@ -24,18 +24,10 @@ class ValueRate(object):
                     metrics_rate = 1
                 return metrics_rate
 
-            #except:
-            #    import pushdata, sys
-            #    pushdata.print_error(self, sys.exc_info()[0])
-            #    pass
-
             except Exception as e:
                 push = __import__('pushdata')
                 push.print_error(__name__ , (e))
                 pass
-
-
-
 
     def update_timestamp(self, timestamp):
         pass
