@@ -2,7 +2,8 @@
 This check required Python MongoDB, On Debian like systems do
 apt-get install python-pymongo
 '''
-
+import lib.record_rate
+import lib.pushdata
 import pymongo
 import datetime
 import ConfigParser
@@ -31,36 +32,32 @@ def run_mongodb():
 
         connections_dict = db.command("serverStatus")
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        push = __import__('pushdata')
-        value_rate= __import__('record_rate')
-        jsondata=push.JonSon()
-        jsondata.create_data()
-        rate=value_rate.ValueRate()
+        jsondata=lib.pushdata.JonSon()
+        jsondata.prepare_data()
+        rate=lib.record_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
 
         for key, value in connections_dict['metrics']['document'].iteritems():
             reqrate=rate.record_value_rate('mongo_document_'+key, value, timestamp)
-            jsondata.gen_data('mongo_document_'+key, timestamp, reqrate, push.hostname, check_type, cluster_name, 0, 'Rate')
+            jsondata.gen_data('mongo_document_'+key, timestamp, reqrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
         for key, value in connections_dict['metrics']['operation'].iteritems():
             reqrate=rate.record_value_rate('mongo_operation_'+key, value, timestamp)
-            jsondata.gen_data('mongo_operation_'+key, timestamp, reqrate, push.hostname, check_type, cluster_name, 0, 'Rate')
+            jsondata.gen_data('mongo_operation_'+key, timestamp, reqrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
         for key, value in connections_dict['opcounters'].iteritems():
             reqrate=rate.record_value_rate('mongo_opcounters_'+key, value, timestamp)
-            jsondata.gen_data('mongo_opcounters_'+key, timestamp, reqrate, push.hostname, check_type, cluster_name, 0, 'Rate')
+            jsondata.gen_data('mongo_opcounters_'+key, timestamp, reqrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
         '''
         for key, value in connections_dict['indexCounters'].iteritems():
             reqrate=rate.record_value_rate('mongo_indexcounters_'+key, value, timestamp)
-            jsondata.gen_data('mongo_indexcounters_'+key, timestamp, reqrate, push.hostname, check_type, cluster_name, 0, 'Rate')
+            jsondata.gen_data('mongo_indexcounters_'+key, timestamp, reqrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
         '''
         for key, value in connections_dict['connections'].iteritems():
-            jsondata.gen_data('mongo_connections_'+key, timestamp, value, push.hostname, check_type, cluster_name)
+            jsondata.gen_data('mongo_connections_'+key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
 
         jsondata.put_json()
-        jsondata.truncate_data()
 
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass
 

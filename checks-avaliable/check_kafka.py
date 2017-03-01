@@ -1,3 +1,5 @@
+import lib.record_rate
+import lib.pushdata
 import urllib2
 import os, sys
 import ConfigParser
@@ -27,12 +29,9 @@ if TYPE == 'CMS':
 def run_kafka():
     try:
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        push = __import__('pushdata')
-        jsondata=push.JonSon()
-        jsondata.create_data()
-        push = __import__('pushdata')
-        value_rate= __import__('record_rate')
-        rate=value_rate.ValueRate()
+        jsondata=lib.pushdata.JonSon()
+        jsondata.prepare_data()
+        rate=lib.record_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
         jolo_mbeans=('java.lang:type=Memory',
@@ -50,30 +49,30 @@ def run_kafka():
                 if name == 'CollectionTime':
                     values_rate = rate.record_value_rate(name, value, timestamp)
                     key = 'kafka_gc_old_' + name
-                    jsondata.gen_data(key, timestamp, values_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
+                    jsondata.gen_data(key, timestamp, values_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
                 else:
                     key = 'kafka_gc_old_' + name
-                    jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data(key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
             for name in ('LastGcInfo', 'CollectionTime', 'CollectionCount'):
                 if name == 'LastGcInfo':
                     vl = gc_young_json['value'][name]['duration']
                     if vl is None:
                         vl = 0
                     key = 'kafka_gc_young_' + name
-                    jsondata.gen_data(key, timestamp, vl, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data(key, timestamp, vl, lib.pushdata.hostname, check_type, cluster_name)
                 if name == 'CollectionTime':
                     vl = gc_young_json['value'][name]
                     if vl is None:
                         vl = 0
                     key = 'kafka_gc_young_' + name
                     vl_rate = rate.record_value_rate(key, vl, timestamp)
-                    jsondata.gen_data(key, timestamp, vl_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
+                    jsondata.gen_data(key, timestamp, vl_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
                 if name == 'CollectionCount':
                     vl = gc_young_json['value'][name]
                     if vl is None:
                         vl = 0
                     key = 'kafka_gc_young_' + name
-                    jsondata.gen_data(key, timestamp, vl, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data(key, timestamp, vl, lib.pushdata.hostname, check_type, cluster_name)
 
         for beans in jolo_mbeans:
             jolo_url=urllib2.urlopen(jolokia_url+'/'+beans, timeout=15).read()
@@ -87,52 +86,46 @@ def run_kafka():
                         if heap == 'NonHeapMemoryUsage':
                             key='kafka_nonheap_'+ metr
                             mon_values=jolo_keys[heap][metr]
-                            jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
+                            jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name)
                         else:
                             key='kafka_heap_'+ metr
                             mon_values=jolo_keys[heap][metr]
-                            jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
+                            jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name)
             elif beans == 'kafka.server:type=Fetch':
                 value= jolo_keys['queue-size']
                 name = 'kafka_'+beans.split('=')[1]
                 values_rate = rate.record_value_rate(name, value, timestamp)
                 if values_rate >= 0:
-                    jsondata.gen_data(name, timestamp, values_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
+                    jsondata.gen_data(name, timestamp, values_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
             elif beans == 'kafka.server:type=Produce':
                 value= jolo_keys['queue-size']
                 name = 'kafka_'+beans.split('=')[1]
                 values_rate = rate.record_value_rate(name, value, timestamp)
                 if values_rate >= 0:
-                    jsondata.gen_data(name, timestamp, values_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
+                    jsondata.gen_data(name, timestamp, values_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
             elif beans == 'kafka.network:name=RequestsPerSec,request=FetchConsumer,type=RequestMetrics':
                 minute_value = jolo_keys['OneMinuteRate']
                 value = minute_value / 60
                 key = 'kafka_RequestMetrics_FetchConsumer'
-                jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name)
+                jsondata.gen_data(key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
             elif beans == 'kafka.network:name=RequestsPerSec,request=Produce,type=RequestMetrics':
                 minute_value = jolo_keys['OneMinuteRate']
                 value = minute_value / 60
                 key = 'kafka_RequestMetrics_Produce'
-                jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name)
+                jsondata.gen_data(key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
 
             elif beans == 'kafka.server:type=BrokerTopicMetrics,name=*':
                 beans=('BytesInPerSec', 'BytesOutPerSec', 'BytesRejectedPerSec', 'FailedFetchRequestsPerSec', 'FailedProduceRequestsPerSec','MessagesInPerSec')
                 for bean in beans :
                     m='kafka.server:name='+bean+',type=BrokerTopicMetrics'
                     value= jolo_json['value'][m]['OneMinuteRate']
-                    jsondata.gen_data('kafka_'+bean, timestamp, value, push.hostname, check_type, cluster_name)
-                #name = 'kafka_'+beans.split('=')[2].split(',')[0]
-                #values_rate = rate.record_value_rate(name, value, timestamp)
-                #if values_rate >= 0:
-                #    jsondata.gen_data(name, timestamp, values_rate, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data('kafka_'+bean, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
         jsondata.put_json()
-        jsondata.truncate_data()
 
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass
 
 

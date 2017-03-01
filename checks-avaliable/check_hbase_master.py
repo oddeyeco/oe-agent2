@@ -1,3 +1,5 @@
+import lib.record_rate
+import lib.pushdata
 import urllib2
 import os, sys
 import ConfigParser
@@ -25,11 +27,9 @@ def run_hbase_master():
         node_rated_keys=('clusterRequests','GcTimeMillis')
         node_stuck_keys=('GcCount','HeapMemoryUsage')
         #mon_values={}
-        push = __import__('pushdata')
-        value_rate= __import__('record_rate')
-        rate=value_rate.ValueRate()
-        jsondata=push.JonSon()
-        jsondata.create_data()
+        rate=lib.record_rate.ValueRate()
+        jsondata=lib.pushdata.JonSon()
+        jsondata.prepare_data()
         timestamp = int(datetime.datetime.now().strftime("%s"))
 
         for stats_index in range(0, len(stats_keys)):
@@ -39,7 +39,7 @@ def run_hbase_master():
                         myvalue=stats_keys[stats_index][values]
                         values_rate=rate.record_value_rate('hmaster_'+values, myvalue, timestamp)
                         if values_rate >= 0:
-                            jsondata.gen_data('hmaster_node_'+values, timestamp, values_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
+                            jsondata.gen_data('hmaster_node_'+values, timestamp, values_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
                             #mon_values.update({'hmaster_node_'+values: values_rate})
 
             for values in node_stuck_keys:
@@ -48,16 +48,14 @@ def run_hbase_master():
                         heap_metrics=('max', 'init', 'committed', 'used')
                         for heap_values in heap_metrics:
                             #mon_values.update({'hmaster_heap_'+heap_values: stats_keys[stats_index][values][heap_values]})
-                            jsondata.gen_data('hmaster_heap_'+heap_values, timestamp, stats_keys[stats_index][values][heap_values], push.hostname, check_type, cluster_name)
+                            jsondata.gen_data('hmaster_heap_'+heap_values, timestamp, stats_keys[stats_index][values][heap_values], lib.pushdata.hostname, check_type, cluster_name)
                     else:
-                        jsondata.gen_data('hmaster_node_'+values, timestamp, stats_keys[stats_index][values], push.hostname, check_type, cluster_name, 0, 'Rate')
+                        jsondata.gen_data('hmaster_node_'+values, timestamp, stats_keys[stats_index][values], lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
                         #mon_values.update({'hmaster_node_'+values: stats_keys[stats_index][values]})
 
         #for key in mon_values.keys():
-        #    jsondata.gen_data(key, timestamp, mon_values[key], push.hostname, check_type, cluster_name)
+        #    jsondata.gen_data(key, timestamp, mon_values[key], lib.pushdata.hostname, check_type, cluster_name)
         jsondata.put_json()
-        jsondata.truncate_data()
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass

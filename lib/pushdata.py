@@ -8,25 +8,25 @@ import logging
 import pickle
 import struct
 import record_rate
+import time
+import uuid
 #import zlib
 
 
-record_rate.init()
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0] + '/conf/config.ini')
 cluster_name = config.get('SelfConfig', 'cluster_name')
-hostname = socket.getfqdn()
-
-
+host_group = config.get('SelfConfig', 'host_group')
 tsdb_type = config.get('TSDB', 'tsdtype')
-
+hostname = socket.getfqdn()
 c = pycurl.Curl()
+record_rate.init()
+
 
 if (tsdb_type == 'KairosDB' or tsdb_type == 'OpenTSDB'):
     tsdb_url = config.get('TSDB', 'address') + config.get('TSDB', 'datapoints')
     tsdb_auth = config.get('TSDB', 'user') + ':' + config.get('TSDB', 'pass')
-    host_group = config.get('SelfConfig', 'host_group')
     curl_auth = config.getboolean('TSDB', 'auth')
     tsd_rest = True
 else:
@@ -37,7 +37,6 @@ if tsdb_type == 'Carbon':
     carbon_server = config.get('TSDB', 'address')
     carbon_host = carbon_server.split(':')[0]
     carbon_port = int(carbon_server.split(':')[1])
-    host_group = config.get('SelfConfig', 'host_group')
     path = hostname.replace('.', '_')
 else:
     tsd_carbon = False
@@ -47,7 +46,6 @@ if tsdb_type == 'InfluxDB':
     influx_server = config.get('TSDB', 'address')
     influx_db = config.get('TSDB', 'database')
     influx_url = influx_server + '/write?db=' + influx_db
-    host_group = config.get('SelfConfig', 'host_group')
     curl_auth = config.getboolean('TSDB', 'auth')
     influx_auth = config.get('TSDB', 'user') + ':' + config.get('TSDB', 'pass')
 else:
@@ -55,7 +53,6 @@ else:
 
 if (tsdb_type == 'OddEye'):
     tsdb_url = config.get('TSDB', 'url')
-    host_group = config.get('SelfConfig', 'host_group')
     oddeye_uuid = config.get('TSDB', 'uuid')
     tsd_oddeye = True
     err_handler = int(config.get('TSDB', 'err_handler'))
@@ -76,11 +73,10 @@ class JonSon(object):
         elif tsdb_type == 'OpenTSDB':
             self.data['metric'].append({"metric": name, "timestamp": timestamp, "value": value, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group}})
         elif tsdb_type == 'BlueFlood':
-            print 'BlueFlood is not supported yet'
+            raise NotImplementedError('BlueFlood is not supported yet')
         elif tsdb_type == 'Carbon':
             self.data.append((cluster_name + '.' + host_group + '.' + path + '.' + name, (timestamp, value)))
         elif tsdb_type == 'InfluxDB':
-            import time
             nanotime = lambda: int(round(time.time() * 1000000000))
             str_nano = str(nanotime())
             if type(value) is int:
@@ -94,31 +90,33 @@ class JonSon(object):
         else:
             print 'Please set TSDB type'
 
-    def create_data(self):
+    def prepare_data(self):
         if tsd_rest is True:
-            self.data = {'metric': []}
+            try:
+                self.data.__delitem__('metric')
+                self.data = {'metric': []}
+            except:
+                self.data = {'metric': []}
         if tsd_carbon is True:
-            self.data = []
+            try:
+                self.data.__delitem__
+            except:
+                self.data = []
         if tsd_influx is True:
-            self.data = []
+            try:
+                self.data.__delitem__
+            except:
+                self.data = []
         if tsd_oddeye is True:
-            self.data = {'metric': []}
-            # self.metrics = {}
+            try:
+                self.data.__delitem__('metric')
+                self.data = {'metric': []}
+            except:
+                self.data = {'metric': []}
+    # ------------------------------------------- #
 
-    def truncate_data(self):
-        if tsd_rest is True:
-            self.data.__delitem__('metric')
-            self.data = {'metric': []}
-        if tsd_carbon is True:
-            self.data.__delitem__
-        if tsd_influx is True:
-            self.data.__delitem__
-        if tsd_oddeye is True:
-            self.data.__delitem__('metric')
-            self.data = {'metric': []}
-
-    def send_oddeye_data(self, data):
-        c.setopt(pycurl.URL, tsdb_url)
+    def httt_set_opt(self,url, data):
+        c.setopt(pycurl.URL, url)
         c.setopt(pycurl.POST, 0)
         c.setopt(pycurl.POSTFIELDS, data)
         c.setopt(pycurl.VERBOSE, 0)
@@ -140,9 +138,9 @@ class JonSon(object):
                 pass
 
             def start_cache(data):
-                push = __import__('pushdata')
-                push.print_error(c.getinfo(pycurl.RESPONSE_CODE), 'Got non ubnormal response code, started to cache')
-                import uuid
+                #push = __import__('pushdata')
+                print_error(c.getinfo(pycurl.RESPONSE_CODE), 'Got non ubnormal response code, started to cache')
+                #import uuid
                 tmpdir = config.get('SelfConfig', 'tmpdir')
                 filename = tmpdir + '/' + str(uuid.uuid4()) + '.cached'
                 file = open(filename, "w")
@@ -153,10 +151,10 @@ class JonSon(object):
                 start_cache(data)
 
         except Exception as e:
-            push = __import__('pushdata')
-            push.print_error(__name__, (e))
+            #push = __import__('pushdata')
+            print_error(__name__, (e))
             try:
-                import uuid
+                #import uuid
                 tmpdir = config.get('SelfConfig', 'tmpdir')
                 filename = tmpdir + '/' + str(uuid.uuid4()) + '.cached'
                 file = open(filename, "w")
@@ -169,21 +167,25 @@ class JonSon(object):
         if tsd_oddeye is True:
             json_data = json.dumps(self.data['metric'])
             send_data = barlus_style + json_data
-            jonson=JonSon()
-            jonson.send_oddeye_data(send_data)
-            jonson.upload_it(send_data)
+            # jonson=JonSon()
+            # jonson.httt_set_opt(send_data)
+            # jonson.upload_it(send_data)
+            # logging.critical(" %s : " % send_data)
+            self.httt_set_opt(tsdb_url, send_data)
+            self.upload_it(send_data)
 
         if tsd_rest is True:
             json_data = json.dumps(self.data['metric'])
             if curl_auth is True:
                 c.setopt(pycurl.USERPWD, tsdb_auth)
-            c.setopt(pycurl.URL, tsdb_url)
-            c.setopt(pycurl.POST, 0)
-            c.setopt(pycurl.POSTFIELDS, json_data)
-            c.setopt(pycurl.VERBOSE, 0)
-            c.setopt(pycurl.TIMEOUT, 10)
-            c.setopt(pycurl.NOSIGNAL, 5)
-            JonSon.upload_it(self, json_data)
+            # c.setopt(pycurl.URL, tsdb_url)
+            # c.setopt(pycurl.POST, 0)
+            # c.setopt(pycurl.POSTFIELDS, json_data)
+            # c.setopt(pycurl.VERBOSE, 0)
+            # c.setopt(pycurl.TIMEOUT, 10)
+            # c.setopt(pycurl.NOSIGNAL, 5)
+            self.httt_set_opt(tsdb_url, json_data)
+            self.upload_it(json_data)
 
         if tsd_carbon is True:
             payload = pickle.dumps(self.data, protocol=2)
@@ -198,13 +200,15 @@ class JonSon(object):
             line_data = '%s' % ''.join(map(str, self.data))
             if curl_auth is True:
                 c.setopt(pycurl.USERPWD, influx_auth)
-            c.setopt(pycurl.URL, influx_url)
-            c.setopt(pycurl.POST, 0)
-            c.setopt(pycurl.POSTFIELDS, line_data)
-            c.setopt(pycurl.VERBOSE, 0)
-            c.setopt(pycurl.TIMEOUT, 10)
-            c.setopt(pycurl.NOSIGNAL, 5)
-            JonSon.upload_it(self, line_data)
+            # c.setopt(pycurl.URL, influx_url)
+            # c.setopt(pycurl.POST, 0)
+            # c.setopt(pycurl.POSTFIELDS, line_data)
+            # c.setopt(pycurl.VERBOSE, 0)
+            # c.setopt(pycurl.TIMEOUT, 10)
+            # c.setopt(pycurl.NOSIGNAL, 5)
+            self.httt_set_opt(influx_url, line_data)
+            self.upload_it(line_data)
+            #logging.critical(" %s : " % line_data)
 
 # ------------------------------------------------------------------------------- #
     def send_special(self, module, timestamp, value, error_msg, mytype, reaction=0):
@@ -221,9 +225,11 @@ class JonSon(object):
                                    "tags": {"host": hostname,"cluster": cluster_name, "group": host_group}})
                 send_err_msg = json.dumps(error_data)
                 send_error_data = barlus_style + send_err_msg
-                jonson = JonSon()
-                jonson.send_oddeye_data(send_error_data)
-                jonson.upload_it(send_error_data)
+                # jonson = JonSon()
+                # jonson.httt_set_opt(send_error_data)
+                # jonson.upload_it(send_error_data)
+                self.httt_set_opt(tsdb_url, send_error_data)
+                self.upload_it(send_error_data)
         except:
                 logging.critical(" %s : " % module + str(send_err_msg))
 # ------------------------------------------------------------------------------- #
@@ -256,13 +262,13 @@ def print_error(module, e):
             send_error_data = barlus_style + send_err_msg
 
             jonson=JonSon()
-            jonson.send_oddeye_data(send_error_data)
+            jonson.httt_set_opt(send_error_data)
             c.setopt(pycurl.POSTFIELDS, send_error_data)
             c.perform()
             logging.critical(" %s : " % module + str(e))
         else:
             logging.critical(" %s : " % module + str(e))
-            logging.critical(" status code: %s : " % str(c.getinfo(pycurl.HTTP_CODE))+ str(e))
+            #logging.critical(" status code: %s : " % str(c.getinfo(pycurl.HTTP_CODE))+ str(e))
     try:
         if module == 'pushdata':
             logging.critical(" %s : " % "Cannot connect to Barlus" + str(e))

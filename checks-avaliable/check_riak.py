@@ -1,3 +1,5 @@
+import lib.record_rate
+import lib.pushdata
 import urllib2
 import os, sys
 import ConfigParser
@@ -21,9 +23,8 @@ def run_riak():
     try:
         riak_stats = urllib2.urlopen(riak_url, timeout=5).read()
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        push = __import__('pushdata')
-        jsondata=push.JonSon()
-        jsondata.create_data()
+        jsondata=lib.pushdata.JonSon()
+        jsondata.prepare_data()
         stats_json = json.loads(riak_stats)
         metrics= ('sys_process_count', 'memory_processes', 'memory_processes_used', 'node_gets', 'node_puts', 'vnode_gets', 'vnode_puts')
         for metric in metrics:
@@ -38,12 +39,10 @@ def run_riak():
                 myvalue = stats_json[metric]/60
             else:
                 myvalue = stats_json[metric]
-            jsondata.gen_data('riak_'+metric, timestamp, myvalue, push.hostname, check_type, cluster_name)
+            jsondata.gen_data('riak_'+metric, timestamp, myvalue, lib.pushdata.hostname, check_type, cluster_name)
         jsondata.put_json()
-        jsondata.truncate_data()
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass
 
 

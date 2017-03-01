@@ -1,3 +1,5 @@
+import lib.record_rate
+import lib.pushdata
 import pycurl
 import os, sys
 import ConfigParser
@@ -41,11 +43,9 @@ def run_hadoop_namenode():
         hadoop_namenode_stats=json.loads(t.contents)
 
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        push = __import__('pushdata')
-        value_rate= __import__('record_rate')
-        rate=value_rate.ValueRate()
-        jsondata=push.JonSon()
-        jsondata.create_data()
+        rate=lib.record_rate.ValueRate()
+        jsondata=lib.pushdata.JonSon()
+        jsondata.prepare_data()
         timestamp = int(datetime.datetime.now().strftime("%s"))
 
         stats_keys = hadoop_namenode_stats['beans']
@@ -79,15 +79,13 @@ def run_hadoop_namenode():
                 if values in stats_keys[stats_index]:
                     stack_value=stats_keys[stats_index][values]
                     reqrate=rate.record_value_rate('namenode_'+values, stack_value, timestamp)
-                    jsondata.gen_data('namenode_'+values, timestamp, reqrate, push.hostname, check_type, cluster_name, 0, 'Rate')
+                    jsondata.gen_data('namenode_'+values, timestamp, reqrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
         for key in mon_values.keys():
-            jsondata.gen_data(key, timestamp, mon_values[key], push.hostname, check_type, cluster_name)
+            jsondata.gen_data(key, timestamp, mon_values[key], lib.pushdata.hostname, check_type, cluster_name)
         jsondata.put_json()
-        jsondata.truncate_data()
         #print mon_values
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass
 

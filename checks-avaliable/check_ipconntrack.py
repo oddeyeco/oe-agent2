@@ -1,3 +1,5 @@
+import lib.record_rate
+import lib.pushdata
 import os, sys
 import datetime
 import ConfigParser
@@ -15,14 +17,11 @@ def run_ipconntrack():
         check_type = 'system'
         timestamp = int(datetime.datetime.now().strftime("%s"))
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        push = __import__('pushdata')
-        jsondata=push.JonSon()
-        jsondata.create_data()
-        jsondata.gen_data('conntrack_max', timestamp, max, push.hostname, check_type, cluster_name, reaction)
-        jsondata.gen_data('conntrack_cur', timestamp, cur, push.hostname, check_type, cluster_name)
+        jsondata=lib.pushdata.JonSon()
+        jsondata.prepare_data()
+        jsondata.gen_data('conntrack_max', timestamp, max, lib.pushdata.hostname, check_type, cluster_name, reaction)
+        jsondata.gen_data('conntrack_cur', timestamp, cur, lib.pushdata.hostname, check_type, cluster_name)
         jsondata.put_json()
-        jsondata.truncate_data()
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass

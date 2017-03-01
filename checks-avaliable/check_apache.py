@@ -3,6 +3,9 @@ import os, sys
 import ConfigParser
 import datetime
 import socket
+import lib.pushdata
+import lib.record_rate
+
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
@@ -41,11 +44,9 @@ def run_apache():
         c.close()
 
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        push = __import__('pushdata')
-        value_rate= __import__('record_rate')
-        jsondata=push.JonSon()
-        jsondata.create_data()
-        rate=value_rate.ValueRate()
+        jsondata=lib.pushdata.JonSon()
+        jsondata.prepare_data()
+        rate=lib.record_rate.ValueRate()
         check_type = 'apache'
         metrics_rated=('Total Accesses', 'Total kBytes')
         metrics_stuck=('ReqPerSec', 'BytesPerSec', 'BytesPerReq', 'BusyWorkers', 'IdleWorkers')
@@ -55,7 +56,7 @@ def run_apache():
                 if searchitem in line:
                     key=line.split(' ')[0].replace(':', '')
                     value=line.split(' ')[1]
-                    jsondata.gen_data('apache_'+key, timestamp, value, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data('apache_'+key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
             for searchitem in  metrics_rated:
                 reaction = 0
                 metr_type='Rate'
@@ -63,13 +64,11 @@ def run_apache():
                     key=line.split(' ')[0]+line.split(' ')[1].replace(':', '')
                     value=line.split(' ')[2]
                     value_rate=rate.record_value_rate(key, value, timestamp)
-                    jsondata.gen_data('apache_'+key, timestamp, value_rate, push.hostname, check_type, cluster_name, reaction, metr_type)
+                    jsondata.gen_data('apache_'+key, timestamp, value_rate, lib.pushdata.hostname, check_type, cluster_name, reaction, metr_type)
 
         jsondata.put_json()
-        jsondata.truncate_data()
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass
 
 

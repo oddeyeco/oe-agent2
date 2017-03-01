@@ -1,3 +1,5 @@
+import lib.record_rate
+import lib.pushdata
 import os, sys
 import ConfigParser
 import datetime
@@ -22,12 +24,10 @@ message = "INFO\r\n"
 def run_redis():
     try:
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        push = __import__('pushdata')
-        value_rate= __import__('record_rate')
 
-        jsondata=push.JonSon()
-        jsondata.create_data()
-        rate=value_rate.ValueRate()
+        jsondata=lib.pushdata.JonSon()
+        jsondata.prepare_data()
+        rate=lib.record_rate.ValueRate()
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(5)
         s.connect((redis_host, redis_port))
@@ -48,10 +48,8 @@ def run_redis():
                         value=rate.record_value_rate('redis_keyspace_hits', value, timestamp)
                     if searchitem == 'keyspace_misses':
                         value=rate.record_value_rate('redis_keyspace_misses', value, timestamp)
-                    jsondata.gen_data('redis_'+key, timestamp, value, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data('redis_'+key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
         jsondata.put_json()
-        jsondata.truncate_data()
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass

@@ -4,6 +4,8 @@ import ConfigParser
 import datetime
 import socket
 import json
+import lib.pushdata
+import lib.record_rate
 
 
 config = ConfigParser.RawConfigParser()
@@ -23,11 +25,9 @@ def run_elasticsearch():
     try:
         elastic_stats = urllib2.urlopen(elastic_url, timeout=5).read()
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        push = __import__('pushdata')
-        value_rate= __import__('record_rate')
-        rate=value_rate.ValueRate()
-        jsondata=push.JonSon()
-        jsondata.create_data()
+        rate=lib.record_rate.ValueRate()
+        jsondata=lib.pushdata.JonSon()
+        jsondata.prepare_data()
         stats_json = json.loads(elastic_stats)
         node_keys = stats_json['nodes'].keys()[0]
         data = {}
@@ -91,7 +91,7 @@ def run_elasticsearch():
         for key, value in rated_stats.iteritems():
             reqrate=rate.record_value_rate('es_'+key, value, timestamp)
             if reqrate >=0:
-                jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name, 0, 'Rate')
+                jsondata.gen_data('elasticsearch_'+key, timestamp, reqrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
         data.update({''
                     'elasticsearch_heap_committed':stats_json['nodes'][node_keys]['jvm']['mem']['heap_committed_in_bytes'],
@@ -103,12 +103,10 @@ def run_elasticsearch():
                      })
         for key, value in data.iteritems():
             if key =='elasticsearch_non_heap_used' or key=='elasticsearch_heap_used' or key=='elasticsearch_non_heap_committed' or key=='elasticsearch_heap_committed':
-                jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name, reaction)
+                jsondata.gen_data(key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name, reaction)
             else:
-                jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name)
+                jsondata.gen_data(key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
         jsondata.put_json()
-        jsondata.truncate_data()
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass

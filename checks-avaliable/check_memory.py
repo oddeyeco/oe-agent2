@@ -1,6 +1,9 @@
 import os, sys, re
 import datetime
 import ConfigParser
+import lib.pushdata
+import lib.record_rate
+
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
@@ -10,10 +13,9 @@ reaction = 0
 
 def run_memory():
     sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-    push = __import__('pushdata')
     check_type = 'system'
-    jsondata=push.JonSon()
-    jsondata.create_data()
+    jsondata=lib.pushdata.JonSon()
+    jsondata.prepare_data()
     timestamp = int(datetime.datetime.now().strftime("%s"))
     try:
         memory_stats = ('MemTotal:', 'MemAvailable:', 'Cached:', 'Active:', 'Inactive:')
@@ -29,16 +31,14 @@ def run_memory():
                         memorytimes['mem_'+u[0].replace(':','').replace('Mem','').lower()] = 1024*int(u[1])
 
         for key, value in memorytimes.iteritems():
-            jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name, reaction)
+            jsondata.gen_data(key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name, reaction)
         if 'mem_available' in memorytimes:
             mem_used_percent = 100 - ((memorytimes['mem_available'] * 100) / memorytimes['mem_total'])
-            jsondata.gen_data('mem_used_percent', timestamp, mem_used_percent, push.hostname, check_type, cluster_name)
+            jsondata.gen_data('mem_used_percent', timestamp, mem_used_percent, lib.pushdata.hostname, check_type, cluster_name)
 
         jsondata.put_json()
-        jsondata.truncate_data()
 
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass
 

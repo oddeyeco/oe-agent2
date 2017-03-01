@@ -1,3 +1,5 @@
+import lib.record_rate
+import lib.pushdata
 import pycurl
 import os, sys
 import ConfigParser
@@ -43,11 +45,9 @@ def run_hadoop_datanode():
         hadoop_datanode_stats=json.loads(t.contents)
 
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        push = __import__('pushdata')
-        value_rate= __import__('record_rate')
-        rate=value_rate.ValueRate()
-        jsondata=push.JonSon()
-        jsondata.create_data()
+        rate=lib.record_rate.ValueRate()
+        jsondata=lib.pushdata.JonSon()
+        jsondata.prepare_data()
         timestamp = int(datetime.datetime.now().strftime("%s"))
 
         stats_keys = hadoop_datanode_stats['beans']
@@ -81,24 +81,19 @@ def run_hadoop_datanode():
                 if values in stats_keys[stats_index]:
                     stack_value=stats_keys[stats_index][values]
                     reqrate=rate.record_value_rate('datanode_'+values, stack_value, timestamp)
-                    #mon_values.update({'datanode_'+values: reqrate})
-                    jsondata.gen_data('datanode_'+values, timestamp, reqrate, push.hostname, check_type, cluster_name, 0, 'Rate')
+                    jsondata.gen_data('datanode_'+values, timestamp, reqrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
         for key in mon_values.keys():
             if key is 'datanode_dfsused' or key is 'datanode_space_remaining':
-                jsondata.gen_data(key, timestamp, mon_values[key], push.hostname, check_type, cluster_name, reaction)
+                jsondata.gen_data(key, timestamp, mon_values[key], lib.pushdata.hostname, check_type, cluster_name, reaction)
             else:
-                jsondata.gen_data(key, timestamp, mon_values[key], push.hostname, check_type, cluster_name)
+                jsondata.gen_data(key, timestamp, mon_values[key], lib.pushdata.hostname, check_type, cluster_name)
 
-        #du_total=mon_values['datanode_dfsused']+mon_values['datanode_space_remaining']
         data_du_percent=mon_values['datanode_dfsused']*100/(mon_values['datanode_dfsused']+mon_values['datanode_space_remaining'])
-        jsondata.gen_data('datanode_du_percent', timestamp, data_du_percent, push.hostname, check_type, cluster_name, warn_level, 'Percent')
+        jsondata.gen_data('datanode_du_percent', timestamp, data_du_percent, lib.pushdata.hostname, check_type, cluster_name, warn_level, 'Percent')
 
         jsondata.put_json()
-        jsondata.truncate_data()
-        #print mon_values
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass
 

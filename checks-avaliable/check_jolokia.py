@@ -1,3 +1,5 @@
+import lib.record_rate
+import lib.pushdata
 import urllib2
 import os, sys
 import ConfigParser
@@ -30,12 +32,9 @@ def run_jolokia():
             G1 = True
 
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        push = __import__('pushdata')
-        jsondata=push.JonSon()
-        jsondata.create_data()
-        push = __import__('pushdata')
-        value_rate= __import__('record_rate')
-        rate=value_rate.ValueRate()
+        jsondata=lib.pushdata.JonSon()
+        jsondata.prepare_data()
+        rate=lib.record_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
         heam_mem='java.lang:type=Memory'
@@ -50,16 +49,16 @@ def run_jolokia():
                     key='jolokia_nonheap_'+ metr
                     mon_values=jolo_keys[heap][metr]
                     if metr == 'used':
-                        jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
+                        jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name)
                     else:
-                        jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, reaction)
+                        jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name, reaction)
                 else:
                     key='jolokia_heap_'+ metr
                     mon_values=jolo_keys[heap][metr]
                     if metr == 'used':
-                        jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name)
+                        jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name)
                     else:
-                        jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, reaction)
+                        jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name, reaction)
         if CMS is True:
             collector = ('java.lang:name=ParNew,type=GarbageCollector', 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector')
             for coltype in collector:
@@ -68,10 +67,10 @@ def run_jolokia():
                 CollectionCount = beans['value']['CollectionCount']
                 CollectionTime = beans['value']['CollectionTime']
                 def push_metrics(preffix):
-                    jsondata.gen_data('jolokia_'+preffix+'_LastGcInfo', timestamp, LastGcInfo, push.hostname, check_type, cluster_name)
-                    jsondata.gen_data('jolokia_'+preffix+'_CollectionCount', timestamp, CollectionCount, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data('jolokia_'+preffix+'_LastGcInfo', timestamp, LastGcInfo, lib.pushdata.hostname, check_type, cluster_name)
+                    jsondata.gen_data('jolokia_'+preffix+'_CollectionCount', timestamp, CollectionCount, lib.pushdata.hostname, check_type, cluster_name)
                     CollectionTime_rate = rate.record_value_rate('jolokia_'+preffix+'_CollectionTime', CollectionTime, timestamp)
-                    jsondata.gen_data('jolokia_'+preffix+'_CollectionTime', timestamp, CollectionTime_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
+                    jsondata.gen_data('jolokia_'+preffix+'_CollectionTime', timestamp, CollectionTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
                 if coltype=='java.lang:name=ConcurrentMarkSweep,type=GarbageCollector':
                     push_metrics(preffix='CMS')
                 if coltype == 'java.lang:name=ParNew,type=GarbageCollector':
@@ -102,7 +101,7 @@ def run_jolokia():
                     value = j['value'][name]['duration']
                     v = check_null(value)
                     m_name = 'jolokia_G1_young_LastGcInfo'
-                jsondata.gen_data(m_name, timestamp, v, push.hostname, check_type, cluster_name)
+                jsondata.gen_data(m_name, timestamp, v, lib.pushdata.hostname, check_type, cluster_name)
 
             metr_keys = ('CollectionTime', 'CollectionCount')
             for k, v in enumerate(gc_g1):
@@ -117,11 +116,11 @@ def run_jolokia():
                         v = check_null(value)
                         rate_key=vl+type
                         CollectionTime_rate = rate.record_value_rate('jolokia_' + rate_key, v, timestamp)
-                        jsondata.gen_data('jolokia_G1'+ type+ vl, timestamp, CollectionTime_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
+                        jsondata.gen_data('jolokia_G1'+ type+ vl, timestamp, CollectionTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
                     if ky is 1:
                         value = j['value'][vl]
                         v = check_null(value)
-                        jsondata.gen_data('jolokia_G1' + type + vl, timestamp, v, push.hostname, check_type, cluster_name)
+                        jsondata.gen_data('jolokia_G1' + type + vl, timestamp, v, lib.pushdata.hostname, check_type, cluster_name)
         jolo_threads='java.lang:type=Threading'
         jolo_turl=urllib2.urlopen(jolokia_url+'/'+jolo_threads, timeout=5).read()
         jolo_tjson = json.loads(jolo_turl)
@@ -129,15 +128,13 @@ def run_jolokia():
         for thread_metric in thread_metrics:
             name='jolokia_'+thread_metric
             vlor=jolo_tjson['value'][thread_metric]
-            jsondata.gen_data(name, timestamp, vlor, push.hostname, check_type, cluster_name)
+            jsondata.gen_data(name, timestamp, vlor, lib.pushdata.hostname, check_type, cluster_name)
 
 
         jsondata.put_json()
-        jsondata.truncate_data()
 
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass
 
 

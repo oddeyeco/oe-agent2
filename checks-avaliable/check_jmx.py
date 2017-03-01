@@ -1,3 +1,5 @@
+import lib.record_rate
+import lib.pushdata
 # Requires jpype, Please install it (apt-get install python-jpype)
 import os, sys
 import ConfigParser
@@ -60,19 +62,16 @@ def try_connection():
     except Exception as e:
         pass
         connection = None
-        push = __import__('pushdata')
-        push.print_error(__name__, (e))
+        lib.pushdata.print_error(__name__, (e))
 try_connection()
 
 def run_jmx():
     def run_all(connection):
         try:
             sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-            push = __import__('pushdata')
-            value_rate= __import__('record_rate')
-            rate=value_rate.ValueRate()
-            jsondata=push.JonSon()
-            jsondata.create_data()
+            rate=lib.record_rate.ValueRate()
+            jsondata=lib.pushdata.JonSon()
+            jsondata.prepare_data()
             timestamp = int(datetime.datetime.now().strftime("%s"))
 
             object = 'java.lang:type=Memory'
@@ -82,25 +81,25 @@ def run_jmx():
             heap_attributes=('used', 'committed', 'init', 'max')
             for heap in heap_attributes:
                 value = str(attr.contents.get(heap))
-                jsondata.gen_data('jmx_heap_'+ heap, timestamp, value, push.hostname, check_type, cluster_name)
+                jsondata.gen_data('jmx_heap_'+ heap, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
 
             threads_bean = 'java.lang:type=Threading'
             threads_mbeans=('PeakThreadCount', 'DaemonThreadCount', 'ThreadCount')
             for mbean in threads_mbeans:
                 value = str(connection.getAttribute(javax.management.ObjectName(threads_bean), mbean))
-                jsondata.gen_data('jmx_'+ mbean, timestamp, value, push.hostname, check_type, cluster_name)
+                jsondata.gen_data('jmx_'+ mbean, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
 
             if CMS is True:
                 object = 'java.lang:type=GarbageCollector,name=ConcurrentMarkSweep'
                 GcCount = 'CollectionCount'
                 ColCount = str(connection.getAttribute(javax.management.ObjectName(object), GcCount))
-                jsondata.gen_data('jmx_CMSGcCount', timestamp, ColCount, push.hostname, check_type, cluster_name)
+                jsondata.gen_data('jmx_CMSGcCount', timestamp, ColCount, lib.pushdata.hostname, check_type, cluster_name)
 
                 GcTime = 'CollectionTime'
                 ColTime = connection.getAttribute(javax.management.ObjectName(object), GcTime)
 
                 GcTime_rate = rate.record_value_rate('jmx_CMSGcTime', ColTime.value, timestamp)
-                jsondata.gen_data('jmx_CMSGcTime', timestamp, GcTime_rate, push.hostname, check_type, cluster_name)
+                jsondata.gen_data('jmx_CMSGcTime', timestamp, GcTime_rate, lib.pushdata.hostname, check_type, cluster_name)
                 try:
                     object = 'java.lang:type=GarbageCollector,name=ParNew'
                     PnGcCount = 'CollectionCount'
@@ -110,13 +109,12 @@ def run_jmx():
                     PnColTime = connection.getAttribute(javax.management.ObjectName(object), PnGcTime)
                     PnColTime_value=str(PnColTime.value)
                     strPnColCount=str(PnColCount)
-                    jsondata.gen_data('jmx_' + 'ParNewGcCount', timestamp, strPnColCount, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data('jmx_' + 'ParNewGcCount', timestamp, strPnColCount, lib.pushdata.hostname, check_type, cluster_name)
                     GcTime_rate = rate.record_value_rate('jmx_ParNewGcTime', PnColTime_value, timestamp)
-                    jsondata.gen_data('jmx_ParNewGcTime', timestamp, GcTime_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
+                    jsondata.gen_data('jmx_ParNewGcTime', timestamp, GcTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
                 except Exception as e:
-                    push = __import__('pushdata')
-                    push.print_error(__name__, (e))
+                    lib.pushdata.print_error(__name__, (e))
 
             if G1 is True:
                 object = 'java.lang:type=GarbageCollector,name=G1 Old Generation'
@@ -126,9 +124,9 @@ def run_jmx():
                 OldGcTime = 'CollectionTime'
                 OldColTime = connection.getAttribute(javax.management.ObjectName(object), OldGcTime)
 
-                jsondata.gen_data('jmx_G1_' + 'OldGcCount', timestamp, OldColCount, push.hostname, check_type, cluster_name)
+                jsondata.gen_data('jmx_G1_' + 'OldGcCount', timestamp, OldColCount, lib.pushdata.hostname, check_type, cluster_name)
                 OldGcTime_rate = rate.record_value_rate('jmx_G1_OldGcTime', OldColTime.value, timestamp)
-                jsondata.gen_data('jmx_G1_OldGcTime', timestamp, str(OldGcTime_rate), push.hostname, check_type, cluster_name, 0, 'Rate')
+                jsondata.gen_data('jmx_G1_OldGcTime', timestamp, str(OldGcTime_rate), lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
                 object = 'java.lang:type=GarbageCollector,name=G1 Young Generation'
                 YoungGcCount = 'CollectionCount'
@@ -137,15 +135,13 @@ def run_jmx():
                 YoungGcTime = 'CollectionTime'
                 YoungColTime = connection.getAttribute(javax.management.ObjectName(object), YoungGcTime)
 
-                jsondata.gen_data('jmx_G1_' + 'YoungGcCount', timestamp, str(YoungColCount), push.hostname, check_type, cluster_name)
+                jsondata.gen_data('jmx_G1_' + 'YoungGcCount', timestamp, str(YoungColCount), lib.pushdata.hostname, check_type, cluster_name)
                 YoungColTime_rate = rate.record_value_rate('jmx_G1_YoungColTime', YoungColTime.value, timestamp)
-                jsondata.gen_data('jmx_G1_YoungGcTime', timestamp, YoungColTime_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
+                jsondata.gen_data('jmx_G1_YoungGcTime', timestamp, YoungColTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
             jsondata.put_json()
-            jsondata.truncate_data()
         except Exception as e:
-            push = __import__('pushdata')
-            push.print_error(__name__, (e, java.rmi.ConnectException))
+            lib.pushdata.print_error(__name__, (e, java.rmi.ConnectException))
             try_connection()
             pass
     run_all(connection)

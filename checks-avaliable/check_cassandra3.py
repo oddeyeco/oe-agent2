@@ -5,6 +5,11 @@ import datetime
 import socket
 import json
 
+import lib.pushdata
+import lib.record_rate
+
+
+
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
@@ -19,11 +24,9 @@ reaction=-3
 def run_cassandra3():
     try:
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        push = __import__('pushdata')
-        value_rate= __import__('record_rate')
-        jsondata=push.JonSon()
-        jsondata.create_data()
-        rate=value_rate.ValueRate()
+        jsondata=lib.pushdata.JonSon()
+        jsondata.prepare_data()
+        rate=lib.record_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
 
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
@@ -39,11 +42,11 @@ def run_cassandra3():
                 if heap == 'NonHeapMemoryUsage':
                     key = 'cassa_nonheap_' + metr
                     mon_values = java_lang_metrics['value'][heap][metr]
-                    jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, reaction)
+                    jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name, reaction)
                 else:
                     key = 'cassa_heap_' + metr
                     mon_values = java_lang_metrics['value'][heap][metr]
-                    jsondata.gen_data(key, timestamp, mon_values, push.hostname, check_type, cluster_name, reaction)
+                    jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name, reaction)
 
         cql_statemets = ('PreparedStatementsExecuted', 'RegularStatementsExecuted')
         for cql_statement in cql_statemets:
@@ -51,24 +54,22 @@ def run_cassandra3():
             mon_name='cassa_cql_'+cql_statement
             if mon_value is not None:
                 if mon_value is 0:
-                    jsondata.gen_data(mon_name, timestamp, mon_value, push.hostname, check_type, cluster_name)
+                    jsondata.gen_data(mon_name, timestamp, mon_value, lib.pushdata.hostname, check_type, cluster_name)
                 else:
                     value_rate=rate.record_value_rate('cql_'+mon_name, mon_value, timestamp)
-                    jsondata.gen_data(mon_name, timestamp, value_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
+                    jsondata.gen_data(mon_name, timestamp, value_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
         cache_metrics = ('Hits,scope=KeyCache', 'Requests,scope=KeyCache', 'Requests,scope=RowCache', 'Hits,scope=RowCache')
         for cache_metric in cache_metrics:
             mon_value = cassa_cache_metrics['value']['org.apache.cassandra.metrics:name=' + cache_metric + ',type=Cache']['OneMinuteRate']
             mon_name= 'cassa_'+ str(cache_metric).replace(',scope=', '_')
-            jsondata.gen_data(mon_name, timestamp, mon_value, push.hostname, check_type, cluster_name)
+            jsondata.gen_data(mon_name, timestamp, mon_value, lib.pushdata.hostname, check_type, cluster_name)
 
         copaction_tasks=cassa_copmaction['value']['org.apache.cassandra.metrics:name=PendingTasks,type=Compaction']['Value']
-        jsondata.gen_data('cassa_compaction_pending', timestamp, copaction_tasks, push.hostname, check_type, cluster_name)
+        jsondata.gen_data('cassa_compaction_pending', timestamp, copaction_tasks, lib.pushdata.hostname, check_type, cluster_name)
 
         jsondata.put_json()
-        jsondata.truncate_data()
 
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass

@@ -1,3 +1,5 @@
+import lib.record_rate
+import lib.pushdata
 import pycurl
 import os, sys
 import ConfigParser
@@ -8,17 +10,13 @@ config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/webservers.ini')
 
-haproxy_url = config.get('HAProxy', 'url')
-
 hostname = socket.getfqdn()
-
+haproxy_url = config.get('HAProxy', 'url')
 haproxy_auth = config.get('HAProxy', 'user')+':'+config.get('HAProxy', 'pass')
-#haproxy_upstream = config.get('HAProxy', 'upstream')
 curl_auth = config.getboolean('HAProxy', 'auth')
 cluster_name = config.get('SelfConfig', 'cluster_name')
 
 haproxy_upstream = config.get('HAProxy', 'upstream').split(',')
-
 
 class buffer:
    def __init__(self):
@@ -26,7 +24,6 @@ class buffer:
 
    def body_callback(self, buf):
        self.contents = self.contents + buf
-
 
 def run_haproxy():
     try:
@@ -44,9 +41,8 @@ def run_haproxy():
         c.close()
 
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        push = __import__('pushdata')
-        jsondata=push.JonSon()
-        jsondata.create_data()
+        jsondata=lib.pushdata.JonSon()
+        jsondata.prepare_data()
         check_type = 'haproxy'
         lazy_totals=("FRONTEND", "BACKEND")
         timestamp = int(datetime.datetime.now().strftime("%s"))
@@ -57,13 +53,11 @@ def run_haproxy():
                         upstream=line.split(',')[1]
                         sessions=line.split(',')[4]
                         connrate=line.split(',')[33]
-                        jsondata.gen_data('haproxy_connrate_'+upstream, timestamp, connrate, push.hostname, check_type, cluster_name)
-                        jsondata.gen_data('haproxy_sessions_'+upstream, timestamp, sessions, push.hostname, check_type, cluster_name)
+                        jsondata.gen_data('haproxy_connrate_'+upstream, timestamp, connrate, lib.pushdata.hostname, check_type, cluster_name)
+                        jsondata.gen_data('haproxy_sessions_'+upstream, timestamp, sessions, lib.pushdata.hostname, check_type, cluster_name)
         jsondata.put_json()
-        jsondata.truncate_data()
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass
 
 

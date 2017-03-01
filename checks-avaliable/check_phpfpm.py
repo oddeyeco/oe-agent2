@@ -1,3 +1,5 @@
+import lib.record_rate
+import lib.pushdata
 import pycurl
 import os, sys
 import ConfigParser
@@ -48,25 +50,21 @@ def run_phpfpm():
         max_children=t.contents.splitlines()[12].split(':')[1].replace(" ", "")
         slow_request=t.contents.splitlines()[13].split(':')[1].replace(" ", "")
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        push = __import__('pushdata')
-        value_rate= __import__('record_rate')
-        jsondata=push.JonSon()
-        jsondata.create_data()
-        rate=value_rate.ValueRate()
+        jsondata=lib.pushdata.JonSon()
+        jsondata.prepare_data()
+        rate=lib.record_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
         conns_per_sec=rate.record_value_rate('phpfpm_connections', connections, timestamp)
-        jsondata.gen_data('phpfpm_conns_per_sec', timestamp, conns_per_sec, push.hostname, check_type, cluster_name, 0, 'Rate')
-        jsondata.gen_data('phpfpm_proc_idle', timestamp, proc_idle, push.hostname, check_type, cluster_name)
-        jsondata.gen_data('phpfpm_proc_active', timestamp, proc_active, push.hostname, check_type, cluster_name)
-        jsondata.gen_data('phpfpm_proc_total', timestamp, proc_total, push.hostname, check_type, cluster_name)
-        jsondata.gen_data('phpfpm_max_active', timestamp, max_active, push.hostname, check_type, cluster_name)
-        jsondata.gen_data('phpfpm_max_children', timestamp, max_children, push.hostname, check_type, cluster_name)
-        jsondata.gen_data('phpfpm_slow_request', timestamp, slow_request, push.hostname, check_type, cluster_name)
+        jsondata.gen_data('phpfpm_conns_per_sec', timestamp, conns_per_sec, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+        jsondata.gen_data('phpfpm_proc_idle', timestamp, proc_idle, lib.pushdata.hostname, check_type, cluster_name)
+        jsondata.gen_data('phpfpm_proc_active', timestamp, proc_active, lib.pushdata.hostname, check_type, cluster_name)
+        jsondata.gen_data('phpfpm_proc_total', timestamp, proc_total, lib.pushdata.hostname, check_type, cluster_name)
+        jsondata.gen_data('phpfpm_max_active', timestamp, max_active, lib.pushdata.hostname, check_type, cluster_name)
+        jsondata.gen_data('phpfpm_max_children', timestamp, max_children, lib.pushdata.hostname, check_type, cluster_name)
+        jsondata.gen_data('phpfpm_slow_request', timestamp, slow_request, lib.pushdata.hostname, check_type, cluster_name)
         jsondata.put_json()
-        jsondata.truncate_data()
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass
 
 

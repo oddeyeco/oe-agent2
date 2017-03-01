@@ -1,6 +1,8 @@
 import os, sys
 import datetime
 import ConfigParser
+import lib.pushdata
+import lib.record_rate
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
@@ -27,12 +29,10 @@ crit_level = 100
 
 def run_cpustats():
     sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-    push = __import__('pushdata')
-    value_rate= __import__('record_rate')
     check_type = 'system'
-    jsondata=push.JonSon()
-    jsondata.create_data()
-    rate=value_rate.ValueRate()
+    jsondata=lib.pushdata.JonSon()
+    jsondata.prepare_data()
+    rate=lib.record_rate.ValueRate()
     timestamp = int(datetime.datetime.now().strftime("%s"))
 
     cpucount = 0
@@ -66,7 +66,7 @@ def run_cpustats():
         else:
             utilisation = 0
     except Exception as e:
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
 
 
 
@@ -87,10 +87,10 @@ def run_cpustats():
 
             health_message = err_type + ': CPU Usage is ' + str(d) + ' percent'
             jsondata.send_special("CPU-Percent", timestamp, health_value, health_message, err_type)
-            jsondata.gen_data('cpu_percent', timestamp, d, push.hostname, check_type, cluster_name, 0 , values_type)
+            jsondata.gen_data('cpu_percent', timestamp, d, lib.pushdata.hostname, check_type, cluster_name, 0 , values_type)
         send_special()
     except Exception as e:
-        push.print_error(__name__, (e))
+        lib.pushdata.print_error(__name__, (e))
 
 
 
@@ -104,14 +104,13 @@ def run_cpustats():
                 reaction = -3
             if rated is True:
                 values_rate = rate.record_value_rate(name, value, timestamp)/cpucount
-                jsondata.gen_data(name, timestamp, values_rate, push.hostname, check_type, cluster_name, reaction, values_type)
+                jsondata.gen_data(name, timestamp, values_rate, lib.pushdata.hostname, check_type, cluster_name, reaction, values_type)
             else:
-                jsondata.gen_data(name, timestamp, int(value)/cpucount, push.hostname, check_type, cluster_name, reaction, values_type)
+                jsondata.gen_data(name, timestamp, int(value)/cpucount, lib.pushdata.hostname, check_type, cluster_name, reaction, values_type)
 
 
         jsondata.put_json()
-        jsondata.truncate_data()
     except Exception as e:
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass
 

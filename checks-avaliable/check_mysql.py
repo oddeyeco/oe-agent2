@@ -10,6 +10,8 @@ import MySQLdb
 import datetime
 import ConfigParser
 import os, sys
+from lib.pushdata import JonSon,hostname,print_error
+from lib.record_rate import ValueRate
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
@@ -26,11 +28,9 @@ def run_mysql():
         db = MySQLdb.connect(host=mysql_host, user=mysql_user, passwd=mysql_pass, )
         cur = db.cursor()
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        push = __import__('pushdata')
-        value_rate= __import__('record_rate')
-        jsondata=push.JonSon()
-        jsondata.create_data()
-        rate=value_rate.ValueRate()
+        jsondata=JonSon()
+        jsondata.prepare_data()
+        rate=ValueRate()
         raw_mysqlstats = cur.execute("SHOW GLOBAL STATUS WHERE Variable_name='Connections'"
                             "OR Variable_name='Com_select' "
                             "OR Variable_name='Com_delete_multi' "
@@ -52,14 +52,12 @@ def run_mysql():
             myvalue = row[1]
             if mytype not in non_rate_metrics:
                 myvalue=rate.record_value_rate('mysql_'+mytype, myvalue, timestamp)
-                jsondata.gen_data('mysql_' + mytype, timestamp, myvalue, push.hostname, check_type, cluster_name, 0, 'Rate')
+                jsondata.gen_data('mysql_' + mytype, timestamp, myvalue, hostname, check_type, cluster_name, 0, 'Rate')
             else:
-                jsondata.gen_data('mysql_'+mytype, timestamp, myvalue, push.hostname, check_type, cluster_name)
+                jsondata.gen_data('mysql_'+mytype, timestamp, myvalue, hostname, check_type, cluster_name)
         jsondata.put_json()
-        jsondata.truncate_data()
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        print_error(__name__ , (e))
         pass
 
 

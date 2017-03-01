@@ -1,7 +1,7 @@
 import datetime
-import socket
 import os, sys
 import ConfigParser
+import lib.pushdata
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
@@ -19,13 +19,10 @@ def run_load_average():
         if 'cpu' in line:
             cpucount += 1
     cpucount -=1
-
-    hostname = socket.getfqdn()
     check_type = 'system'
     sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-    push = __import__('pushdata')
-    jsondata=push.JonSon()
-    jsondata.create_data()
+    jsondata=lib.pushdata.JonSon()
+    jsondata.prepare_data()
     timestamp = int(datetime.datetime.now().strftime("%s"))
 
     try:
@@ -46,13 +43,11 @@ def run_load_average():
             jsondata.send_special("Load-Average", timestamp, health_value, health_message, err_type)
         send_special()
 
-        jsondata.gen_data('sys_load_1', timestamp, proc_loadavg[0], hostname, check_type, cluster_name)
-        jsondata.gen_data('sys_load_5', timestamp, proc_loadavg[1], hostname, check_type, cluster_name, reaction)
-        jsondata.gen_data('sys_load_15', timestamp, proc_loadavg[2], hostname, check_type, cluster_name, reaction)
+        jsondata.gen_data('sys_load_1', timestamp, proc_loadavg[0], lib.pushdata.hostname, check_type, cluster_name)
+        jsondata.gen_data('sys_load_5', timestamp, proc_loadavg[1], lib.pushdata.hostname, check_type, cluster_name, reaction)
+        jsondata.gen_data('sys_load_15', timestamp, proc_loadavg[2], lib.pushdata.hostname, check_type, cluster_name, reaction)
 
         jsondata.put_json()
-        jsondata.truncate_data()
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass

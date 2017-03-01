@@ -1,3 +1,5 @@
+import lib.record_rate
+import lib.pushdata
 import pycurl
 import os, sys
 import ConfigParser
@@ -41,11 +43,9 @@ def run_nginx():
         c.close()
 
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        push = __import__('pushdata')
-        value_rate= __import__('record_rate')
-        jsondata=push.JonSon()
-        jsondata.create_data()
-        rate=value_rate.ValueRate()
+        jsondata=lib.pushdata.JonSon()
+        jsondata.prepare_data()
+        rate=lib.record_rate.ValueRate()
         check_type = 'nginx'
 
         timestamp = int(datetime.datetime.now().strftime("%s"))
@@ -61,19 +61,17 @@ def run_nginx():
         handelerate=rate.record_value_rate('nginx_handled', handled, timestamp)
         acceptrate=rate.record_value_rate('nginx_accept', accept, timestamp)
 
-        jsondata.gen_data('nginx_connections', timestamp, connections, push.hostname, check_type, cluster_name)
-        jsondata.gen_data('nginx_requests', timestamp, reqrate, push.hostname, check_type, cluster_name, 0, 'Rate')
-        jsondata.gen_data('nginx_handled', timestamp, handelerate, push.hostname, check_type, cluster_name, 0, 'Rate')
-        jsondata.gen_data('nginx_accept', timestamp, acceptrate, push.hostname, check_type, cluster_name, 0, 'Rate')
-        jsondata.gen_data('nginx_reading', timestamp, reading, push.hostname, check_type, cluster_name)
-        jsondata.gen_data('nginx_writing', timestamp, writing, push.hostname, check_type, cluster_name)
-        jsondata.gen_data('nginx_waiting', timestamp, waiting, push.hostname, check_type, cluster_name)
+        jsondata.gen_data('nginx_connections', timestamp, connections, lib.pushdata.hostname, check_type, cluster_name)
+        jsondata.gen_data('nginx_requests', timestamp, reqrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+        jsondata.gen_data('nginx_handled', timestamp, handelerate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+        jsondata.gen_data('nginx_accept', timestamp, acceptrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+        jsondata.gen_data('nginx_reading', timestamp, reading, lib.pushdata.hostname, check_type, cluster_name)
+        jsondata.gen_data('nginx_writing', timestamp, writing, lib.pushdata.hostname, check_type, cluster_name)
+        jsondata.gen_data('nginx_waiting', timestamp, waiting, lib.pushdata.hostname, check_type, cluster_name)
 
         jsondata.put_json()
-        jsondata.truncate_data()
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass
 
 

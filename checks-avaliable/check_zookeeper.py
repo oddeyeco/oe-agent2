@@ -1,3 +1,5 @@
+import lib.record_rate
+import lib.pushdata
 import os, sys
 import ConfigParser
 import datetime
@@ -20,12 +22,10 @@ message = "mntr"
 def run_zookeeper():
     try:
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        push = __import__('pushdata')
-        value_rate= __import__('record_rate')
 
-        jsondata=push.JonSon()
-        jsondata.create_data()
-        rate=value_rate.ValueRate()
+        jsondata=lib.pushdata.JonSon()
+        jsondata.prepare_data()
+        rate=lib.record_rate.ValueRate()
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(5)
         s.connect((zk_host, zk_port))
@@ -48,12 +48,10 @@ def run_zookeeper():
 
                     if searchitem == 'zk_packets_received' or searchitem == 'zk_packets_sent':
                         value_rate=rate.record_value_rate(searchitem, value, timestamp)
-                        jsondata.gen_data(searchitem, timestamp, value_rate, push.hostname, check_type, cluster_name, 0, 'Rate')
+                        jsondata.gen_data(searchitem, timestamp, value_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
                     else:
-                        jsondata.gen_data(key, timestamp, value, push.hostname, check_type, cluster_name)
+                        jsondata.gen_data(key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
         jsondata.put_json()
-        jsondata.truncate_data()
     except Exception as e:
-        push = __import__('pushdata')
-        push.print_error(__name__ , (e))
+        lib.pushdata.print_error(__name__ , (e))
         pass
