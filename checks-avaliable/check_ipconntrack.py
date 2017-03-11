@@ -4,6 +4,7 @@ import os, sys
 import datetime
 import ConfigParser
 
+
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
 cluster_name = config.get('SelfConfig', 'cluster_name')

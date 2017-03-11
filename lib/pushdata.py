@@ -12,8 +12,6 @@ import time
 import uuid
 #import zlib
 
-
-
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0] + '/conf/config.ini')
 cluster_name = config.get('SelfConfig', 'cluster_name')
@@ -138,9 +136,7 @@ class JonSon(object):
                 pass
 
             def start_cache(data):
-                #push = __import__('pushdata')
                 print_error(c.getinfo(pycurl.RESPONSE_CODE), 'Got non ubnormal response code, started to cache')
-                #import uuid
                 tmpdir = config.get('SelfConfig', 'tmpdir')
                 filename = tmpdir + '/' + str(uuid.uuid4()) + '.cached'
                 file = open(filename, "w")
@@ -151,10 +147,8 @@ class JonSon(object):
                 start_cache(data)
 
         except Exception as e:
-            #push = __import__('pushdata')
             print_error(__name__, (e))
             try:
-                #import uuid
                 tmpdir = config.get('SelfConfig', 'tmpdir')
                 filename = tmpdir + '/' + str(uuid.uuid4()) + '.cached'
                 file = open(filename, "w")
@@ -167,10 +161,6 @@ class JonSon(object):
         if tsd_oddeye is True:
             json_data = json.dumps(self.data['metric'])
             send_data = barlus_style + json_data
-            # jonson=JonSon()
-            # jonson.httt_set_opt(send_data)
-            # jonson.upload_it(send_data)
-            # logging.critical(" %s : " % send_data)
             self.httt_set_opt(tsdb_url, send_data)
             self.upload_it(send_data)
 
@@ -178,12 +168,6 @@ class JonSon(object):
             json_data = json.dumps(self.data['metric'])
             if curl_auth is True:
                 c.setopt(pycurl.USERPWD, tsdb_auth)
-            # c.setopt(pycurl.URL, tsdb_url)
-            # c.setopt(pycurl.POST, 0)
-            # c.setopt(pycurl.POSTFIELDS, json_data)
-            # c.setopt(pycurl.VERBOSE, 0)
-            # c.setopt(pycurl.TIMEOUT, 10)
-            # c.setopt(pycurl.NOSIGNAL, 5)
             self.httt_set_opt(tsdb_url, json_data)
             self.upload_it(json_data)
 
@@ -200,15 +184,8 @@ class JonSon(object):
             line_data = '%s' % ''.join(map(str, self.data))
             if curl_auth is True:
                 c.setopt(pycurl.USERPWD, influx_auth)
-            # c.setopt(pycurl.URL, influx_url)
-            # c.setopt(pycurl.POST, 0)
-            # c.setopt(pycurl.POSTFIELDS, line_data)
-            # c.setopt(pycurl.VERBOSE, 0)
-            # c.setopt(pycurl.TIMEOUT, 10)
-            # c.setopt(pycurl.NOSIGNAL, 5)
             self.httt_set_opt(influx_url, line_data)
             self.upload_it(line_data)
-            #logging.critical(" %s : " % line_data)
 
 # ------------------------------------------------------------------------------- #
     def send_special(self, module, timestamp, value, error_msg, mytype, reaction=0):
@@ -225,9 +202,6 @@ class JonSon(object):
                                    "tags": {"host": hostname,"cluster": cluster_name, "group": host_group}})
                 send_err_msg = json.dumps(error_data)
                 send_error_data = barlus_style + send_err_msg
-                # jonson = JonSon()
-                # jonson.httt_set_opt(send_error_data)
-                # jonson.upload_it(send_error_data)
                 self.httt_set_opt(tsdb_url, send_error_data)
                 self.upload_it(send_error_data)
         except:
@@ -262,13 +236,12 @@ def print_error(module, e):
             send_error_data = barlus_style + send_err_msg
 
             jonson=JonSon()
-            jonson.httt_set_opt(send_error_data)
+            jonson.httt_set_opt(tsdb_url, send_error_data)
             c.setopt(pycurl.POSTFIELDS, send_error_data)
             c.perform()
             logging.critical(" %s : " % module + str(e))
         else:
             logging.critical(" %s : " % module + str(e))
-            #logging.critical(" status code: %s : " % str(c.getinfo(pycurl.HTTP_CODE))+ str(e))
     try:
         if module == 'pushdata':
             logging.critical(" %s : " % "Cannot connect to Barlus" + str(e))
