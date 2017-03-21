@@ -19,7 +19,7 @@ check_type = 'ceph'
 def run_ceph():
     try:
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        jsondata=lib.lib.pushdatadata.lib.pushdata.JonSon()
+        jsondata=lib.pushdata.JonSon()
         jsondata.prepare_data()
         timestamp = int(datetime.datetime.now().strftime("%s"))
         command='ceph -n ' + ceph_client +' --keyring='+ ceph_keyring + ' pg stat -f json'
