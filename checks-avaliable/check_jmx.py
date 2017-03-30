@@ -18,7 +18,6 @@ HOST= config.get('JMX', 'host')
 PORT= config.get('JMX', 'port')
 USER= config.get('JMX', 'user')
 PASS= config.get('JMX', 'pass')
-TYPE= config.get('JMX', 'gctype')
 JAVA= config.get('JMX', 'java_home')
 URL = 'service:jmx:rmi:///jndi/rmi://'+HOST+':'+PORT+'/jmxrmi'
 
@@ -26,11 +25,19 @@ hostname = socket.getfqdn()
 cluster_name = config.get('SelfConfig', 'cluster_name')
 check_type = 'jmx'
 
+if config.has_option('JMX', 'gctype'):
+    TYPE = config.get('JMX', 'gctype')
+else:
+    TYPE=None
+
 if TYPE == 'G1':
     CMS=False
     G1=True
-if TYPE == 'CMS':
+elif TYPE == 'CMS':
     CMS=True
+    G1=False
+else:
+    CMS=False
     G1=False
 
 os.environ['JAVA_HOME'] = JAVA
