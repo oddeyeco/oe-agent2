@@ -39,16 +39,26 @@ def run_mysql():
                             "OR Variable_name='Com_update' "
                             "OR Variable_name LIKE 'Bytes_%' "
                             "OR Variable_name='Queries' "
+                            "OR Variable_name='Questions' "        
                             "OR Variable_name='Slow_queries' "
                             "OR Variable_name='Qcache_hits' "
                             "OR Variable_name='Open_files' "
                             "OR Variable_name='Max_used_connections' "
                             "OR Variable_name='Threads_connected' "
+                            "OR Variable_name='Innodb_rows_deleted' "
+                            "OR Variable_name='Innodb_rows_inserted' "
+                            "OR Variable_name='Innodb_rows_read' "        
+                            "OR Variable_name='Innodb_rows_updated' "
+                            "OR Variable_name='Innodb_data_read' "
+                            "OR Variable_name='Innodb_data_writes' "
+                            "OR Variable_name='Innodb_buffer_pool_read_requests' "
+                            "OR Variable_name='Innodb_buffer_pool_write_requests' "
+                            "OR Variable_name='Innodb_data_fsyncs' "
                             "")
         timestamp = int(datetime.datetime.now().strftime("%s"))
         non_rate_metrics=('Max_used_connections', 'Slow_queries', 'Open_files', 'Threads_connected')
         for row in cur.fetchall():
-            mytype = row[0]
+            mytype = row[0].lower()
             myvalue = row[1]
             if mytype not in non_rate_metrics:
                 myvalue=rate.record_value_rate('mysql_'+mytype, myvalue, timestamp)
