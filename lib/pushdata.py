@@ -120,9 +120,10 @@ class JonSon(object):
         c.setopt(pycurl.VERBOSE, 0)
         c.setopt(pycurl.TIMEOUT, 3)
         c.setopt(pycurl.NOSIGNAL, 5)
-        c.setopt(pycurl.USERAGENT, 'PuyPuy v.02')
+        c.setopt(pycurl.USERAGENT, 'PuyPuy v.03')
         c.setopt(pycurl.ENCODING, "gzip,deflate")
         c.setopt(pycurl.WRITEFUNCTION, lambda x: None)
+
 
     def upload_it(self, data):
         http_response_codes = [100, 101, 102, 200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]
@@ -192,13 +193,13 @@ class JonSon(object):
         try:
             if tsd_oddeye is True:
                 error_data = []
-                error_data.append({"metric": module, \
-                                   "timestamp": timestamp, \
-                                   "value": value, \
-                                   "message": error_msg, \
-                                   "type": "Special", \
-                                   "status": mytype, \
-                                   "reaction": reaction, \
+                error_data.append({"metric": module,
+                                   "timestamp": timestamp,
+                                   "value": value,
+                                   "message": error_msg,
+                                   "type": "Special",
+                                   "status": mytype,
+                                   "reaction": reaction,
                                    "tags": {"host": hostname,"cluster": cluster_name, "group": host_group}})
                 send_err_msg = json.dumps(error_data)
                 send_error_data = barlus_style + send_err_msg
@@ -219,13 +220,13 @@ def print_error(module, e):
             error_msg = str(e).replace('[', '').replace(']', '').replace('<', '').replace('>', '').replace('(', '').replace(')', '').replace("'", '').replace('"', '')
             timestamp = int(datetime.datetime.now().strftime("%s"))
             error_data = []
-            error_data.append({"metric": module, \
-                               "timestamp": timestamp, \
-                               "value": 16, \
-                               "message": error_msg, \
-                               "status": "ERROR", \
-                               "type": "Special", \
-                               "reaction": negative_handler, \
+            error_data.append({"metric": module,
+                               "timestamp": timestamp,
+                               "value": 16,
+                               "message": error_msg,
+                               "status": "ERROR",
+                               "type": "Special",
+                               "reaction": negative_handler,
                                "tags": {"host": hostname, "cluster": cluster_name, "group": host_group}})
             send_err_msg = json.dumps(error_data)
             if sandbox is True:
@@ -250,3 +251,13 @@ def print_error(module, e):
             send_error_msg()
     except Exception as err:
         logging.critical(" %s : " % "Cannot send error" + str(err))
+
+
+    # log_file = config.get('SelfConfig', 'log_file')
+    # logger = logging.getLogger("PuyPuy")
+    # logger.setLevel(logging.INFO)
+    # formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+    # handler = logging.FileHandler(log_file)
+    # handler.setFormatter(formatter)
+    # logger.addHandler(handler)
+    # logging.info(message)

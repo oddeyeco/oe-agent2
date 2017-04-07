@@ -15,9 +15,10 @@
 SCRIPT_DIR="$(cd $(dirname $0) && pwd)"
 PYTHON=`which python`
 cd $SCRIPT_DIR
-RUNUSER=nobody
+RUNUSER=pastor
 
 TMPDIR=`grep tmpdir conf/config.ini|  awk '{print $NF}'`
+PIDFILE=`grep pid_file conf/config.ini  | awk '{print $2}'`
 
     case "$1" in
 
@@ -34,12 +35,19 @@ TMPDIR=`grep tmpdir conf/config.ini|  awk '{print $NF}'`
 
     stop)
     su $RUNUSER -s /bin/bash -c "$PYTHON puypuy.py stop"
-    rm -f checks-enabled/*.pyc
+    rm -f checks_enabled/*.pyc
     ;;
 
     restart)
     su $RUNUSER -s /bin/bash -c "$PYTHON puypuy.py stop"
-    sleep 1
+
+    while [ -f  $PIDFILE ];
+        do
+            echo -n '.'
+            sleep 1
+        done
+        echo
+
     su $RUNUSER -s /bin/bash -c "$PYTHON puypuy.py start"
     ;;
     *)
