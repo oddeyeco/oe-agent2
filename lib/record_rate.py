@@ -1,3 +1,5 @@
+import puylogger
+
 def init():
     global last_value
     last_value = {}
@@ -20,10 +22,11 @@ class ValueRate(object):
                 last_value.update({mytype:myvalue})
                 ValueRate.metrics_value_rate = mytype+'_timestamp'
                 last_value.update({ValueRate.metrics_value_rate:timestamp})
+                if puylogger.debug_log:
+                    puylogger.print_message(__name__ + ' ' + str(mytype) + ' ' + str(last_value))
                 if metrics_rate < 0:
                     metrics_rate = 1
                 return metrics_rate
-
             except Exception as e:
                 push = __import__('pushdata')
                 push.print_error(__name__ , (e))
@@ -31,4 +34,6 @@ class ValueRate(object):
 
     def update_timestamp(self, timestamp):
         pass
+
+
 
