@@ -5,29 +5,32 @@ PuyPuy is python2 metrics collection daemon for OddEye, which also works with Ka
 
 Main idea behind PuyPuy is simplicity and less as possible dependencies, it is tested on Debian and Ubuntu systems, but should work on any Linux system.   
 
-To install PuyPuy just clone our repository, make sure that you have few python dependency modules (pycurl, daemon) for base program.
-
-If you use specific checks like check_mysql, MySQLdb should also be installed.
-If you are going to use JMX check you will need module called python-jpype. 
-
-Standard python-jpype which comes with Debian has dependency of default-jre, so apt-get install python-jpype will install lots of unwanted software, especially if you use Host-Spot JVM. 
-To avoid that we have recreated python-jpype and removed default-jre dependency. You can download and use it. 
-
-    wget http://apt.netangels.net/pool/main/p/python-jpype/python-jpype_0.5.4.2-3_amd64.deb
-    dpkg -i python-jpype_0.5.4.2-3_amd64.deb
-
-Tested on Debian 7 and 8, most likely will work for Ubuntu 
-
-If you like python pip, then :
+To install PuyPuy just clone our repository. Base program requires only pycurl as external dependency. 
+On Debian/Ubuntu you can install it via apt-get
  
-    pip install jpype1
+    apt-get install python-pycurl 
+On RedHat systems:
+ 
+    yum install python-pycurl
+Via python pip: 
+
+    pip install pycurl
+
+Some checks requires additional modules for example check_mysql requires MySQLdb. So make sure to install it before using MySQL check 
+Debian/Ubuntu : 
+
+    apt-get install python-mysqldb
+
+Python pip: 
+    
+    pip install MySQL-python
     
 Make your changes if needed in config.ini and run 
 
     ./puypuy.sh start
 Python daemon process will start, run all python scripts from checks_available directory as well as all check_* files scripts_available directory. 
 
-###Main Config
+### Main Config
 
 OddEye client (PuyPuy) uses simple ini files to configure main service and all checks. Configs are splitted into sections. Section [SelfConfig] contains base config parameters like checks interval, log/pid file location as well as some basic tags. 
 
@@ -43,7 +46,7 @@ cluster_name and host_group are placeholders for tags for better manageability.
 
 In section [TSDB] you should set correct backend and uri. 
 
-###Back End Config
+### Back End Config
 To make it run you need to change **uuid** to one which you got during registration and start PuyPuy, optionally change run user from puypuy.sh and start 
 
     ./puypuy.sh start 
@@ -115,7 +118,7 @@ PuyPuy is completely stateless, so if you want to scale Backend, you can use any
 For all types of REST Backens (OpenTSDB, KairosDB, InfluxDB) config fields user/pass are mandatory even if you do not user authentication at backend.
 So **Do not delete authentication parameters**,  just write something meaningless and use it as placeholder. 
 
-###Configure modules
+### Configure modules
 
 By default all checks are disabled . To enable check you need to create symlink  or copy check module from PUYPUY_HOME/checks_available to PUYPUY_HOME/checks_enable checks-available
 
@@ -143,7 +146,7 @@ Some checks depends on non standard python modules, like check_mysql.py depends 
     pip install MySQL-python
     '''
 
-###Create own python module 
+### Create own python module 
 
 Create file in checks_enabled directory with name check_checkname.py, inside script you should have function with name runcheck() (Here you actual check should live). Naming of check files and check functions is important. Name of files should be check_something.py, main function inside it which will run in loop and do actual checks should be named runcheck(). 
 Your check should contain some  minimal imports in order to talk to main program: 
@@ -185,7 +188,7 @@ Next push data to TSDB and truncate local copy:
 		jsondata.gen_data(key, timestamp, value_rate, lib.pushdata, check_type, cluster_name)
 	jsondata.put_json()
 
-###Create custom non python module 
+### Create custom non python module 
 
 To run custom script  like Bash, Perl etc.. Create scripts in format *check_name.extension* in folder scripts_enabled. 
 All is needed from custom is to system out values in right order, Below is sample Bash scripts, which generates random number and send to collector for graphing: Make sure to have check_style parameter (stack/rate). This is for telling main program if it should calculate value rates or just push data as it comes. 
@@ -205,7 +208,7 @@ All is needed from custom is to system out values in right order, Below is sampl
 	echo $mytype $myvalue $check_type $check_style
 	echo -n $mytype2 $myvalue2 $check_type2 $check_style2
 
-###OddEye Specific 
+### OddEye Specific 
 
 As OddEye is completely push based and our servers does not have any direct access to your infrastructure we need special check which will determine if particular host is alive or not. Thus we made small module, which will call our servers and send response times as any other module do. We will generate host alive parameter based based on this. If you want to have host aliveness test just enable check_oddeye.py as you will do with any other python check:
 
