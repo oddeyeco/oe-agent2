@@ -1,164 +1,171 @@
 import lib.record_rate
 import lib.pushdata
-# Requires jpype, Please install it (apt-get install python-jpype)
-import os, sys
+import lib.puylogger
+import lib.jolostart
+import urllib2
+import os
+import sys
 import ConfigParser
 import datetime
 import socket
-import jpype
-from jpype import java
-from jpype import javax
+import json
 
 config = ConfigParser.RawConfigParser()
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/hadoop.ini')
-
-HOST= config.get('HBase-Rest', 'host')
-PORT= config.get('HBase-Rest', 'port')
-USER= config.get('HBase-Rest', 'user')
-PASS= config.get('HBase-Rest', 'pass')
-JAVA= config.get('HBase-Rest', 'java_home')
-URL = 'service:jmx:rmi:///jndi/rmi://'+HOST+':'+PORT+'/jmxrmi'
+config.read(os.path.split(os.path.dirname(__file__))[0] + '/conf/config.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0] + '/conf/hadoop.ini')
 
 hostname = socket.getfqdn()
+hrest_url = config.get('HBase-Rest', 'url')
+
 cluster_name = config.get('SelfConfig', 'cluster_name')
+java = config.get('HBase-Rest', 'java')
+juser = config.get('HBase-Rest', 'user')
+jclass = config.get('HBase-Rest', 'class')
 check_type = 'hbase'
+reaction = -3
 
-if config.has_option('HBase-Rest', 'gctype'):
-    TYPE = config.get('HBase-Rest', 'gctype')
-else:
-    TYPE=None
-
-if TYPE == 'G1':
-    CMS=False
-    G1=True
-elif TYPE == 'CMS':
-    CMS=True
-    G1=False
-else:
-    CMS=False
-    G1=False
-
-os.environ['JAVA_HOME'] = JAVA
-
-JAVA = config.get('HBase-Rest', 'java_home')
-
-def init_jvm(jvmpath=None):
-    if jpype.isJVMStarted():
-        return
-    else:
-        jpype.startJVM(jpype.getDefaultJVMPath())
-    if not jpype.isThreadAttachedToJVM():
-        jpype.attachThreadToJVM()
-
-init_jvm()
-
-
-def try_connection():
-    try:
-        os.environ['JAVA_HOME'] = JAVA
-        jhash = java.util.HashMap()
-        jarray = jpype.JArray(java.lang.String)([USER, PASS])
-        jhash.put(javax.management.remote.JMXConnector.CREDENTIALS, jarray);
-        jmxurl = javax.management.remote.JMXServiceURL(URL)
-        jmxsoc = javax.management.remote.JMXConnectorFactory.connect(jmxurl, jhash)
-        global connection
-        connection = jmxsoc.getMBeanServerConnection();
-    except Exception as e:
-        pass
-        connection = None
-        lib.pushdata.print_error(__name__, (e))
-try_connection()
+lib.jolostart.do_joloikia(java, juser, jclass)
 
 def runcheck():
-    def run_all(connection):
+    try:
+        data_dict = json.loads(urllib2.urlopen(hrest_url + '/java.lang:type=GarbageCollector,name=*', timeout=5).read())
+        ConcurrentMarkSweep = 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector'
+        G1Gc = 'java.lang:name=G1 Young Generation,type=GarbageCollector'
+
+        if ConcurrentMarkSweep in data_dict['value']:
+            CMS = True
+            G1 = False
+        elif G1Gc in data_dict['value']:
+            CMS = False
+            G1 = True
+        else:
+            CMS = False
+            G1 = False
+
+        sys.path.append(os.path.split(os.path.dirname(__file__))[0] + '/lib')
+        jsondata = lib.pushdata.JonSon()
+        jsondata.prepare_data()
+        rate = lib.record_rate.ValueRate()
+        timestamp = int(datetime.datetime.now().strftime("%s"))
+        sys.path.append(os.path.split(os.path.dirname(__file__))[0] + '/lib')
+        heam_mem = 'java.lang:type=Memory'
+        jolo_url = urllib2.urlopen(hrest_url + '/' + heam_mem, timeout=5).read()
+        jolo_json = json.loads(jolo_url)
+        jolo_keys = jolo_json['value']
+        metr_name = ('used', 'committed', 'max')
+        heap_type = ('NonHeapMemoryUsage', 'HeapMemoryUsage')
+        for heap in heap_type:
+            for metr in metr_name:
+                if heap == 'NonHeapMemoryUsage':
+                    key = 'hrest_nonheap_' + metr
+                    mon_values = jolo_keys[heap][metr]
+                    if metr == 'used':
+                        jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name)
+                    else:
+                        jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name, reaction)
+                else:
+                    key = 'hrest_heap_' + metr
+                    mon_values = jolo_keys[heap][metr]
+                    if metr == 'used':
+                        jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name)
+                    else:
+                        jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name, reaction)
+        if CMS is True:
+            collector = ('java.lang:name=ParNew,type=GarbageCollector', 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector')
+            for coltype in collector:
+                beans = json.loads(urllib2.urlopen(hrest_url + '/' + coltype, timeout=5).read())
+                if beans['value']['LastGcInfo']:
+                    LastGcInfo = beans['value']['LastGcInfo']['duration']
+                CollectionCount = beans['value']['CollectionCount']
+                CollectionTime = beans['value']['CollectionTime']
+
+                def push_metrics(preffix):
+                    jsondata.gen_data('hrest_' + preffix + '_CollectionCount', timestamp, CollectionCount, lib.pushdata.hostname, check_type, cluster_name)
+                    CollectionTime_rate = rate.record_value_rate('hrest_' + preffix + '_CollectionTime', CollectionTime, timestamp)
+                    jsondata.gen_data('hrest_' + preffix + '_CollectionTime', timestamp, CollectionTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+                    if 'LastGcInfo' in locals():
+                        jsondata.gen_data('hrest_' + preffix + '_LastGcInfo', timestamp, LastGcInfo, lib.pushdata.hostname, check_type, cluster_name)
+
+                if coltype == 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector':
+                    push_metrics(preffix='CMS')
+                if coltype == 'java.lang:name=ParNew,type=GarbageCollector':
+                    push_metrics(preffix='ParNew')
+
+        if G1 is True:
+            gc_g1 = ('/java.lang:name=G1%20Old%20Generation,type=GarbageCollector', '/java.lang:name=G1%20Young%20Generation,type=GarbageCollector')
+
+            def check_null(value):
+                if value is None:
+                    value = 0
+                    return value
+                else:
+                    return value
+
+            for k, v in enumerate(gc_g1):
+                j = json.load(urllib2.urlopen(hrest_url + v, timeout=5))
+                name = 'LastGcInfo'
+                if k is 0:
+                    try:
+                        value = j['value'][name]['duration']
+                        v = check_null(value)
+                    except:
+                        v = 0
+                        pass
+                    m_name = 'hrest_G1_old_LastGcInfo'
+                if k is 1:
+                    value = j['value'][name]['duration']
+                    v = check_null(value)
+                    m_name = 'hrest_G1_young_LastGcInfo'
+                jsondata.gen_data(m_name, timestamp, v, lib.pushdata.hostname, check_type, cluster_name)
+
+            metr_keys = ('CollectionTime', 'CollectionCount')
+            for k, v in enumerate(gc_g1):
+                j = json.load(urllib2.urlopen(hrest_url + v, timeout=5))
+                if k is 0:
+                    type = '_old_'
+                if k is 1:
+                    type = '_young_'
+                for ky, vl in enumerate(metr_keys):
+                    if ky is 0:
+                        value = j['value'][vl]
+                        v = check_null(value)
+                        rate_key = vl + type
+                        CollectionTime_rate = rate.record_value_rate('hrest_' + rate_key, v, timestamp)
+                        jsondata.gen_data('hrest_G1' + type + vl, timestamp, CollectionTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+                    if ky is 1:
+                        value = j['value'][vl]
+                        v = check_null(value)
+                        jsondata.gen_data('hrest_G1' + type + vl, timestamp, v, lib.pushdata.hostname, check_type, cluster_name)
+        jolo_threads = 'java.lang:type=Threading'
+        jolo_turl = urllib2.urlopen(hrest_url + '/' + jolo_threads, timeout=5).read()
+        jolo_tjson = json.loads(jolo_turl)
+        thread_metrics = ('TotalStartedThreadCount', 'PeakThreadCount', 'ThreadCount', 'DaemonThreadCount')
+        for thread_metric in thread_metrics:
+            name = 'hrest_' + thread_metric
+            vlor = jolo_tjson['value'][thread_metric]
+            jsondata.gen_data(name, timestamp, vlor, lib.pushdata.hostname, check_type, cluster_name)
+
+        jolo_thrift = 'Hadoop:service=HBase,name=REST'
+        jolo_trurl = urllib2.urlopen(hrest_url + '/' + jolo_thrift, timeout=5).read()
+        jolo_tjson = json.loads(jolo_trurl)
+        hrmetrics = ('requests', 'PauseTimeWithGc_99th_percentile', 'PauseTimeWithGc_90th_percentile',
+                     'PauseTimeWithoutGc_90th_percentile', 'PauseTimeWithoutGc_99th_percentile',
+                     'successfulDelete', 'successfulGet', 'successfulPut', 'successfulScanCount',
+                     'failedDelete', 'failedGet', 'failedPut', 'failedScanCount'
+                     )
+        for thread_metric in hrmetrics:
+            name = 'hrest_' + thread_metric
+            blor = jolo_tjson['value'][thread_metric]
+            jsondata.gen_data(name, timestamp, blor, lib.pushdata.hostname, check_type, cluster_name)
+
+        jsondata.put_json()
+
+    except Exception as e:
+        lib.pushdata.print_error(__name__, (e))
         try:
-            sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-            rate=lib.record_rate.ValueRate()
-            jsondata=lib.pushdata.JonSon()
-            jsondata.prepare_data()
-            timestamp = int(datetime.datetime.now().strftime("%s"))
-
-            object = 'java.lang:type=Memory'
-            attribute = 'HeapMemoryUsage'
-            attr = connection.getAttribute(javax.management.ObjectName(object), attribute)
-
-            heap_attributes=('used', 'committed', 'init', 'max')
-            for heap in heap_attributes:
-                value = str(attr.contents.get(heap))
-                jsondata.gen_data('hbrest_heap_'+ heap, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
-
-            threads_bean = 'java.lang:type=Threading'
-            threads_mbeans=('PeakThreadCount', 'DaemonThreadCount', 'ThreadCount')
-            for mbean in threads_mbeans:
-                value = str(connection.getAttribute(javax.management.ObjectName(threads_bean), mbean))
-                jsondata.gen_data('hbrest_'+ mbean, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
-
-            if CMS is True:
-                object = 'java.lang:type=GarbageCollector,name=ConcurrentMarkSweep'
-                GcCount = 'CollectionCount'
-                ColCount = str(connection.getAttribute(javax.management.ObjectName(object), GcCount))
-                jsondata.gen_data('hbrest_CMSGcCount', timestamp, ColCount, lib.pushdata.hostname, check_type, cluster_name)
-
-                GcTime = 'CollectionTime'
-                ColTime = connection.getAttribute(javax.management.ObjectName(object), GcTime)
-
-                GcTime_rate = rate.record_value_rate('hbrest_CMSGcTime', ColTime.value, timestamp)
-                jsondata.gen_data('hbrest_CMSGcTime', timestamp, GcTime_rate, lib.pushdata.hostname, check_type, cluster_name)
-                try:
-                    object = 'java.lang:type=GarbageCollector,name=ParNew'
-                    PnGcCount = 'CollectionCount'
-                    PnColCount = connection.getAttribute(javax.management.ObjectName(object), PnGcCount)
-
-                    PnGcTime = 'CollectionTime'
-                    PnColTime = connection.getAttribute(javax.management.ObjectName(object), PnGcTime)
-                    PnColTime_value=str(PnColTime.value)
-                    strPnColCount=str(PnColCount)
-                    jsondata.gen_data('hbrest_' + 'ParNewGcCount', timestamp, strPnColCount, lib.pushdata.hostname, check_type, cluster_name)
-                    GcTime_rate = rate.record_value_rate('hbrest_ParNewGcTime', PnColTime_value, timestamp)
-                    jsondata.gen_data('hbrest_ParNewGcTime', timestamp, GcTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
-
-                except Exception as e:
-                    lib.pushdata.print_error(__name__, (e))
-
-            if G1 is True:
-                object = 'java.lang:type=GarbageCollector,name=G1 Old Generation'
-                OldGcCount = 'CollectionCount'
-                OldColCount = str(connection.getAttribute(javax.management.ObjectName(object), OldGcCount))
-
-                OldGcTime = 'CollectionTime'
-                OldColTime = connection.getAttribute(javax.management.ObjectName(object), OldGcTime)
-
-                jsondata.gen_data('hbrest_G1_' + 'OldGcCount', timestamp, OldColCount, lib.pushdata.hostname, check_type, cluster_name)
-                OldGcTime_rate = rate.record_value_rate('hbrest_G1_OldGcTime', OldColTime.value, timestamp)
-                jsondata.gen_data('hbrest_G1_OldGcTime', timestamp, str(OldGcTime_rate), lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
-
-                object = 'java.lang:type=GarbageCollector,name=G1 Young Generation'
-                YoungGcCount = 'CollectionCount'
-                YoungColCount = connection.getAttribute(javax.management.ObjectName(object), YoungGcCount)
-
-                YoungGcTime = 'CollectionTime'
-                YoungColTime = connection.getAttribute(javax.management.ObjectName(object), YoungGcTime)
-
-                jsondata.gen_data('hbrest_G1_' + 'YoungGcCount', timestamp, str(YoungColCount), lib.pushdata.hostname, check_type, cluster_name)
-                YoungColTime_rate = rate.record_value_rate('hbrest_G1_YoungColTime', YoungColTime.value, timestamp)
-                jsondata.gen_data('hbrest_G1_YoungGcTime', timestamp, YoungColTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
-
-            object = 'Hadoop:service=HBase,name=REST'
-            hrmetrics=('requests', 'PauseTimeWithGc_99th_percentile', 'PauseTimeWithGc_90th_percentile',
-                       'PauseTimeWithoutGc_90th_percentile', 'PauseTimeWithoutGc_99th_percentile',
-                       'successfulDelete', 'successfulGet', 'successfulPut', 'successfulScanCount',
-                       'failedDelete', 'failedGet', 'failedPut', 'failedScanCount'
-                      )
-            for hrmetric in hrmetrics:
-                r = str(connection.getAttribute(javax.management.ObjectName(object), hrmetric))
-                jsondata.gen_data('hbrest_' + hrmetric , timestamp, r, lib.pushdata.hostname, check_type, cluster_name)
+            lib.jolostart.do_joloikia(java, juser, jclass)
+        except Exception as jolo:
+            lib.pushdata.print_error(__name__, (jolo))
+        pass
 
 
-
-            jsondata.put_json()
-        except Exception as e:
-            lib.pushdata.print_error(__name__, (e, java.rmi.ConnectException))
-            try_connection()
-            pass
-    run_all(connection)

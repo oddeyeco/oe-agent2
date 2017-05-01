@@ -2,7 +2,7 @@ import os
 import ConfigParser
 import logging
 import time
-import pycurl
+# import pycurl
 # import datetime
 # import json
 # import pushdata
@@ -11,9 +11,11 @@ config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0] + '/conf/config.ini')
 cluster_name = config.get('SelfConfig', 'cluster_name')
 host_group = config.get('SelfConfig', 'host_group')
+debug_log = config.getboolean('SelfConfig', 'debug_log')
 tsdb_type = config.get('TSDB', 'tsdtype')
+
 #tsdb_url = config.get('TSDB', 'url')
-c = pycurl.Curl()
+#c = pycurl.Curl()
 
 def print_message(message):
     log_file = config.get('SelfConfig', 'log_file')

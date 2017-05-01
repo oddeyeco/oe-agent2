@@ -76,5 +76,6 @@ def upload_files(myfile):
 
 def cache_uploader():
     for myfile in os.listdir(tmpdir):
+    #for myfile in sorted(os.listdir(tmpdir)):
         if upload_files(myfile) is not True:
             break

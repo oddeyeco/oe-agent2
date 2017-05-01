@@ -30,10 +30,11 @@ def runcheck():
         jsondata.send_special("HeartBeat", timestamp, resptime, message, "OK", err_handler)
         jsondata.put_json()
     except Exception as e:
-        import logging
-        log_file = config.get('SelfConfig', 'log_file')
-        logging.basicConfig(filename=log_file, level=logging.DEBUG)
-        logger = logging.getLogger("PuyPuy")
-        logger.setLevel(logging.DEBUG)
-        logging.critical(" %s : " % "Cannot connect to Barlus" + str(e))
+        lib.pushdata.print_error(__name__ , (e))
+        # import logging
+        # log_file = config.get('SelfConfig', 'log_file')
+        # logging.basicConfig(filename=log_file, level=logging.DEBUG)
+        # logger = logging.getLogger("PuyPuy")
+        # logger.setLevel(logging.DEBUG)
+        # logging.critical(" %s : " % "Cannot connect to Barlus" + str(e))
         pass

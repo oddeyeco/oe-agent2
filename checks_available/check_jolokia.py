@@ -26,11 +26,13 @@ def runcheck():
         if ConcurrentMarkSweep in data_dict['value']:
             CMS = True
             G1 = False
-
-        if G1Gc in data_dict['value']:
+        elif G1Gc in data_dict['value']:
             CMS = False
             G1 = True
-
+        else:
+            CMS = False
+            G1 = False
+            
         sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
         jsondata=lib.pushdata.JonSon()
         jsondata.prepare_data()

@@ -36,9 +36,14 @@ def runcheck():
         message_stats=('publish','ack','deliver_get','redeliver','deliver')
         queue_totals=('messages','messages_ready','messages_unacknowledged')
         for stats in message_stats:
-            stats_name='rabbitmq_'+stats+'_rate'
-            stats_value=stats_json['message_stats'][stats+'_details']['rate']
-            jsondata.gen_data(stats_name, timestamp, stats_value, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+            try:
+                stats_name='rabbitmq_'+stats+'_rate'
+                stats_value=stats_json['message_stats'][stats+'_details']['rate']
+                jsondata.gen_data(stats_name, timestamp, stats_value, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+            except Exception as e:
+                lib.puylogger.print_message('Cannot get stats for ' + str(e))
+                pass
+
         for queue in queue_totals:
             queue_name='rabbitmq_'+queue
             queue_value=stats_json['queue_totals'][queue]

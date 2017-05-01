@@ -22,9 +22,10 @@ def runcheck():
         hbase_region_stats = urllib2.urlopen(hbase_region_url, timeout=5).read()
         stats_json = json.loads(hbase_region_stats)
         stats_keys = stats_json['beans']
-        node_rated_keys=('totalRequestCount','readRequestCount','writeRequestCount', 'Delete_num_ops', 'Mutate_num_ops', 'FlushTime_num_ops',\
-                         'GcTimeMillis','compactedCellsCount', 'majorCompactedCellsCount', 'compactedCellsSize', 'majorCompactedCellsSize',)
-        node_stuck_keys=('GcCount','HeapMemoryUsage', 'OpenFileDescriptorCount', 'blockCacheHitCount', 'blockCacheMissCount', 'blockCacheEvictionCount', 'blockCacheCount')
+        node_rated_keys=('totalRequestCount','readRequestCount','writeRequestCount', 'Delete_num_ops', 'Mutate_num_ops', 'FlushTime_num_ops',
+                         'GcTimeMillis','compactedCellsCount', 'majorCompactedCellsCount', 'compactedCellsSize', 'majorCompactedCellsSize',
+                         'blockCacheHitCount', 'blockCacheMissCount', 'blockCacheEvictionCount')
+        node_stuck_keys=('GcCount','HeapMemoryUsage', 'OpenFileDescriptorCount', 'blockCacheCount')
         rate=lib.record_rate.ValueRate()
         jsondata=lib.pushdata.JonSon()
         jsondata.prepare_data()

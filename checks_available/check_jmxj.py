@@ -12,23 +12,23 @@ import json
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0] + '/conf/config.ini')
-config.read(os.path.split(os.path.dirname(__file__))[0] + '/conf/hadoop.ini')
+config.read(os.path.split(os.path.dirname(__file__))[0] + '/conf/java.ini')
 
 hostname = socket.getfqdn()
-hthrift_url = config.get('HBase-Thrift', 'url')
+jmxj_url = config.get('JMXJ', 'jmxj')
 
 cluster_name = config.get('SelfConfig', 'cluster_name')
-java = config.get('HBase-Thrift', 'java')
-juser = config.get('HBase-Thrift', 'user')
-jclass = config.get('HBase-Thrift', 'class')
-check_type = 'hbase'
+java = config.get('JMXJ', 'java')
+juser = config.get('JMXJ', 'user')
+jclass = config.get('JMXJ', 'class')
+check_type = 'JMX'
 reaction = -3
 
 lib.jolostart.do_joloikia(java, juser, jclass)
 
 def runcheck():
     try:
-        data_dict = json.loads(urllib2.urlopen(hthrift_url + '/java.lang:type=GarbageCollector,name=*', timeout=5).read())
+        data_dict = json.loads(urllib2.urlopen(jmxj_url + '/java.lang:type=GarbageCollector,name=*', timeout=5).read())
         ConcurrentMarkSweep = 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector'
         G1Gc = 'java.lang:name=G1 Young Generation,type=GarbageCollector'
 
@@ -49,7 +49,7 @@ def runcheck():
         timestamp = int(datetime.datetime.now().strftime("%s"))
         sys.path.append(os.path.split(os.path.dirname(__file__))[0] + '/lib')
         heam_mem = 'java.lang:type=Memory'
-        jolo_url = urllib2.urlopen(hthrift_url + '/' + heam_mem, timeout=5).read()
+        jolo_url = urllib2.urlopen(jmxj_url + '/' + heam_mem, timeout=5).read()
         jolo_json = json.loads(jolo_url)
         jolo_keys = jolo_json['value']
         metr_name = ('used', 'committed', 'max')
@@ -57,14 +57,14 @@ def runcheck():
         for heap in heap_type:
             for metr in metr_name:
                 if heap == 'NonHeapMemoryUsage':
-                    key = 'hthrift_nonheap_' + metr
+                    key = 'jmxj_nonheap_' + metr
                     mon_values = jolo_keys[heap][metr]
                     if metr == 'used':
                         jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name)
                     else:
                         jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name, reaction)
                 else:
-                    key = 'hthrift_heap_' + metr
+                    key = 'jmxj_heap_' + metr
                     mon_values = jolo_keys[heap][metr]
                     if metr == 'used':
                         jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name)
@@ -73,18 +73,18 @@ def runcheck():
         if CMS is True:
             collector = ('java.lang:name=ParNew,type=GarbageCollector', 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector')
             for coltype in collector:
-                beans = json.loads(urllib2.urlopen(hthrift_url + '/' + coltype, timeout=5).read())
+                beans = json.loads(urllib2.urlopen(jmxj_url + '/' + coltype, timeout=5).read())
                 if beans['value']['LastGcInfo']:
                     LastGcInfo = beans['value']['LastGcInfo']['duration']
                 CollectionCount = beans['value']['CollectionCount']
                 CollectionTime = beans['value']['CollectionTime']
 
                 def push_metrics(preffix):
-                    jsondata.gen_data('hthrift_' + preffix + '_CollectionCount', timestamp, CollectionCount, lib.pushdata.hostname, check_type, cluster_name)
-                    CollectionTime_rate = rate.record_value_rate('hthrift_' + preffix + '_CollectionTime', CollectionTime, timestamp)
-                    jsondata.gen_data('hthrift_' + preffix + '_CollectionTime', timestamp, CollectionTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+                    jsondata.gen_data('jmxj_' + preffix + '_CollectionCount', timestamp, CollectionCount, lib.pushdata.hostname, check_type, cluster_name)
+                    CollectionTime_rate = rate.record_value_rate('jmxj_' + preffix + '_CollectionTime', CollectionTime, timestamp)
+                    jsondata.gen_data('jmxj_' + preffix + '_CollectionTime', timestamp, CollectionTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
                     if 'LastGcInfo' in locals():
-                        jsondata.gen_data('hthrift_' + preffix + '_LastGcInfo', timestamp, LastGcInfo, lib.pushdata.hostname, check_type, cluster_name)
+                        jsondata.gen_data('jmxj_' + preffix + '_LastGcInfo', timestamp, LastGcInfo, lib.pushdata.hostname, check_type, cluster_name)
 
                 if coltype == 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector':
                     push_metrics(preffix='CMS')
@@ -102,7 +102,7 @@ def runcheck():
                     return value
 
             for k, v in enumerate(gc_g1):
-                j = json.load(urllib2.urlopen(hthrift_url + v, timeout=5))
+                j = json.load(urllib2.urlopen(jmxj_url + v, timeout=5))
                 name = 'LastGcInfo'
                 if k is 0:
                     try:
@@ -111,16 +111,16 @@ def runcheck():
                     except:
                         v = 0
                         pass
-                    m_name = 'hthrift_G1_old_LastGcInfo'
+                    m_name = 'jmxj_G1_old_LastGcInfo'
                 if k is 1:
                     value = j['value'][name]['duration']
                     v = check_null(value)
-                    m_name = 'hthrift_G1_young_LastGcInfo'
+                    m_name = 'jmxj_G1_young_LastGcInfo'
                 jsondata.gen_data(m_name, timestamp, v, lib.pushdata.hostname, check_type, cluster_name)
 
             metr_keys = ('CollectionTime', 'CollectionCount')
             for k, v in enumerate(gc_g1):
-                j = json.load(urllib2.urlopen(hthrift_url + v, timeout=5))
+                j = json.load(urllib2.urlopen(jmxj_url + v, timeout=5))
                 if k is 0:
                     type = '_old_'
                 if k is 1:
@@ -130,31 +130,20 @@ def runcheck():
                         value = j['value'][vl]
                         v = check_null(value)
                         rate_key = vl + type
-                        CollectionTime_rate = rate.record_value_rate('hthrift_' + rate_key, v, timestamp)
-                        jsondata.gen_data('hthrift_G1' + type + vl, timestamp, CollectionTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+                        CollectionTime_rate = rate.record_value_rate('jmxj_' + rate_key, v, timestamp)
+                        jsondata.gen_data('jmxj_G1' + type + vl, timestamp, CollectionTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
                     if ky is 1:
                         value = j['value'][vl]
                         v = check_null(value)
-                        jsondata.gen_data('hthrift_G1' + type + vl, timestamp, v, lib.pushdata.hostname, check_type, cluster_name)
+                        jsondata.gen_data('jmxj_G1' + type + vl, timestamp, v, lib.pushdata.hostname, check_type, cluster_name)
         jolo_threads = 'java.lang:type=Threading'
-        jolo_turl = urllib2.urlopen(hthrift_url + '/' + jolo_threads, timeout=5).read()
+        jolo_turl = urllib2.urlopen(jmxj_url + '/' + jolo_threads, timeout=5).read()
         jolo_tjson = json.loads(jolo_turl)
         thread_metrics = ('TotalStartedThreadCount', 'PeakThreadCount', 'ThreadCount', 'DaemonThreadCount')
         for thread_metric in thread_metrics:
-            name = 'hthrift_' + thread_metric
+            name = 'jmxj_' + thread_metric
             vlor = jolo_tjson['value'][thread_metric]
             jsondata.gen_data(name, timestamp, vlor, lib.pushdata.hostname, check_type, cluster_name)
-
-        jolo_thrift = 'hadoop:service=thrift,name=Thrift'
-        jolo_trurl = urllib2.urlopen(hthrift_url + '/' + jolo_thrift, timeout=5).read()
-        jolo_tjson = json.loads(jolo_trurl)
-        hrmetrics = ('CorePoolSize', 'CountersMapSize', 'FailedIncrements', 'TotalIncrements',
-                     'MaxPoolSize', 'MaxQueueSize', 'PoolCompletedTaskCount', 'PoolLargestPoolSize', 'QueueSize'
-                     )
-        for thread_metric in hrmetrics:
-            name = 'hthrift_' + thread_metric
-            blor = jolo_tjson['value'][thread_metric]
-            jsondata.gen_data(name, timestamp, blor, lib.pushdata.hostname, check_type, cluster_name)
 
         jsondata.put_json()
 

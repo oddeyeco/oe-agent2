@@ -15,10 +15,18 @@
 SCRIPT_DIR="$(cd $(dirname $0) && pwd)"
 PYTHON=`which python`
 cd $SCRIPT_DIR
-RUNUSER=pastor
+#RUNUSER=pastor
 
-TMPDIR=`grep tmpdir conf/config.ini|  awk '{print $NF}'`
-PIDFILE=`grep pid_file conf/config.ini  | awk '{print $2}'`
+function getValue {
+    VALUE=`grep $1 conf/config.ini|  awk '{print $NF}'`
+    if [ `echo $VALUE  | grep -o ':'` ] ; then VALUE=`echo $VALUE| cut -d ':' -f2` ; fi
+    if [ `echo $VALUE  | grep -o '='` ] ; then VALUE=`echo $VALUE| cut -d '=' -f2` ; fi
+    echo $VALUE
+}
+
+RUNUSER=`getValue puypuy_user`
+TMPDIR=`getValue tmpdir`
+PIDFILE=`getValue pid_file`
 
     case "$1" in
 
@@ -29,7 +37,6 @@ PIDFILE=`grep pid_file conf/config.ini  | awk '{print $2}'`
             chown $RUNUSER $TMPDIR
             chmod 755 $TMPDIR
     fi
-
     su $RUNUSER -s /bin/bash -c "$PYTHON puypuy.py start"
     ;;
 
@@ -39,16 +46,14 @@ PIDFILE=`grep pid_file conf/config.ini  | awk '{print $2}'`
     ;;
 
     restart)
-    su $RUNUSER -s /bin/bash -c "$PYTHON puypuy.py stop"
-
+    $0 stop
     while [ -f  $PIDFILE ];
         do
             echo -n '.'
             sleep 1
         done
         echo
-
-    su $RUNUSER -s /bin/bash -c "$PYTHON puypuy.py start"
+    $0 start
     ;;
     *)
     echo "Usage: `basename $0` start | stop | restart"

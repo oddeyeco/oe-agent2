@@ -1,5 +1,5 @@
 import sys, os, time, atexit
-#from signal import SIGTERM
+from signal import SIGTERM
 import ConfigParser
 
 config = ConfigParser.RawConfigParser()
@@ -85,13 +85,13 @@ class Daemon:
 
         try:
             #while 1:
-            #os.kill(pid + 1, SIGTERM)
-            #os.kill(pid, SIGTERM)
-            os.system('kill -KILL {pid}'.format(pid=pid+1))
-            os.system('kill -KILL {pid}'.format(pid=pid))
-            time.sleep(0.1)
+            os.kill(pid, SIGTERM)
+            # try:
+            #     time.sleep(1)
+            #     os.system('kill -KILL {pid}'.format(pid=pid))
+            # except:
+            #     pass
             os.remove(pid_file)
-
 
         except OSError, err:
             err = str(err)

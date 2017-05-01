@@ -1,7 +1,7 @@
 **PuyPuy**
 ---------
 
-PuyPuy is python2 metrics collection daemon, which works with KairosDB, OpenTDB, Graphite and InfluxDB, For InfluxDB, KairosDB and OpenTSDB it uses REST interface, for Graphite Pickle.
+PuyPuy is python2 metrics collection daemon for OddEye, which also works with KairosDB, OpenTDB, Graphite and InfluxDB, For InfluxDB, KairosDB and OpenTSDB it uses REST interface, for Graphite Pickle.
 
 Main idea behind PuyPuy is simplicity and less as possible dependencies, it is tested on Debian and Ubuntu systems, but should work on any Linux system.   
 
@@ -25,7 +25,7 @@ If you like python pip, then :
 Make your changes if needed in config.ini and run 
 
     ./puypuy.sh start
-Python daemon process will start, run all python scripts from checks_avaliable directory as well as all check_* files scripts_available directory. 
+Python daemon process will start, run all python scripts from checks_available directory as well as all check_* files scripts_available directory. 
 
 ###Main Config
 
@@ -43,12 +43,6 @@ cluster_name and host_group are placeholders for tags for better manageability.
 
 In section [TSDB] you should set correct backend and uri. 
 
-OpenTSDB (Enable chinked requests in OpenTSDB )
-
-opentsdb.conf
-
-	tsd.http.request.enable_chunked = true
-
 ###Back End Config
 To make it run you need to change **uuid** to one which you got during registration and start PuyPuy, optionally change run user from puypuy.sh and start 
 
@@ -64,6 +58,10 @@ OddEye server is native backend, but PuyPuy can for with number of other open so
     uuid = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
     sandbox = False
     err_handler = 2
+
+As PuyPuy send metrics with small bulks you should enable chunked requests in opentsdb.conf
+
+	tsd.http.request.enable_chunked = true
 
 **OpenTSDB**
 
@@ -98,7 +96,8 @@ Enable or disable auth: in accordance to your KairosDB setup
     pass: bololo
     database: test
     tsdtype: InfluxDB
- Enable or disable authentication.
+
+Enable or disable authentication.
  
 **Graphite Carbon** 
 
@@ -113,7 +112,7 @@ PuyPuy uses Carbon pickle, default port is 2004
 
 PuyPuy is completely stateless, so if you want to scale Backend, you can use any load balancing mechanism including DNS Round Robin.  
 
-For all types of REST Backens (OpenTSDB, KairosDB, InfluxDB) config fiellds user/pass are mandatory even if you do not user authentication at backend.
+For all types of REST Backens (OpenTSDB, KairosDB, InfluxDB) config fields user/pass are mandatory even if you do not user authentication at backend.
 So **Do not delete authentication parameters**,  just write something meaningless and use it as placeholder. 
 
 ###Configure modules
@@ -135,7 +134,7 @@ Some of checks needs to be configured before you can use it, for example `check_
 
 Some checks depends on non standard python modules, like check_mysql.py depends on MySQL-python , so be sure to install all dependent modules before running checks. information about modules that should be installed before using checks are inside module files as comments. 
 
-    head  checks-avaliable/check_mysql.py 
+    head  checks-available/check_mysql.py 
 
     '''
     This check required Python MySQLDB, On Debian like systems do
@@ -211,10 +210,10 @@ All is needed from custom is to system out values in right order, Below is sampl
 As OddEye is completely push based and our servers does not have any direct access to your infrastructure we need special check which will determine if particular host is alive or not. Thus we made small module, which will call our servers and send response times as any other module do. We will generate host alive parameter based based on this. If you want to have host aliveness test just enable check_oddeye.py as you will do with any other python check:
 
     cd ${puypuy_home}/checks enabled
-    ln -s ../checks-avaliable/check_oddeye.py ./ 
+    ln -s ../checks-available/check_oddeye.py ./ 
     ../puypuy.sh restart 
 
-OddEye is completely dynamic system based on machine learning algorithms, but if you want to have statically defined alerts you can use  `send_special` method in python module. Example below demonstrates how custom alerts can be configured its taken from check_load_average: 
+OddEye is dynamic system based on machine learning, but if you want to have statically defined alerts you can use  `send_special` method in python module. Example below demonstrates how custom alerts can be configured its taken from check_load_average: 
 
     reaction = -3
     warn_level = 90

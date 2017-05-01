@@ -10,9 +10,7 @@ import lib.upload_cached
 import lib.run_bash
 import lib.pushdata
 import lib.puylogger
-
-#from daemon import runner
-#import threading
+import threading
 
 sys.path.append(os.path.dirname(os.path.realpath("__file__"))+'/checks_enabled')
 sys.path.append(os.path.dirname(os.path.realpath("__file__"))+'/lib')
@@ -58,7 +56,6 @@ def upload_cache():
     lib.upload_cached.cache_uploader()
 
 class App(Daemon):
-
     def run(self):
         tsdb_type = config.get('TSDB', 'tsdtype')
         backends = ('OddEye', 'InfluxDB', 'KairosDB', 'OpenTSDB')
@@ -66,25 +63,41 @@ class App(Daemon):
             def run_normal():
                 while True:
                     run_scripts()
+                    if lib.puylogger.debug_log:
+                        lib.puylogger.print_message(str(run_scripts))
                     run_shell_scripts()
+                    if lib.puylogger.debug_log:
+                        lib.puylogger.print_message(str(run_shell_scripts))
                     time.sleep(cron_interval)
 
 
             def run_cache():
                 while True:
                     upload_cache()
+                    if lib.puylogger.debug_log:
+                        lib.puylogger.print_message(str(upload_cache))
                     time.sleep(cron_interval)
 
-            p1 = Process(target=run_normal)
-            p1.daemon = True
-            p1.start()
 
-            p2 = Process(target=run_cache())
-            if not p2.is_alive():
-                p2.daemon = True
-                p2.start()
-                p2.join()
-            p1.join()
+            cache=threading.Thread(target=run_cache, name='Run Cache')
+            cache.daemon = True
+            cache.start()
+
+            run_normal()
+
+            # p1 = Process(target=run_normal)
+            # p1.daemon = True
+            # p1.start()
+
+            #run_cache()
+
+            # p2 = Process(target=run_cache)
+            # if not p2.is_alive():
+            #     p2.daemon = True
+            #     p2.start()
+            #     p2.join()
+            # p1.join()
+
         else:
             while True:
                 run_scripts()
@@ -107,101 +120,3 @@ if __name__ == "__main__":
         else:
                 print "usage: %s start|stop|restart" % sys.argv[0]
                 sys.exit(2)
-
-# class App():
-#
-#
-#     def __init__(self):
-#         self.stdin_path = '/dev/null'
-#         self.stdout_path = log_file
-#         self.stderr_path = log_file
-#         self.pidfile_path = pid_file
-#         self.pidfile_timeout = 5
-#
-#     def run(self):
-#         tsdb_type = config.get('TSDB', 'tsdtype')
-#         backends = ('OddEye', 'InfluxDB', 'KairosDB', 'OpenTSDB')
-#         if tsdb_type in backends:
-#             def run_normal():
-#                 while True:
-#                     run_scripts()
-#                     run_shell_scripts()
-#                     time.sleep(cron_interval)
-#
-#
-#             def run_cache():
-#                 while True:
-#                     upload_cache()
-#                     time.sleep(cron_interval)
-#
-#             p1 = Process(target=run_normal)
-#             p1.daemon = True
-#             p1.start()
-#
-#             p2 = Process(target=run_cache())
-#             if not p2.is_alive():
-#                 p2.daemon = True
-#                 p2.start()
-#                 p2.join()
-#             p1.join()
-#         else:
-#             while True:
-#                 run_scripts()
-#                 run_shell_scripts()
-#                 time.sleep(cron_interval)
-#
-
-    # try:
-    #     def run(self):
-    #         tsdb_type = config.get('TSDB', 'tsdtype')
-    #         backends = ('OddEye', 'InfluxDB', 'KairosDB', 'OpenTSDB')
-    #         if tsdb_type in backends:
-    #             while True:
-    #                 def run_normal():
-    #                         #while True:
-    #                         run_scripts()
-    #                         run_shell_scripts()
-    #                         time.sleep(cron_interval)
-    #
-    #
-    #                 def run_cache():
-    #                         upload_cache()
-    #                         time.sleep(cron_interval)
-    #
-    #                 p1 = threading.Thread(target=run_normal, name='Run Normal')
-    #                 if not p1.is_alive():
-    #                     p1.daemon = True
-    #                     p1.start()
-    #
-    #                 p2 = threading.Thread(target=run_cache, name='Run Cache')
-    #                 if not p2.is_alive():
-    #                     p2.daemon = True
-    #                     p2.start()
-    #                     p2.join()
-    #                 p1.join()
-    #         else:
-    #             while True:
-    #                 run_scripts()
-    #                 run_shell_scripts()
-    #                 time.sleep(cron_interval)
-    # except (KeyboardInterrupt, SystemExit):
-    #    sys.exit()
-
-
-# try:
-#   import setproctitle
-#   setproctitle.setproctitle('puypuy-mukik')
-# except:
-#   pass
-
-# app = App()
-# logger = logging.getLogger("PuyPuy")
-# logger.setLevel(logging.INFO)
-# formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-# handler = logging.FileHandler(log_file)
-# handler.setFormatter(formatter)
-# logger.addHandler(handler)
-#
-# daemon_runner = runner.DaemonRunner(app)
-# daemon_runner.daemon_context.files_preserve=[handler.stream]
-# daemon_runner.do_action()
