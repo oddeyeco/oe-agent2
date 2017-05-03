@@ -24,7 +24,7 @@ jclass = config.get('JMX', 'class')
 check_type = 'JMX'
 reaction = -3
 
-lib.jolostart.do_joloikia(java, juser, jclass)
+lib.jolostart.do_joloikia(java, juser, jclass, jmx_url)
 
 def runcheck():
     try:
@@ -150,7 +150,8 @@ def runcheck():
     except Exception as e:
         lib.pushdata.print_error(__name__, (e))
         try:
-            lib.jolostart.do_joloikia(java, juser, jclass)
+            lib.jolostart.do_joloikia(java, juser, jclass, jmx_url)
+            #lib.jolostart.do_joloikia(java, juser, jclass)
         except Exception as jolo:
             lib.pushdata.print_error(__name__, (jolo))
         pass
