@@ -111,7 +111,7 @@ def runcheck():
                 if values_rate >= 0:
                     jsondata.gen_data(name, timestamp, values_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
             elif beans == 'kafka.server:type=BrokerTopicMetrics,name=*':
-                beans = ('BytesInPerSec', 'BytesOutPerSec', 'BytesRejectedPerSec', 'FailedFetchRequestsPerSec', 'FailedProduceRequestsPerSec', 'MessagesInPerSec')
+                beans = ('TotalProduceRequestsPerSec', 'BytesInPerSec', 'BytesOutPerSec', 'BytesRejectedPerSec', 'FailedFetchRequestsPerSec', 'FailedProduceRequestsPerSec', 'MessagesInPerSec')
                 for bean in beans:
                     m = 'kafka.server:name=' + bean + ',type=BrokerTopicMetrics'
                     value = jolo_json['value'][m]['OneMinuteRate']
