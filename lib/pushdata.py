@@ -194,16 +194,15 @@ class JonSon(object):
 # ------------------------------------------------------------------------------- #
     def send_special(self, module, timestamp, value, error_msg, mytype, reaction=0):
         try:
-            #if tsd_oddeye is True and module is not 'lib.pushdata':
             if tsd_oddeye is True:
                 error_data = []
-                error_data.append({"metric": module, \
-                                   "timestamp": timestamp, \
-                                   "value": value, \
-                                   "message": error_msg, \
-                                   "type": "Special", \
-                                   "status": mytype, \
-                                   "reaction": reaction, \
+                error_data.append({"metric": module,
+                                   "timestamp": timestamp,
+                                   "value": value,
+                                   "message": error_msg,
+                                   "type": "Special",
+                                   "status": mytype,
+                                   "reaction": reaction,
                                    "tags": {"host": hostname,"cluster": cluster_name, "group": host_group}})
                 send_err_msg = json.dumps(error_data)
                 send_error_data = barlus_style + send_err_msg
@@ -237,8 +236,10 @@ def print_error(module, e):
                                "type": "Special",
                                "reaction": negative_handler,
                                "tags": {"host": hostname, "cluster": cluster_name, "group": host_group}})
+            if puylogger.debug_log:
+                puylogger.print_message(str(error_data))
             try:
-                send_err_msg = json.dumps(str(error_data))
+                send_err_msg = json.dumps(error_data)
             except Exception as  dddd:
                 logging.critical(" %s : " % str(dddd))
                 pass
