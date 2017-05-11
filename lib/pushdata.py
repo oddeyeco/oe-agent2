@@ -11,12 +11,13 @@ import record_rate
 import time
 import uuid
 import puylogger
-#import zlib
+import cStringIO
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.split(os.path.dirname(__file__))[0] + '/conf/config.ini')
 cluster_name = config.get('SelfConfig', 'cluster_name')
 host_group = config.get('SelfConfig', 'host_group')
+maxcache = config.getint('SelfConfig', 'max_cache')
 tsdb_type = config.get('TSDB', 'tsdtype')
 hostname = socket.getfqdn()
 c = pycurl.Curl()
@@ -115,6 +116,8 @@ class JonSon(object):
     # ------------------------------------------- #
 
     def httt_set_opt(self,url, data):
+        global pycurl_response
+        pycurl_response = cStringIO.StringIO()
         c.setopt(pycurl.URL, url)
         c.setopt(pycurl.POST, 0)
         c.setopt(pycurl.POSTFIELDS, data)
@@ -123,11 +126,14 @@ class JonSon(object):
         c.setopt(pycurl.NOSIGNAL, 5)
         c.setopt(pycurl.USERAGENT, 'PuyPuy v.02')
         c.setopt(pycurl.ENCODING, "gzip,deflate")
-        c.setopt(pycurl.WRITEFUNCTION, lambda x: None)
+        if tsd_oddeye is True:
+            c.setopt(pycurl.WRITEFUNCTION, pycurl_response.write)
+        else:
+            c.setopt(pycurl.WRITEFUNCTION, lambda x: None)
 
     def upload_it(self, data):
-        #timestamp=datetime.datetime.now().strftime("%s")
         http_response_codes = [100, 101, 102, 200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]
+        http_oddeye_errors = [406, 411, 415, 424]
         try:
             c.perform()
             try:
@@ -140,22 +146,31 @@ class JonSon(object):
             def start_cache(data):
                 print_error(str(c.getinfo(pycurl.RESPONSE_CODE)) + ' Got non ubnormal response code, started to cache', '')
                 tmpdir = config.get('SelfConfig', 'tmpdir')
-                filename = tmpdir + '/' + str(uuid.uuid4()) + '.cached'
-                file = open(filename, "w")
-                file.write(data)
-                file.close()
+                if len(os.listdir(tmpdir)) > maxcache:
+                    logging.critical('Too many cached files')
+                else:
+                    filename = tmpdir + '/' + str(uuid.uuid4()) + '.cached'
+                    file = open(filename, "w")
+                    file.write(data)
+                    file.close()
 
             if response_code not in http_response_codes and response_exists is True:
-                start_cache(data)
+                if response_code in http_oddeye_errors:
+                    logging.critical(" %s : " % "OddEye Error" + str(response_code) + pycurl_response.getvalue().replace('\n',''))
+                else:
+                    start_cache(data)
 
         except Exception as e:
             print_error(__name__, (e))
             try:
                 tmpdir = config.get('SelfConfig', 'tmpdir')
-                filename = tmpdir + '/' + str(uuid.uuid4()) + '.cached'
-                file = open(filename, "w")
-                file.write(data)
-                file.close()
+                if len(os.listdir(tmpdir)) > maxcache:
+                    logging.critical('Too many cached files')
+                else:
+                    filename = tmpdir + '/' + str(uuid.uuid4()) + '.cached'
+                    file = open(filename, "w")
+                    file.write(data)
+                    file.close()
             except:
                 pass
 
