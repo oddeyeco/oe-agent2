@@ -1,12 +1,9 @@
 import datetime
-import os, sys
-import ConfigParser
+import lib.getconfig
 import lib.pushdata
 
-config = ConfigParser.RawConfigParser()
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
-cluster_name = config.get('SelfConfig', 'cluster_name')
-host_group = config.get('SelfConfig', 'host_group')
+cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
+host_group = lib.getconfig.getparam('SelfConfig', 'host_group')
 
 reaction = -3
 warn_level = 90
@@ -15,18 +12,20 @@ crit_level = 100
 def runcheck():
 
     cpucount = 0
-    for line in open("/proc/stat", "r").xreadlines():
+    procstats = open("/proc/stat", "r")
+    for line in procstats.xreadlines():
         if 'cpu' in line:
             cpucount += 1
     cpucount -=1
+    procstats.close()
     check_type = 'system'
-    #sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
     jsondata=lib.pushdata.JonSon()
     jsondata.prepare_data()
     timestamp = int(datetime.datetime.now().strftime("%s"))
 
     try:
-        proc_loadavg=open("/proc/loadavg", "r").readline().split()
+        loadavg = open("/proc/loadavg", "r")
+        proc_loadavg = loadavg.readline().split()
 
         def send_special():
             curr_level = float(proc_loadavg[0]) * 100 / cpucount
@@ -48,6 +47,8 @@ def runcheck():
         jsondata.gen_data('sys_load_15', timestamp, proc_loadavg[2], lib.pushdata.hostname, check_type, cluster_name, reaction)
 
         jsondata.put_json()
+        loadavg.close()
+
     except Exception as e:
         lib.pushdata.print_error(__name__ , (e))
         pass

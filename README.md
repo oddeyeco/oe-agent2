@@ -230,7 +230,6 @@ OddEye is dynamic system based on machine learning, but if you want to have stat
                 cpucount += 1
         cpucount -=1
         check_type = 'system'
-        #sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
         jsondata=lib.pushdata.JonSon()
         jsondata.prepare_data()
         timestamp = int(datetime.datetime.now().strftime("%s"))

@@ -1,28 +1,26 @@
-import os, sys, re
+import re
 import datetime
-import ConfigParser
+import lib.getconfig
 import lib.pushdata
 import lib.record_rate
 
 
-config = ConfigParser.RawConfigParser()
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
-cluster_name = config.get('SelfConfig', 'cluster_name')
+cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 reaction = 0
 
 
 def runcheck():
-    sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
     check_type = 'system'
     jsondata=lib.pushdata.JonSon()
     jsondata.prepare_data()
     timestamp = int(datetime.datetime.now().strftime("%s"))
     try:
-        memory_stats = ('MemTotal:', 'MemAvailable:', 'Cached:', 'Active:', 'Inactive:')
-        #memory_stats = ('MemTotal:', 'MemAvailable:', 'Buffers:', 'Cached:', 'Active:', 'Inactive:')
+        memory_stats = ('MemTotal:', 'MemAvailable:', 'Buffers:', 'Cached:', 'Active:', 'Inactive:')
         memorytimes = {}
 
-        raw_memorystats="\n".join(open("/proc/meminfo", "r").read().split('\n'))
+        read_memorystats = open("/proc/meminfo", "r")
+        raw_memorystats = "\n".join(read_memorystats.read().split('\n'))
+
         for i in raw_memorystats.split("\n"):
             for stat in memory_stats:
                 if stat in i:
@@ -37,6 +35,7 @@ def runcheck():
             jsondata.gen_data('mem_used_percent', timestamp, mem_used_percent, lib.pushdata.hostname, check_type, cluster_name)
 
         jsondata.put_json()
+        read_memorystats.close()
 
     except Exception as e:
         lib.pushdata.print_error(__name__ , (e))

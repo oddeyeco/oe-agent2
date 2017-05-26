@@ -1,58 +1,35 @@
 import lib.record_rate
 import lib.pushdata
-import pycurl
-import os, sys
-import ConfigParser
+import lib.commonclient
+import lib.getconfig
+import lib.puylogger
 import datetime
-import socket
 
-config = ConfigParser.RawConfigParser()
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/webservers.ini')
-
-phpfpm_url = config.get('PhpFPM', 'address') + config.get('PhpFPM', 'stats')
-
-hostname = socket.getfqdn()
-
-phpfpm_auth = config.get('PhpFPM', 'user')+':'+config.get('PhpFPM', 'pass')
-curl_auth = config.getboolean('PhpFPM', 'auth')
-cluster_name = config.get('SelfConfig', 'cluster_name')
+phpfpm_url = lib.getconfig.getparam('PhpFPM', 'address') + lib.getconfig.getparam('PhpFPM', 'stats')
+phpfpm_auth = lib.getconfig.getparam('PhpFPM', 'user')+':'+lib.getconfig.getparam('PhpFPM', 'pass')
+curl_auth = lib.getconfig.getparam('PhpFPM', 'auth')
+cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'php-fpm'
-
-class buffer:
-   def __init__(self):
-       self.contents = ''
-   def body_callback(self, buf):
-       self.contents = self.contents + buf
 
 
 def runcheck():
     try:
-        t = buffer()
-        c = pycurl.Curl()
-        c.setopt(c.URL, phpfpm_url)
-        c.setopt(c.WRITEFUNCTION, t.body_callback)
-        c.setopt(c.FAILONERROR, True)
-        c.setopt(pycurl.CONNECTTIMEOUT, 5)
-        c.setopt(pycurl.TIMEOUT, 5)
-        c.setopt(pycurl.NOSIGNAL, 2)
         if curl_auth is True:
-            c.setopt(pycurl.USERPWD, phpfpm_auth)
-        c.perform()
-        c.close()
-        #uptime=t.contents.splitlines()[3].split(':')[1].replace(" ", "")
-        connections=t.contents.splitlines()[4].split(':')[1].replace(" ", "")
+            data = lib.commonclient.httpget(__name__, phpfpm_url, phpfpm_auth)
+        else:
+            data = lib.commonclient.httpget(__name__, phpfpm_url)
 
-        proc_idle=t.contents.splitlines()[8].split(':')[1].replace(" ", "")
-        proc_active=t.contents.splitlines()[9].split(':')[1].replace(" ", "")
-        proc_total=t.contents.splitlines()[10].split(':')[1].replace(" ", "")
-        max_active=t.contents.splitlines()[11].split(':')[1].replace(" ", "")
-        max_children=t.contents.splitlines()[12].split(':')[1].replace(" ", "")
-        slow_request=t.contents.splitlines()[13].split(':')[1].replace(" ", "")
-        sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        jsondata=lib.pushdata.JonSon()
+        #uptime=data.splitlines()[3].split(':')[1].replace(" ", "")
+        connections = data.splitlines()[4].split(':')[1].replace(" ", "")
+        proc_idle = data.splitlines()[8].split(':')[1].replace(" ", "")
+        proc_active = data.splitlines()[9].split(':')[1].replace(" ", "")
+        proc_total = data.splitlines()[10].split(':')[1].replace(" ", "")
+        max_active = data.splitlines()[11].split(':')[1].replace(" ", "")
+        max_children = data.splitlines()[12].split(':')[1].replace(" ", "")
+        slow_request = data.splitlines()[13].split(':')[1].replace(" ", "")
+        jsondata = lib.pushdata.JonSon()
         jsondata.prepare_data()
-        rate=lib.record_rate.ValueRate()
+        rate = lib.record_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
         conns_per_sec=rate.record_value_rate('phpfpm_connections', connections, timestamp)
         jsondata.gen_data('phpfpm_conns_per_sec', timestamp, conns_per_sec, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
@@ -64,7 +41,7 @@ def runcheck():
         jsondata.gen_data('phpfpm_slow_request', timestamp, slow_request, lib.pushdata.hostname, check_type, cluster_name)
         jsondata.put_json()
     except Exception as e:
-        lib.pushdata.print_error(__name__ , (e))
+        lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass
 
 

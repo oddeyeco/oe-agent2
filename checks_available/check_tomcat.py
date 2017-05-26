@@ -8,38 +8,29 @@ Edit $CATALINA_HOME/conf/tomcat-users.xml and add following inside tomcat-users 
 
 '''
 
-import lib.record_rate, lib.pushdata
-import urllib2
-import os, sys, re
-import ConfigParser
+#import lib.record_rate
+import lib.pushdata
+import lib.getconfig
+import lib.commonclient
+import lib.puylogger
+import re
 import datetime
 
-config = ConfigParser.RawConfigParser()
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/webservers.ini')
-
-tomcat_url = config.get('Tomcat', 'url')
-tomcat_user = config.get('Tomcat', 'user')
-tomcat_pass = config.get('Tomcat', 'pass')
-cluster_name = config.get('SelfConfig', 'cluster_name')
+tomcat_url = lib.getconfig.getparam('Tomcat', 'url')
+tomcat_user = lib.getconfig.getparam('Tomcat', 'user')
+tomcat_pass = lib.getconfig.getparam('Tomcat', 'pass')
+tomcat_auth = lib.getconfig.getparam('Tomcat', 'user')+':'+lib.getconfig.getparam('Tomcat', 'pass')
+cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'tomcat'
 
 def runcheck():
     try:
-        sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-
         urls=[tomcat_url+'?qry=java.lang:type=Memory', tomcat_url+'?qry=java.lang:type=Threading', tomcat_url+'?qry=java.lang:type=GarbageCollector,name=*']
 
-        password_mgr.add_password(None, urls, tomcat_user, tomcat_pass)
-        handler = urllib2.HTTPBasicAuthHandler(password_mgr)
-        opener = urllib2.build_opener(handler)
-
-        tmemstats=opener.open(urls[0],timeout=5).read().splitlines()
-        threadstats = opener.open(urls[1], timeout=5).read().splitlines()
-        gcstats = opener.open(urls[2], timeout=5).read()#.splitlines()
-
-        urllib2.install_opener(opener)
+        #lib.puylogger.print_message(tmemstats)
+        tmemstats = lib.commonclient.httpget(__name__, urls[0], tomcat_auth).splitlines()
+        threadstats = lib.commonclient.httpget(__name__, urls[1], tomcat_auth).splitlines()
+        gcstats = str(lib.commonclient.httpget(__name__, urls[2], tomcat_auth).splitlines())
         jsondata=lib.pushdata.JonSon()
         jsondata.prepare_data()
         timestamp = int(datetime.datetime.now().strftime("%s"))
@@ -61,12 +52,18 @@ def runcheck():
                     sender=line.replace(':', '').split()
                     jsondata.gen_data('tomcat_' + sender[0].lower(), timestamp, sender[1], lib.pushdata.hostname, check_type, cluster_name)
 
-        gcdurations=re.findall('duration='+"[+-]?\d+(?:\.\d+)?" , gcstats)
+        gcdurations = re.findall('duration='+"[+-]?\d+(?:\.\d+)?" , gcstats)
         for index, s in enumerate(gcdurations):
             jsondata.gen_data('tomcat_lastgc_' + str(index) , timestamp, s.split('=')[1], lib.pushdata.hostname, check_type, cluster_name)
 
         jsondata.put_json()
+
+        # del gcstats
+        # del threadstats
+        # del tmemstats
+
+
     except Exception as e:
-        lib.pushdata.print_error(__name__ , (e))
+        lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass
 

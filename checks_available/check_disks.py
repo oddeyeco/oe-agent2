@@ -1,14 +1,13 @@
-import datetime
-import os, sys, re
-import ConfigParser
-import subprocess
+import lib.getconfig
 import lib.pushdata
 import lib.record_rate
+import subprocess
+import datetime
+import os
+import re
 
 
-config = ConfigParser.RawConfigParser()
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
-cluster_name = config.get('SelfConfig', 'cluster_name')
+cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'system'
 
 # ------------------------ #
@@ -19,7 +18,6 @@ io_warning_percent = 40
 # ------------------------ #
 
 def runcheck():
-    sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
     jsondata=lib.pushdata.JonSon()
     jsondata.prepare_data()
     rate=lib.record_rate.ValueRate()
@@ -28,10 +26,13 @@ def runcheck():
     try:
         for device in os.listdir('/sys/block'):
             if 'ram' not in device and 'loop' not in device:
-                devices_blocks[device] = open('/sys/block/'+device+'/queue/hw_sector_size', 'r').readline().rstrip('\n')
+                devblk = open('/sys/block/'+device+'/queue/hw_sector_size', 'r')
+                devices_blocks[device] = devblk.readline().rstrip('\n')
+                devblk.close()
 
         for key, value in devices_blocks.iteritems():
-            stats=open('/sys/block/' + key + '/stat', 'r').readline().split()
+            statsfile = open('/sys/block/' + key + '/stat', 'r')
+            stats = statsfile.readline().split()
             read_bytes=int(stats[2]) * int(value)
             write_bytes = int(stats[6]) * int(value)
             if rated is True:
@@ -45,6 +46,7 @@ def runcheck():
             else:
                 jsondata.gen_data(reads,  timestamp, read_bytes, lib.pushdata.hostname, check_type, cluster_name, reaction)
                 jsondata.gen_data(writes, timestamp, write_bytes, lib.pushdata.hostname, check_type, cluster_name, reaction)
+            statsfile.close()
 
         command = 'df'
         p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
@@ -56,7 +58,7 @@ def runcheck():
                 jsondata.gen_data('drive' + u[0].replace('/dev/', '_') + '_bytes_available', timestamp, u[3], lib.pushdata.hostname, check_type, cluster_name, reaction)
                 jsondata.gen_data('drive' + u[0].replace('/dev/', '_') + '_percent_used', timestamp, u[4].replace('%', ''), lib.pushdata.hostname, check_type, cluster_name, warn_percent, 'Percent')
 
-        proc_stats=open('/proc/diskstats')
+        proc_stats = open('/proc/diskstats')
         for line in proc_stats:
             if "loop" not  in line:
                 fields = line.strip().split()
@@ -68,7 +70,7 @@ def runcheck():
                     if isinstance( reqrate, int ):
                         diskrate=reqrate/10
                         jsondata.gen_data(name, timestamp, diskrate, lib.pushdata.hostname, check_type, cluster_name,0 ,'Percent')
-
+        proc_stats.close()
         jsondata.put_json()
 
     except Exception as e:

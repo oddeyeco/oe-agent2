@@ -1,23 +1,20 @@
-import os, datetime, sys, glob
-import ConfigParser
+import datetime
+import glob
+import lib.getconfig
 import lib.pushdata
 import lib.record_rate
 
-config = ConfigParser.RawConfigParser()
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
-cluster_name = config.get('SelfConfig', 'cluster_name')
+cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 
 check_localhost = False
 rated = True
 
-
 def runcheck():
-    sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
 
     check_type = 'system'
-    jsondata=lib.pushdata.JonSon()
+    jsondata = lib.pushdata.JonSon()
     jsondata.prepare_data()
-    rate=lib.record_rate.ValueRate()
+    rate = lib.record_rate.ValueRate()
     timestamp = int(datetime.datetime.now().strftime("%s"))
     try:
         ifaces=glob.glob("/sys/class/net/*")
@@ -32,8 +29,14 @@ def runcheck():
                 iflist.append(iface)
 
         for nic in iflist:
-            rx = int(open("/sys/class/net/" + nic + "/statistics/rx_bytes", "r").read())
-            tx = int(open("/sys/class/net/" + nic + "/statistics/tx_bytes", "r").read())
+            # rx = int(open("/sys/class/net/" + nic + "/statistics/rx_bytes", "r").read())
+            # tx = int(open("/sys/class/net/" + nic + "/statistics/tx_bytes", "r").read())
+
+            rxb = open("/sys/class/net/" + nic + "/statistics/rx_bytes", "r")
+            txb = open("/sys/class/net/" + nic + "/statistics/tx_bytes", "r")
+            rx = int(rxb.read())
+            tx = int(txb.read())
+
             if rx is not 0 or tx is not 0:
                 txname = 'bytes_tx_' + nic
                 rxname = 'bytes_rx_' + nic
@@ -45,8 +48,9 @@ def runcheck():
                 else:
                     jsondata.gen_data(txname, timestamp, tx, lib.pushdata.hostname, check_type, cluster_name, 0, 'Counter')
                     jsondata.gen_data(rxname, timestamp, rx, lib.pushdata.hostname, check_type, cluster_name, 0, 'Counter')
+            rxb.close()
+            txb.close()
         jsondata.put_json()
-
     except Exception as e:
         lib.pushdata.print_error(__name__ , (e))
         pass

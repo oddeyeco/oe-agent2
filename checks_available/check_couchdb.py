@@ -1,39 +1,26 @@
-import lib.record_rate
-import lib.pushdata
-import urllib2
-import os, sys
-import ConfigParser
-import datetime
-import socket
-import json
 import lib.puylogger
 import lib.record_rate
+import lib.pushdata
+import lib.getconfig
+import lib.commonclient
+import datetime
+import json
 
 
-config = ConfigParser.RawConfigParser()
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/bigdata.ini')
+couchdb_url = lib.getconfig.getparam('CouchDB', 'stats')
 
-
-couchdb_url = config.get('CouchDB', 'stats')
-
-hostname = socket.getfqdn()
-cluster_name = config.get('SelfConfig', 'cluster_name')
+cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'couchdb'
 
 timestamp = int(datetime.datetime.now().strftime("%s"))
 
 def runcheck():
     try:
-        stats = urllib2.urlopen(couchdb_url, timeout=5).read()
-        sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        stats_json = json.loads(stats)
-
+        stats_json = json.loads(lib.commonclient.httpget(__name__, couchdb_url))
         jsondata = lib.pushdata.JonSon()
         jsondata.prepare_data()
         rate = lib.record_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
-
         sections = ('couchdb', 'httpd_request_methods', 'httpd_status_codes', 'httpd')
         couchdb_stats = ('auth_cache_misses', 'database_writes', 'open_databases', 'auth_cache_hits', 'request_time', 'database_reads', 'open_os_files')
         httpd_methods = ('GET', 'PUT', 'COPY', 'DELETE', 'POST', 'HEAD')
@@ -64,7 +51,7 @@ def runcheck():
 
         jsondata.put_json()
     except Exception as e:
-        lib.pushdata.print_error(__name__, (e))
+        lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass
 
 

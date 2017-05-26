@@ -1,31 +1,25 @@
 import subprocess
 import json
-import ConfigParser
-import os, sys, datetime
-import socket
+import lib.getconfig
+import datetime
 import lib.pushdata
 
-config = ConfigParser.RawConfigParser()
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/bigdata.ini')
 
-ceph_client = config.get('Ceph', 'client')
-ceph_keyring = config.get('Ceph', 'keyring')
-cluster_name = config.get('SelfConfig', 'cluster_name')
-hostname = socket.getfqdn()
+ceph_client = lib.getconfig.getparam('Ceph', 'client')
+ceph_keyring = lib.getconfig.getparam('Ceph', 'keyring')
+cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'ceph'
 
 
 def runcheck():
     try:
-        sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        jsondata=lib.pushdata.JonSon()
+        jsondata = lib.pushdata.JonSon()
         jsondata.prepare_data()
         timestamp = int(datetime.datetime.now().strftime("%s"))
-        command='ceph -n ' + ceph_client +' --keyring='+ ceph_keyring + ' pg stat -f json'
+        command = 'ceph -n ' + ceph_client +' --keyring='+ ceph_keyring + ' pg stat -f json'
         p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
         output, err = p.communicate()
-        stats=json.loads(output)
+        stats = json.loads(output)
         jsondata.gen_data('ceph_num_bytes', timestamp, stats['num_bytes'], lib.pushdata.hostname, check_type, cluster_name)
         jsondata.gen_data('ceph_num_pgs', timestamp, stats['num_pgs'], lib.pushdata.hostname, check_type, cluster_name)
         jsondata.gen_data('ceph_raw_bytes', timestamp, stats['raw_bytes'], lib.pushdata.hostname, check_type, cluster_name)
@@ -44,7 +38,9 @@ def runcheck():
             jsondata.gen_data('ceph_write_bytes_sec', timestamp, stats['write_bytes_sec'], lib.pushdata.hostname, check_type, cluster_name)
         else:
             jsondata.gen_data('ceph_write_bytes_sec', timestamp, 0, lib.pushdata.hostname, check_type, cluster_name)
+
         jsondata.put_json()
+        p.stdout.close()
     except Exception as e:
         lib.pushdata.print_error(__name__ , (e))
         pass

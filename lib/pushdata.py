@@ -1,40 +1,39 @@
 import pycurl
 import json
 import os
-import ConfigParser
 import datetime
 import socket
 import logging
 import pickle
 import struct
-import record_rate
 import time
 import uuid
-import puylogger
+import lib.puylogger
+import lib.getconfig
 import cStringIO
 
-config = ConfigParser.RawConfigParser()
-config.read(os.path.split(os.path.dirname(__file__))[0] + '/conf/config.ini')
-cluster_name = config.get('SelfConfig', 'cluster_name')
-host_group = config.get('SelfConfig', 'host_group')
-maxcache = config.getint('SelfConfig', 'max_cache')
-tsdb_type = config.get('TSDB', 'tsdtype')
+cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
+host_group = lib.getconfig.getparam('SelfConfig', 'host_group')
+maxcache = int(lib.getconfig.getparam('SelfConfig', 'max_cache'))
+tsdb_type = lib.getconfig.getparam('TSDB', 'tsdtype')
+tmpdir = lib.getconfig.getparam('SelfConfig', 'tmpdir')
+log_file = lib.getconfig.getparam('SelfConfig', 'log_file')
+
 hostname = socket.getfqdn()
 c = pycurl.Curl()
-record_rate.init()
-
+global pycurl_response
 
 if (tsdb_type == 'KairosDB' or tsdb_type == 'OpenTSDB'):
-    tsdb_url = config.get('TSDB', 'address') + config.get('TSDB', 'datapoints')
-    tsdb_auth = config.get('TSDB', 'user') + ':' + config.get('TSDB', 'pass')
-    curl_auth = config.getboolean('TSDB', 'auth')
+    tsdb_url = lib.getconfig.getparam('TSDB', 'address') + lib.getconfig.getparam('TSDB', 'datapoints')
+    tsdb_auth = lib.getconfig.getparam('TSDB', 'user') + ':' + lib.getconfig.getparam('TSDB', 'pass')
+    curl_auth = bool(lib.getconfig.getparam('TSDB', 'auth'))
     tsd_rest = True
 else:
     tsd_rest = False
 
 if tsdb_type == 'Carbon':
     tsd_carbon = True
-    carbon_server = config.get('TSDB', 'address')
+    carbon_server = lib.getconfig.getparam('TSDB', 'address')
     carbon_host = carbon_server.split(':')[0]
     carbon_port = int(carbon_server.split(':')[1])
     path = hostname.replace('.', '_')
@@ -43,21 +42,21 @@ else:
 
 if tsdb_type == 'InfluxDB':
     tsd_influx = True
-    influx_server = config.get('TSDB', 'address')
-    influx_db = config.get('TSDB', 'database')
+    influx_server = lib.getconfig.getparam('TSDB', 'address')
+    influx_db = lib.getconfig.getparam('TSDB', 'database')
     influx_url = influx_server + '/write?db=' + influx_db
-    curl_auth = config.getboolean('TSDB', 'auth')
-    influx_auth = config.get('TSDB', 'user') + ':' + config.get('TSDB', 'pass')
+    curl_auth = bool(lib.getconfig.getparam('TSDB', 'auth'))
+    influx_auth = lib.getconfig.getparam('TSDB', 'user') + ':' + lib.getconfig.getparam('TSDB', 'pass')
 else:
     tsd_influx = False
 
 if (tsdb_type == 'OddEye'):
-    tsdb_url = config.get('TSDB', 'url')
-    oddeye_uuid = config.get('TSDB', 'uuid')
+    tsdb_url = lib.getconfig.getparam('TSDB', 'url')
+    oddeye_uuid = lib.getconfig.getparam('TSDB', 'uuid')
     tsd_oddeye = True
-    err_handler = int(config.get('TSDB', 'err_handler'))
+    err_handler = int(lib.getconfig.getparam('TSDB', 'err_handler'))
     negative_handler = err_handler * -1
-    sandbox = config.getboolean('TSDB', 'sandbox')
+    sandbox = bool(lib.getconfig.getparam('TSDB', 'sandbox'))
     if sandbox is True:
         barlus_style = 'UUID=' + oddeye_uuid + '&sandbox=true&data='
     else:
@@ -93,30 +92,30 @@ class JonSon(object):
     def prepare_data(self):
         if tsd_rest is True:
             try:
-                self.data.__delitem__('metric')
                 self.data = {'metric': []}
             except:
+                lib.puylogger.print_message('Recreating data in except block')
                 self.data = {'metric': []}
         if tsd_carbon is True:
             try:
-                self.data.__delitem__
+                self.data = []
             except:
+                lib.puylogger.print_message('Recreating data in except block')
                 self.data = []
         if tsd_influx is True:
             try:
-                self.data.__delitem__
+                self.data = []
             except:
+                lib.puylogger.print_message('Recreating data in except block')
                 self.data = []
         if tsd_oddeye is True:
             try:
-                self.data.__delitem__('metric')
                 self.data = {'metric': []}
             except:
+                lib.puylogger.print_message('Recreating data in except block')
                 self.data = {'metric': []}
-    # ------------------------------------------- #
 
     def httt_set_opt(self,url, data):
-        global pycurl_response
         pycurl_response = cStringIO.StringIO()
         c.setopt(pycurl.URL, url)
         c.setopt(pycurl.POST, 0)
@@ -130,6 +129,7 @@ class JonSon(object):
             c.setopt(pycurl.WRITEFUNCTION, pycurl_response.write)
         else:
             c.setopt(pycurl.WRITEFUNCTION, lambda x: None)
+
 
     def upload_it(self, data):
         http_response_codes = [100, 101, 102, 200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]
@@ -145,7 +145,6 @@ class JonSon(object):
 
             def start_cache(data):
                 print_error(str(c.getinfo(pycurl.RESPONSE_CODE)) + ' Got non ubnormal response code, started to cache', '')
-                tmpdir = config.get('SelfConfig', 'tmpdir')
                 if len(os.listdir(tmpdir)) > maxcache:
                     logging.critical('Too many cached files')
                 else:
@@ -163,7 +162,6 @@ class JonSon(object):
         except Exception as e:
             print_error(__name__, (e))
             try:
-                tmpdir = config.get('SelfConfig', 'tmpdir')
                 if len(os.listdir(tmpdir)) > maxcache:
                     logging.critical('Too many cached files')
                 else:
@@ -178,9 +176,14 @@ class JonSon(object):
         if tsd_oddeye is True:
             json_data = json.dumps(self.data['metric'])
             send_data = barlus_style + json_data
-            #zdata = zlib.compress(send_data)
             self.httt_set_opt(tsdb_url, send_data)
             self.upload_it(send_data)
+            if lib.puylogger.debug_log:
+                lib.puylogger.print_message('\n' + send_data)
+            del self.data
+            self.data = None
+            del send_data
+            del json_data
 
 
         if tsd_rest is True:
@@ -189,6 +192,9 @@ class JonSon(object):
                 c.setopt(pycurl.USERPWD, tsdb_auth)
             self.httt_set_opt(tsdb_url, json_data)
             self.upload_it(json_data)
+            if lib.puylogger.debug_log:
+                lib.puylogger.print_message('\n' + json_data)
+
 
         if tsd_carbon is True:
             payload = pickle.dumps(self.data, protocol=2)
@@ -199,14 +205,18 @@ class JonSon(object):
             s.connect((carbon_host, carbon_port))
             s.send(message)
             s.close()
+            if lib.puylogger.debug_log:
+                lib.puylogger.print_message('\n' + message)
+
         if tsd_influx is True:
             line_data = '%s' % ''.join(map(str, self.data))
             if curl_auth is True:
                 c.setopt(pycurl.USERPWD, influx_auth)
             self.httt_set_opt(influx_url, line_data)
             self.upload_it(line_data)
+            if lib.puylogger.debug_log:
+                lib.puylogger.print_message('\n' + line_data)
 
-# ------------------------------------------------------------------------------- #
     def send_special(self, module, timestamp, value, error_msg, mytype, reaction=0):
         try:
             if tsd_oddeye is True:
@@ -223,23 +233,21 @@ class JonSon(object):
                 send_error_data = barlus_style + send_err_msg
                 self.httt_set_opt(tsdb_url, send_error_data)
                 self.upload_it(send_error_data)
-                if puylogger.debug_log:
-                    puylogger.print_message(send_error_data)
-                    #logging.critical(" %s : " % module + str(module))
+                if lib.puylogger.debug_log:
+                    lib.puylogger.print_message(send_error_data)
+                del error_data
+                del send_err_msg
         except:
                 logging.critical(" %s : " % module + str(send_err_msg))
-# ------------------------------------------------------------------------------- #
+
 
 def print_error(module, e):
-    log_file = config.get('SelfConfig', 'log_file')
     logging.basicConfig(filename=log_file, level=logging.DEBUG)
     logger = logging.getLogger("PuyPuy")
     logger.setLevel(logging.DEBUG)
     def send_error_msg():
         if tsd_oddeye is True:
-            #if tsd_oddeye is True and module is not 'lib.pushdqata':
             logging.critical(module)
-            cluster_name = config.get('SelfConfig', 'cluster_name')
             error_msg = str(e).replace('[', '').replace(']', '').replace('<', '').replace('>', '').replace('(', '').replace(')', '').replace("'", '').replace('"', '')
             timestamp = int(datetime.datetime.now().strftime("%s"))
             error_data = []
@@ -251,8 +259,8 @@ def print_error(module, e):
                                "type": "Special",
                                "reaction": negative_handler,
                                "tags": {"host": hostname, "cluster": cluster_name, "group": host_group}})
-            if puylogger.debug_log:
-                puylogger.print_message(str(error_data))
+            if lib.puylogger.debug_log:
+                lib.puylogger.print_message(str(error_data))
             try:
                 send_err_msg = json.dumps(error_data)
             except Exception as  dddd:
@@ -269,6 +277,9 @@ def print_error(module, e):
             jonson.httt_set_opt(tsdb_url, send_error_data)
             c.setopt(pycurl.POSTFIELDS, send_error_data)
             c.perform()
+            del error_msg
+            del error_data
+            del send_error_data
         else:
             logging.critical(" %s : " % module + str(e))
     try:
@@ -276,7 +287,6 @@ def print_error(module, e):
             logging.critical(" %s : " % "Failed to connect to Barlus" + str(e))
             pass
         else:
-            #logging.critical(" %s : " % "Cannot connect to Barlus" + str(e))
             send_error_msg()
 
     except Exception as err:

@@ -1,34 +1,27 @@
-import urllib2
-import os, sys
-import ConfigParser
+import lib.getconfig
 import datetime
-import socket
 import json
 import lib.pushdata
 import lib.record_rate
+import lib.commonclient
+import lib.puylogger
 
 
-config = ConfigParser.RawConfigParser()
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/bigdata.ini')
-
-hostname = socket.getfqdn()
-cluster_name = config.get('SelfConfig', 'cluster_name')
-host_group = config.get('SelfConfig', 'host_group')
-host = config.get('ElasticSearch', 'host')
-stats = config.get('ElasticSearch', 'stats')
+cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
+host_group = lib.getconfig.getparam('SelfConfig', 'host_group')
+host = lib.getconfig.getparam('ElasticSearch', 'host')
+stats = lib.getconfig.getparam('ElasticSearch', 'stats')
 elastic_url = host + stats
 check_type = 'elasticsearch'
 reaction = -3
 
 def runcheck():
     try:
-        elastic_stats = urllib2.urlopen(elastic_url, timeout=5).read()
-        sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
-        rate=lib.record_rate.ValueRate()
-        jsondata=lib.pushdata.JonSon()
+        #elastic_stats = urllib2.urlopen(elastic_url, timeout=5)
+        rate = lib.record_rate.ValueRate()
+        jsondata = lib.pushdata.JonSon()
         jsondata.prepare_data()
-        stats_json = json.loads(elastic_stats)
+        stats_json = json.loads(lib.commonclient.httpget(__name__, elastic_url))
         node_keys = stats_json['nodes'].keys()[0]
         data = {}
         rated_stats = {}
@@ -37,33 +30,31 @@ def runcheck():
         # -------------------------------------------------------------------------------------------------------------------- #
         def send_special():
             eshealth_status = host + '/_cluster/health'
-            eshealth_stat = urllib2.urlopen(eshealth_status, timeout=2)
-            eshealth_stats = eshealth_stat.read()
-            eshealth_json = json.loads(eshealth_stats)
-
-            status_code = eshealth_stat.getcode()
-            if status_code != 200:
-                eshealth_message = "Something is very bad, exited with status:", status_code
+            try:
+                eshealth_json = json.loads(lib.commonclient.httpget(__name__, eshealth_status))
+            except:
+                eshealth_message = "Something is very bad, exited with status:"
                 health_value = 16
+
+            status = eshealth_json['status']
+            active_shards = eshealth_json['active_shards']
+            relocating_shards = eshealth_json['relocating_shards']
+            initializing_shards = eshealth_json['initializing_shards']
+            cluster_name = eshealth_json['cluster_name']
+
+            eshealth_message = 'Cluster: ' + cluster_name + ', Status: ' + status + ', Shards Active: ' + str(active_shards) + ', Relocating: ' + str(relocating_shards) + ', Initializing: ' + str(initializing_shards)
+
+            if status == 'green':
+                health_value = 0
+                err_type = 'OK'
+            elif status == 'yellow':
+                health_value = 9
+                err_type = 'WARNING'
             else:
-                status = eshealth_json['status']
-                active_shards = eshealth_json['active_shards']
-                relocating_shards = eshealth_json['relocating_shards']
-                initializing_shards = eshealth_json['initializing_shards']
-                cluster_name = eshealth_json['cluster_name']
-
-                eshealth_message = 'Cluster: ' + cluster_name + ', Status: ' + status + ', Shards Active: ' + str(active_shards) + ', Relocating: ' + str(relocating_shards) + ', Initializing: ' + str(initializing_shards)
-
-                if status == 'green':
-                    health_value = 0
-                    err_type = 'OK'
-                elif status == 'yellow':
-                    health_value = 9
-                    err_type = 'WARNING'
-                else:
-                    health_value = 16
-                    err_type = 'ERROR'
+                health_value = 16
+                err_type = 'ERROR'
             jsondata.send_special("ElasticSearch-Health", timestamp, health_value, eshealth_message, err_type)
+
         send_special()
         # -------------------------------------------------------------------------------------------------------------------- #
 
@@ -107,6 +98,7 @@ def runcheck():
             else:
                 jsondata.gen_data(key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
         jsondata.put_json()
+
     except Exception as e:
-        lib.pushdata.print_error(__name__ , (e))
+        lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass

@@ -1,13 +1,10 @@
-import os, sys
 import datetime
-import ConfigParser
+import lib.getconfig
 import lib.pushdata
 import lib.record_rate
 
-config = ConfigParser.RawConfigParser()
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
-cluster_name = config.get('SelfConfig', 'cluster_name')
-host_group = config.get('SelfConfig', 'host_group')
+cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
+host_group = lib.getconfig.getparam('SelfConfig', 'host_group')
 
 # ---------------------- #
 rated = True
@@ -28,7 +25,6 @@ crit_level = 100
 '''
 
 def runcheck():
-    sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
     check_type = 'system'
     jsondata=lib.pushdata.JonSon()
     jsondata.prepare_data()
@@ -36,63 +32,14 @@ def runcheck():
     timestamp = int(datetime.datetime.now().strftime("%s"))
 
     cpucount = 0
-    for line in open("/proc/stat", "r").xreadlines():
-        if 'cpu' in line:
-            cpucount += 1
-    cpucount -=1
+    with open("/proc/stat", "r") as crn:
+        cpu_stats = [float(column) for column in crn.readline().strip().split()[1:]]
+        for line in crn.readlines():
+            if 'cpu' in line:
+                cpucount += 1
+    crn.close()
 
     metrinames=['cpu_user', 'cpu_nice', 'cpu_system', 'cpu_idle', 'cpu_iowait', 'cpu_irq', 'cpu_softirq']
-
-    with open('/proc/stat') as f:
-        cpu_stats = [float(column) for column in f.readline().strip().split()[1:]]
-
-    if 'cpu_old_stats' not in globals():
-        global cpu_old_stats
-        cpu_old_stats = cpu_stats
-
-    if not cpu_old_stats:
-        print("List is empty")
-
-    last_idle = cpu_old_stats[3]
-    last_total = sum(cpu_old_stats)
-
-    idle = cpu_stats[3]
-    total = sum(cpu_stats)
-
-    try:
-        if idle - last_idle > 0 :
-            idle_delta, total_delta = idle - last_idle, total - last_total
-            utilisation = 100.0 * (1.0 - idle_delta / total_delta)
-        else:
-            utilisation = 0
-    except Exception as e:
-        lib.pushdata.print_error(__name__ , (e))
-
-
-
-    try:
-        def send_special():
-
-            if utilisation < warn_level:
-                health_value = 0
-                err_type = 'OK'
-            if utilisation >= warn_level < crit_level:
-                health_value = 8
-                err_type = 'WARNING'
-            if utilisation >= crit_level:
-                health_value = 16
-                err_type = 'ERROR'
-
-            d = round(utilisation, 2)
-
-            health_message = err_type + ': CPU Usage is ' + str(d) + ' percent'
-            jsondata.send_special("CPU-Percent", timestamp, health_value, health_message, err_type)
-            #jsondata.gen_data('cpu_percent', timestamp, d, lib.pushdata.hostname, check_type, cluster_name, 0 , values_type)
-        send_special()
-    except Exception as e:
-        lib.pushdata.print_error(__name__, (e))
-
-
 
     try:
         for index in range(0, 7):

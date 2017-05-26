@@ -6,20 +6,16 @@ import lib.record_rate
 import lib.pushdata
 import pymongo
 import datetime
-import ConfigParser
-import os, sys
+import lib.getconfig
 
-config = ConfigParser.RawConfigParser()
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/sql_cache.ini')
-cluster_name = config.get('SelfConfig', 'cluster_name')
+cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 
-mongo_host = config.get('MongoDB', 'host')
-mongo_user = config.get('MongoDB', 'user')
-mongo_pass = config.get('MongoDB', 'pass')
-mongo_auth = config.get('MongoDB', 'auth')
-mongo_port = int(config.get('MongoDB', 'port'))
-mongo_mechanism = config.get('MongoDB', 'auth_mechanism')
+mongo_host = lib.getconfig.getparam('MongoDB', 'host')
+mongo_user = lib.getconfig.getparam('MongoDB', 'user')
+mongo_pass = lib.getconfig.getparam('MongoDB', 'pass')
+mongo_auth = lib.getconfig.getparam('MongoDB', 'auth')
+mongo_port = int(lib.getconfig.getparam('MongoDB', 'port'))
+mongo_mechanism = lib.getconfig.getparam('MongoDB', 'auth_mechanism')
 
 
 def runcheck():
@@ -31,7 +27,6 @@ def runcheck():
         db =mongoclient.test
 
         connections_dict = db.command("serverStatus")
-        sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
         jsondata=lib.pushdata.JonSon()
         jsondata.prepare_data()
         rate=lib.record_rate.ValueRate()
@@ -55,6 +50,7 @@ def runcheck():
         for key, value in connections_dict['connections'].iteritems():
             jsondata.gen_data('mongo_connections_'+key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
 
+        mongoclient.close()
         jsondata.put_json()
 
     except Exception as e:

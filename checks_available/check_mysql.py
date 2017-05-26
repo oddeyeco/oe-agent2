@@ -8,26 +8,21 @@ pip install MySQL-python
 
 import MySQLdb
 import datetime
-import ConfigParser
-import os, sys
+import lib.getconfig
 from lib.pushdata import JonSon,hostname,print_error
 from lib.record_rate import ValueRate
 
-config = ConfigParser.RawConfigParser()
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/config.ini')
-config.read(os.path.split(os.path.dirname(__file__))[0]+'/conf/sql_cache.ini')
-cluster_name = config.get('SelfConfig', 'cluster_name')
+cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 
-mysql_host = config.get('MySQL', 'host')
-mysql_user = config.get('MySQL', 'user')
-mysql_pass = config.get('MySQL', 'pass')
+mysql_host = lib.getconfig.getparam('MySQL', 'host')
+mysql_user = lib.getconfig.getparam('MySQL', 'user')
+mysql_pass = lib.getconfig.getparam('MySQL', 'pass')
 
 def runcheck():
     try:
         check_type = 'mysql'
         db = MySQLdb.connect(host=mysql_host, user=mysql_user, passwd=mysql_pass, )
         cur = db.cursor()
-        sys.path.append(os.path.split(os.path.dirname(__file__))[0]+'/lib')
         jsondata=JonSon()
         jsondata.prepare_data()
         rate=ValueRate()
@@ -65,6 +60,8 @@ def runcheck():
                 jsondata.gen_data('mysql_' + mytype, timestamp, myvalue, hostname, check_type, cluster_name, 0, 'Rate')
             else:
                 jsondata.gen_data('mysql_'+mytype, timestamp, myvalue, hostname, check_type, cluster_name)
+        cur.close()
+        db.close()
         jsondata.put_json()
     except Exception as e:
         print_error(__name__ , (e))
