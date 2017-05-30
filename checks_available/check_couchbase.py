@@ -7,25 +7,25 @@ import datetime
 import json
 import re
 
-
-
 couchbase_url = lib.getconfig.getparam('CouchBase', 'stats')
 buckets = lib.getconfig.getparam('CouchBase', 'buckets').replace(' ', '').split(',')
 
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'couchbase'
 
-timestamp = int(datetime.datetime.now().strftime("%s"))
+# timestamp = int(datetime.datetime.now().strftime("%s"))
+
+stats = ('cmd_get', 'couch_docs_data_size', 'curr_items', 'curr_items_tot', 'ep_bg_fetched', 'get_hits', 'mem_used', 'ops', 'vb_replica_curr_items')
+basicstats = ('quotaPercentUsed', 'opsPerSec', 'hitRatio', 'itemCount', 'memUsed')
 
 
 def runcheck():
     try:
+        timestamp = int(datetime.datetime.now().strftime("%s"))
         for bucket in buckets:
             jsondata=lib.pushdata.JonSon()
             jsondata.prepare_data()
             stats_json = json.loads(lib.commonclient.httpget(__name__, couchbase_url + '/' + bucket))
-            stats = ('cmd_get', 'couch_docs_data_size', 'curr_items', 'curr_items_tot', 'ep_bg_fetched', 'get_hits', 'mem_used', 'ops', 'vb_replica_curr_items')
-            basicstats= ('quotaPercentUsed', 'opsPerSec', 'hitRatio', 'itemCount', 'memUsed')
 
             for x in range(0, len(stats_json['nodes'])):
                 longname=stats_json['nodes'][x]['hostname'].split(':')[0]
@@ -46,17 +46,14 @@ def runcheck():
                 for stat in stats:
                     name = 'couchbase_' + nodename + '_' + stat
                     value = float(stats_json['nodes'][x]['interestingStats'][stat])
-                    jsondata.gen_data(name, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
+                    jsondata.gen_data(name.lower(), timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
 
             for bstat in basicstats:
                 name = 'couchbase_clusterwide_' + bstat
                 value = float(stats_json['basicStats'][bstat])
-                jsondata.gen_data(name, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
+                jsondata.gen_data(name.lower(), timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
 
             jsondata.put_json()
     except Exception as e:
         lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass
-
-
-
