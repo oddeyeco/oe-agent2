@@ -13,10 +13,11 @@ check_type = 'mesos'
 
 def runcheck():
     try:
-        jsondata=lib.pushdata.JonSon()
+        timestamp = int(datetime.datetime.now().strftime("%s"))
+        jsondata = lib.pushdata.JonSon()
         jsondata.prepare_data()
         stats_json = json.loads(lib.commonclient.httpget(__name__, mesos_url))
-        metrics= ('master/cpus_percent', 'master/cpus_revocable_percent', 'master/cpus_used',
+        metrics = ('master/cpus_percent', 'master/cpus_revocable_percent', 'master/cpus_used',
                   'master/disk_percent', 'master/disk_revocable_percent', 'master/disk_used',
                   'master/event_queue_dispatches', 'master/event_queue_http_requests', 'master/event_queue_messages',
                   'master/frameworks_active', 'master/gpus_percent', 'master/gpus_used', 'master/mem_percent', 'master/mem_used',
@@ -25,7 +26,6 @@ def runcheck():
                   'master/messages_kill_task', 'master/messages_reregister_framework', 'master/slaves_connected', 'master/slaves_connected',
                   'allocator/mesos/allocation_run_ms', 'allocator/mesos/allocation_run_ms/p99', 'registrar/state_fetch_ms', 'registrar/state_store_ms/p99')
         for metric in metrics:
-            timestamp = int(datetime.datetime.now().strftime("%s"))
             if metric in stats_json:
                 jsondata.gen_data('mesos_'+metric.replace('/','_'), timestamp, stats_json[metric], lib.pushdata.hostname, check_type, cluster_name)
         jsondata.put_json()

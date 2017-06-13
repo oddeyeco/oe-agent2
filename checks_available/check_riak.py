@@ -6,9 +6,6 @@ import lib.commonclient
 import datetime
 import json
 
-
-
-
 riak_url = lib.getconfig.getparam('Riak', 'stats')
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'riak'
@@ -16,12 +13,12 @@ check_type = 'riak'
 
 def runcheck():
     try:
-        jsondata=lib.pushdata.JonSon()
+        jsondata = lib.pushdata.JonSon()
         jsondata.prepare_data()
         stats_json = json.loads(lib.commonclient.httpget(__name__, riak_url))
         metrics= ('sys_process_count', 'memory_processes', 'memory_processes_used', 'node_gets', 'node_puts', 'vnode_gets', 'vnode_puts')
+        timestamp = int(datetime.datetime.now().strftime("%s"))
         for metric in metrics:
-            timestamp = int(datetime.datetime.now().strftime("%s"))
             if metric is 'node_gets':
                 myvalue = stats_json[metric]/60
             elif metric is 'node_puts':

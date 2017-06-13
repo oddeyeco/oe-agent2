@@ -15,9 +15,9 @@ elastic_url = host + stats
 check_type = 'elasticsearch'
 reaction = -3
 
+
 def runcheck():
     try:
-        #elastic_stats = urllib2.urlopen(elastic_url, timeout=5)
         rate = lib.record_rate.ValueRate()
         jsondata = lib.pushdata.JonSon()
         jsondata.prepare_data()
@@ -27,7 +27,6 @@ def runcheck():
         rated_stats = {}
         timestamp = int(datetime.datetime.now().strftime("%s"))
 
-        # -------------------------------------------------------------------------------------------------------------------- #
         def send_special():
             eshealth_status = host + '/_cluster/health'
             try:
@@ -35,6 +34,7 @@ def runcheck():
             except:
                 eshealth_message = "Something is very bad, exited with status:"
                 health_value = 16
+                eshealth_json = None
 
             status = eshealth_json['status']
             active_shards = eshealth_json['active_shards']
@@ -56,7 +56,6 @@ def runcheck():
             jsondata.send_special("ElasticSearch-Health", timestamp, health_value, eshealth_message, err_type)
 
         send_special()
-        # -------------------------------------------------------------------------------------------------------------------- #
 
         rated_stats.update({''
                     'search_total':stats_json['nodes'][node_keys]['indices']['search']['query_total'],
@@ -79,9 +78,9 @@ def runcheck():
                     'gc_old_count':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['old']['collection_count']
                             })
 
-        for key, value in rated_stats.iteritems():
-            reqrate=rate.record_value_rate('es_'+key, value, timestamp)
-            if reqrate >=0:
+        for key, value in rated_stats.items():
+            reqrate = rate.record_value_rate('es_'+key, value, timestamp)
+            if reqrate >= 0:
                 jsondata.gen_data('elasticsearch_'+key, timestamp, reqrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
         data.update({''
@@ -92,8 +91,8 @@ def runcheck():
                     'elasticsearch_open_files':stats_json['nodes'][node_keys]['process']['open_file_descriptors'],
                     'elasticsearch_http_connections':stats_json['nodes'][node_keys]['http']['current_open']
                      })
-        for key, value in data.iteritems():
-            if key =='elasticsearch_non_heap_used' or key=='elasticsearch_heap_used' or key=='elasticsearch_non_heap_committed' or key=='elasticsearch_heap_committed':
+        for key, value in data.items():
+            if key == 'elasticsearch_non_heap_used' or key == 'elasticsearch_heap_used' or key == 'elasticsearch_non_heap_committed' or key == 'elasticsearch_heap_committed':
                 jsondata.gen_data(key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name, reaction)
             else:
                 jsondata.gen_data(key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)

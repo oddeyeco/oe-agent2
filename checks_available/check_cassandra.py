@@ -6,7 +6,6 @@ import lib.getconfig
 import lib.commonclient
 import lib.puylogger
 
-
 jolokia_url = lib.getconfig.getparam('Cassandra', 'jolokia')
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'cassandra'
@@ -19,7 +18,7 @@ def runcheck():
         rate = lib.record_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
 
-        jolo_mbeans=('java.lang:type=Memory', 'org.apache.cassandra.db:type=Caches',
+        jolo_mbeans = ('java.lang:type=Memory', 'org.apache.cassandra.db:type=Caches',
                      'org.apache.cassandra.transport:type=Native-Transport-Requests',
                      'org.apache.cassandra.request:type=*',
                      'org.apache.cassandra.metrics:type=Compaction,name=*',

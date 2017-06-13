@@ -6,9 +6,6 @@ import lib.puylogger
 import datetime
 import json
 
-
-
-
 hadoop_namenode_url = lib.getconfig.getparam('Hadoop-NameNode', 'jmx')
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'hdfs'
@@ -51,8 +48,8 @@ def runcheck():
                             mon_values.update({'namenode_lastgc_duration': stats_keys[stats_index][values]['duration']})
             for values in node_rated_keys:
                 if values in stats_keys[stats_index]:
-                    stack_value=stats_keys[stats_index][values]
-                    reqrate=rate.record_value_rate('namenode_'+values, stack_value, timestamp)
+                    stack_value = stats_keys[stats_index][values]
+                    reqrate = rate.record_value_rate('namenode_'+values, stack_value, timestamp)
                     jsondata.gen_data('namenode_'+values.lower(), timestamp, reqrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
         for key in mon_values.keys():

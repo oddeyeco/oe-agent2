@@ -24,11 +24,12 @@ crit_level = 100
 6: softirq: servicing softirqs
 '''
 
+
 def runcheck():
     check_type = 'system'
-    jsondata=lib.pushdata.JonSon()
+    jsondata = lib.pushdata.JonSon()
     jsondata.prepare_data()
-    rate=lib.record_rate.ValueRate()
+    rate = lib.record_rate.ValueRate()
     timestamp = int(datetime.datetime.now().strftime("%s"))
 
     cpucount = 0
@@ -39,7 +40,7 @@ def runcheck():
                 cpucount += 1
     crn.close()
 
-    metrinames=['cpu_user', 'cpu_nice', 'cpu_system', 'cpu_idle', 'cpu_iowait', 'cpu_irq', 'cpu_softirq']
+    metrinames = ['cpu_user', 'cpu_nice', 'cpu_system', 'cpu_idle', 'cpu_iowait', 'cpu_irq', 'cpu_softirq']
 
     try:
         for index in range(0, 7):
@@ -54,7 +55,6 @@ def runcheck():
                 jsondata.gen_data(name, timestamp, values_rate, lib.pushdata.hostname, check_type, cluster_name, reaction, values_type)
             else:
                 jsondata.gen_data(name, timestamp, int(value)/cpucount, lib.pushdata.hostname, check_type, cluster_name, reaction, values_type)
-
 
         jsondata.put_json()
     except Exception as e:

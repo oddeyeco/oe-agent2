@@ -6,9 +6,6 @@ import lib.puylogger
 import datetime
 import json
 
-
-
-
 hadoop_datanode_url = lib.getconfig.getparam('Hadoop-Datanode', 'jmx')
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'hdfs'
@@ -53,8 +50,8 @@ def runcheck():
                             mon_values.update({'datanode_lastgc_duration': stats_keys[stats_index][values]['duration']})
             for values in node_rated_keys:
                 if values in stats_keys[stats_index]:
-                    stack_value=stats_keys[stats_index][values]
-                    reqrate=rate.record_value_rate('datanode_'+values, stack_value, timestamp)
+                    stack_value = stats_keys[stats_index][values]
+                    reqrate = rate.record_value_rate('datanode_'+values, stack_value, timestamp)
                     jsondata.gen_data('datanode_'+values.lower(), timestamp, reqrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
         for key in mon_values.keys():
@@ -63,7 +60,7 @@ def runcheck():
             else:
                 jsondata.gen_data(key, timestamp, mon_values[key], lib.pushdata.hostname, check_type, cluster_name)
 
-        data_du_percent=mon_values['datanode_dfsused']*100/(mon_values['datanode_dfsused']+mon_values['datanode_space_remaining'])
+        data_du_percent = mon_values['datanode_dfsused']*100/(mon_values['datanode_dfsused']+mon_values['datanode_space_remaining'])
         jsondata.gen_data('datanode_du_percent', timestamp, data_du_percent, lib.pushdata.hostname, check_type, cluster_name, warn_level, 'Percent')
 
         jsondata.put_json()

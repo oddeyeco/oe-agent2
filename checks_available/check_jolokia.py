@@ -62,7 +62,7 @@ def runcheck():
                 CollectionTime = beans['value']['CollectionTime']
                 def push_metrics(preffix):
                     jsondata.gen_data('jolokia_'+preffix+'_lastgcinfo', timestamp, LastGcInfo, lib.pushdata.hostname, check_type, cluster_name)
-                    jsondata.gen_data('jolokia_'+preffix+'_collection_count', timestamp, CollectionCount, lib.pushdata.hostname, check_type, cluster_name)
+                    jsondata.gen_data('jolokia_'+preffix+'_collection_count', timestamp, CollectionCount, lib.pushdata.hostname, check_type, cluster_name, reaction)
                     CollectionTime_rate = rate.record_value_rate('jolokia_'+preffix+'_CollectionTime', CollectionTime, timestamp)
                     jsondata.gen_data('jolokia_'+preffix+'_CollectionTime', timestamp, CollectionTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
                 if coltype=='java.lang:name=ConcurrentMarkSweep,type=GarbageCollector':
@@ -111,13 +111,13 @@ def runcheck():
                     if ky is 0:
                         value = j['value'][vl]
                         v = check_null(value)
-                        rate_key=vl+type
+                        rate_key=vl + type
                         CollectionTime_rate = rate.record_value_rate('jolokia_' + rate_key, v, timestamp)
                         jsondata.gen_data('jolokia_g1'+ type+ vl.lower(), timestamp, CollectionTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
                     if ky is 1:
                         value = j['value'][vl]
                         v = check_null(value)
-                        jsondata.gen_data('jolokia_g1' + type + vl.lower(), timestamp, v, lib.pushdata.hostname, check_type, cluster_name)
+                        jsondata.gen_data('jolokia_g1' + type + vl.lower(), timestamp, v, lib.pushdata.hostname, check_type, cluster_name, reaction)
         jolo_threads='java.lang:type=Threading'
         jolo_tjson = json.loads(lib.commonclient.httpget(__name__, jolokia_url+'/'+jolo_threads))
         thread_metrics=('TotalStartedThreadCount','PeakThreadCount','ThreadCount','DaemonThreadCount')

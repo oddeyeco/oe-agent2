@@ -43,27 +43,27 @@ def runcheck():
 
         for resp in responses:
             resp_name = 'org.eclipse.jetty.server.handler.DefaultHandler.' + resp + '-responses'
-            csvalue= stats_json['metrics'][1][resp_name]['count']
+            csvalue = stats_json['metrics'][1][resp_name]['count']
             csrate = rate.record_value_rate('slr_'+resp, csvalue, timestamp)
             jsondata.gen_data('solr_' + resp + '_responses', timestamp, csrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
         for hu in heapstats:
             hu_name = 'memory.heap.' + hu
-            huvalue= stats_json['metrics'][3][hu_name]['value']
+            huvalue = stats_json['metrics'][3][hu_name]['value']
             jsondata.gen_data('solr_heap_' + hu, timestamp, huvalue, lib.pushdata.hostname, check_type, cluster_name)
 
         for nohu in heapstats:
             nohu_name = 'memory.non-heap.' + nohu
-            nohuvalue= stats_json['metrics'][3][nohu_name]['value']
+            nohuvalue = stats_json['metrics'][3][nohu_name]['value']
             jsondata.gen_data('solr_non_heap_' + nohu, timestamp, nohuvalue, lib.pushdata.hostname, check_type, cluster_name)
 
         for tr in sothreads:
-            trvalue= stats_json['metrics'][3][tr]['value']
+            trvalue = stats_json['metrics'][3][tr]['value']
             jsondata.gen_data('solr_' + tr.replace('.', '_').replace('_count', ''), timestamp, trvalue, lib.pushdata.hostname, check_type, cluster_name)
 
         for gc in garbage:
             if gc in stats_json['metrics'][3]:
-                gcvalue=stats_json['metrics'][3][tr]['value']
+                gcvalue = stats_json['metrics'][3][tr]['value']
                 jsondata.gen_data('solr_' + gc.replace('.', '_').replace('ConcurrentMarkSweep', 'CMS'), timestamp, gcvalue, lib.pushdata.hostname, check_type, cluster_name)
 
         jsondata.put_json()

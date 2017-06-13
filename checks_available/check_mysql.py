@@ -23,9 +23,9 @@ def runcheck():
         check_type = 'mysql'
         db = MySQLdb.connect(host=mysql_host, user=mysql_user, passwd=mysql_pass, )
         cur = db.cursor()
-        jsondata=JonSon()
+        jsondata = JonSon()
         jsondata.prepare_data()
-        rate=ValueRate()
+        rate = ValueRate()
         raw_mysqlstats = cur.execute("SHOW GLOBAL STATUS WHERE Variable_name='Connections'"
                             "OR Variable_name='Com_select' "
                             "OR Variable_name='Com_delete_multi' "
@@ -51,12 +51,12 @@ def runcheck():
                             "OR Variable_name='Innodb_data_fsyncs' "
                             "")
         timestamp = int(datetime.datetime.now().strftime("%s"))
-        non_rate_metrics=('Max_used_connections', 'Slow_queries', 'Open_files', 'Threads_connected')
+        non_rate_metrics = ('Max_used_connections', 'Slow_queries', 'Open_files', 'Threads_connected')
         for row in cur.fetchall():
             mytype = row[0].lower()
             myvalue = row[1]
             if mytype not in non_rate_metrics:
-                myvalue=rate.record_value_rate('mysql_'+mytype, myvalue, timestamp)
+                myvalue = rate.record_value_rate('mysql_'+mytype, myvalue, timestamp)
                 jsondata.gen_data('mysql_' + mytype, timestamp, myvalue, hostname, check_type, cluster_name, 0, 'Rate')
             else:
                 jsondata.gen_data('mysql_'+mytype, timestamp, myvalue, hostname, check_type, cluster_name)

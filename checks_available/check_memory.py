@@ -28,7 +28,7 @@ def runcheck():
                     if len(u) > 1:
                         memorytimes['mem_'+u[0].replace(':','').replace('Mem','').lower()] = 1024*int(u[1])
 
-        for key, value in memorytimes.iteritems():
+        for key, value in memorytimes.items():
             jsondata.gen_data(key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name, reaction)
         if 'mem_available' in memorytimes:
             mem_used_percent = 100 - ((memorytimes['mem_available'] * 100) / memorytimes['mem_total'])

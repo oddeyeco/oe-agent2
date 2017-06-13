@@ -18,8 +18,8 @@ check_type = 'rabbitmq'
 
 def runcheck():
     try:
-        url1=rabbit_url+'/api/overview'
-        jsondata=lib.pushdata.JonSon()
+        url1 = rabbit_url+'/api/overview'
+        jsondata = lib.pushdata.JonSon()
         jsondata.prepare_data()
         stats_json = json.loads(lib.commonclient.httpget(__name__, url1, rabbit_auth))
         timestamp = int(datetime.datetime.now().strftime("%s"))
@@ -27,16 +27,16 @@ def runcheck():
         queue_totals = ('messages','messages_ready','messages_unacknowledged')
         for stats in message_stats:
             try:
-                stats_name='rabbitmq_'+stats+'_rate'
-                stats_value=stats_json['message_stats'][stats+'_details']['rate']
+                stats_name = 'rabbitmq_'+stats+'_rate'
+                stats_value = stats_json['message_stats'][stats+'_details']['rate']
                 jsondata.gen_data(stats_name, timestamp, stats_value, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
             except Exception as e:
                 lib.puylogger.print_message('Cannot get stats for ' + str(e))
                 pass
 
         for queue in queue_totals:
-            queue_name='rabbitmq_'+queue
-            queue_value=stats_json['queue_totals'][queue]
+            queue_name = 'rabbitmq_'+queue
+            queue_value = stats_json['queue_totals'][queue]
             jsondata.gen_data(queue_name, timestamp, queue_value, lib.pushdata.hostname, check_type, cluster_name)
 
         if queue_details is True :
@@ -52,7 +52,7 @@ def runcheck():
                     if 'message_stats' in rabbit_queues[name]:
                         if detail in rabbit_queues[name]['message_stats']:
                             rname = 'rabbitmq_' + str(rabbit_queues[name]['name']) + '_'+ detail
-                            rnamesub ='rabbitmq_'+re.sub('[^a-zA-Z0-9]', '_', rname)
+                            rnamesub  = 'rabbitmq_'+re.sub('[^a-zA-Z0-9]', '_', rname)
                             rvalue = rabbit_queues[name]['message_stats'][detail]['rate']
                             jsondata.gen_data(rnamesub, timestamp, rvalue, lib.pushdata.hostname, check_type, cluster_name)
         jsondata.put_json()

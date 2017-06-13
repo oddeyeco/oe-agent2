@@ -17,8 +17,8 @@ def runcheck():
     rate = lib.record_rate.ValueRate()
     timestamp = int(datetime.datetime.now().strftime("%s"))
     try:
-        ifaces=glob.glob("/sys/class/net/*")
-        iflist=[]
+        ifaces = glob.glob("/sys/class/net/*")
+        iflist = []
         for index in range(0, len(ifaces)):
             if check_localhost is False:
                 iface = ifaces[index].split('/')[4]
@@ -29,9 +29,6 @@ def runcheck():
                 iflist.append(iface)
 
         for nic in iflist:
-            # rx = int(open("/sys/class/net/" + nic + "/statistics/rx_bytes", "r").read())
-            # tx = int(open("/sys/class/net/" + nic + "/statistics/tx_bytes", "r").read())
-
             rxb = open("/sys/class/net/" + nic + "/statistics/rx_bytes", "r")
             txb = open("/sys/class/net/" + nic + "/statistics/tx_bytes", "r")
             rx = int(rxb.read())

@@ -16,57 +16,59 @@ def runcheck():
     try:
         stats_json = json.loads(lib.commonclient.httpget(__name__, hbase_master_url))
         stats_keys = stats_json['beans']
-        node_rated_keys=('clusterRequests','GcTimeMillis')
-        node_stuck_keys=('GcCount','HeapMemoryUsage')
-        rate=lib.record_rate.ValueRate()
-        jsondata=lib.pushdata.JonSon()
+        node_rated_keys = ('clusterRequests','GcTimeMillis')
+        node_stuck_keys = ('GcCount','HeapMemoryUsage')
+        rate = lib.record_rate.ValueRate()
+        jsondata = lib.pushdata.JonSon()
         jsondata.prepare_data()
         timestamp = int(datetime.datetime.now().strftime("%s"))
 
         for stats_x in range(0, len(stats_keys)):
-            for k, v in enumerate(('java.lang:type=GarbageCollector,name=ConcurrentMarkSweep', 'java.lang:type=GarbageCollector,name=ParNew')):
+            for k, v in enumerate(('java.lang:type = GarbageCollector,name = ConcurrentMarkSweep', 'java.lang:type = GarbageCollector,name = ParNew')):
                 if v in stats_keys[stats_x]['name']:
                     if k is 0:
-                        cms_key='hmaster_heap_cms_lastgcInfo'
-                        cms_value=stats_keys[stats_x]['LastGcInfo']['duration']
+                        cms_key = 'hmaster_heap_cms_lastgcInfo'
+                        cms_value = stats_keys[stats_x]['LastGcInfo']['duration']
                         jsondata.gen_data(cms_key, timestamp, cms_value, lib.pushdata.hostname, check_type, cluster_name)
                     if k is 1:
-                        parnew_key='hmaster_heap_parnew_lastgcinfo'
-                        parnew_value=stats_keys[stats_x]['LastGcInfo']['duration']
+                        parnew_key = 'hmaster_heap_parnew_lastgcinfo'
+                        parnew_value = stats_keys[stats_x]['LastGcInfo']['duration']
                         jsondata.gen_data(parnew_key, timestamp, parnew_value, lib.pushdata.hostname, check_type, cluster_name)
 
         for stats_x in range(0, len(stats_keys)):
-            for k, v in enumerate(('java.lang:type=GarbageCollector,name=G1 Young Generation', 'java.lang:type=GarbageCollector,name=G1 Old Generation')):
+            for k, v in enumerate(('java.lang:type = GarbageCollector,name = G1 Young Generation', 'java.lang:type = GarbageCollector,name = G1 Old Generation')):
                 if v in stats_keys[stats_x]['name']:
                     if k is 0:
-                        g1_young_key='hmaster_heap_g1_young_lastgcInfo'
-                        g1_young_value=stats_keys[stats_x]['LastGcInfo']['duration']
+                        g1_young_key = 'hmaster_heap_g1_young_lastgcInfo'
+                        g1_young_value = stats_keys[stats_x]['LastGcInfo']['duration']
                         jsondata.gen_data(g1_young_key, timestamp, g1_young_value, lib.pushdata.hostname, check_type, cluster_name)
                     if k is 1:
                         if stats_keys[stats_x]['LastGcInfo'] is not None:
-                            g1_old_key='hmaster_heap_g1_old_lastgcInfo'
-                            g1_old_value=stats_keys[stats_x]['LastGcInfo']['duration']
+                            g1_old_key = 'hmaster_heap_g1_old_lastgcInfo'
+                            g1_old_value = stats_keys[stats_x]['LastGcInfo']['duration']
                             jsondata.gen_data(g1_old_key, timestamp, g1_old_value, lib.pushdata.hostname, check_type, cluster_name)
                         else:
-                            g1_old_key='hmaster_heap_g1_old_lastgcinfo'
-                            g1_old_value=0
+                            g1_old_key = 'hmaster_heap_g1_old_lastgcinfo'
+                            g1_old_value = 0
                             jsondata.gen_data(g1_old_key, timestamp, g1_old_value, lib.pushdata.hostname, check_type, cluster_name)
 
         for stats_index in range(0, len(stats_keys)):
             for values in node_rated_keys:
                 if values in stats_keys[stats_index]:
                     if values in node_rated_keys:
-                        myvalue=stats_keys[stats_index][values]
-                        values_rate=rate.record_value_rate('hmaster_'+values, myvalue, timestamp)
+                        myvalue = stats_keys[stats_index][values]
+                        values_rate = rate.record_value_rate('hmaster_'+values, myvalue, timestamp)
                         if values_rate >= 0:
                             jsondata.gen_data('hmaster_node_'+values.lower(), timestamp, values_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
             for values in node_stuck_keys:
                 if values in stats_keys[stats_index]:
                     if values == 'HeapMemoryUsage':
-                        heap_metrics=('max', 'init', 'committed', 'used')
+                        heap_metrics = ('max', 'init', 'committed', 'used')
                         for heap_values in heap_metrics:
                             jsondata.gen_data('hmaster_heap_'+heap_values.lower(), timestamp, stats_keys[stats_index][values][heap_values], lib.pushdata.hostname, check_type, cluster_name)
+                    elif values == 'GcCount':
+                        jsondata.gen_data('hmaster_node_' + values.lower(), timestamp, stats_keys[stats_index][values], lib.pushdata.hostname, check_type, cluster_name, -3)
                     else:
                         jsondata.gen_data('hmaster_node_'+values.lower(), timestamp, stats_keys[stats_index][values], lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 

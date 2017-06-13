@@ -17,20 +17,20 @@ message = "stats\nquit"
 def runcheck():
     try:
 
-        jsondata=lib.pushdata.JonSon()
+        jsondata = lib.pushdata.JonSon()
         jsondata.prepare_data()
-        rate=lib.record_rate.ValueRate()
+        rate = lib.record_rate.ValueRate()
         raw_data = lib.commonclient.socketget(__name__, buffer_size, memcached_host, memcached_port, message)
         timestamp = int(datetime.datetime.now().strftime("%s"))
         metrics_stuck = ('curr_connections', 'curr_items', 'rusage_user', 'rusage_system')
         metrics_rated = ('cmd_get', 'cmd_set', 'get_hits', 'set_hits', 'delete_misses', 'delete_hits', 'bytes')
         for line in raw_data.split('\n'):
-            for searchitem in  metrics_stuck:
+            for searchitem in metrics_stuck:
                 if searchitem in line:
                     key = line.split(' ')[1]
                     value = line.split(' ')[2].rstrip('\r')
                     jsondata.gen_data('memcached_'+key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
-            for searchitem in  metrics_rated:
+            for searchitem in metrics_rated:
                 if searchitem in line:
                     key = line.split(' ')[1]
                     value = line.split(' ')[2].rstrip('\r')

@@ -61,7 +61,7 @@ def runcheck():
                         collectiontime = beans['value']['CollectionTime']
                         def push_metrics(preffix):
                             jsondata.gen_data('storm_' + port + '_' + ''+preffix+'_lastgcinfo', timestamp, lastgcinfo, lib.pushdata.hostname, check_type, cluster_name)
-                            jsondata.gen_data('storm_' + port + '_' + ''+preffix+'_collection_count', timestamp, collectioncount, lib.pushdata.hostname, check_type, cluster_name)
+                            jsondata.gen_data('storm_' + port + '_' + ''+preffix+'_collection_count', timestamp, collectioncount, lib.pushdata.hostname, check_type, cluster_name, -3)
                             collectiontime_rate = rate.record_value_rate('storm_' + port + '_' + ''+preffix+'_collection_time', collectiontime, timestamp)
                             jsondata.gen_data('storm_' + port + '_' + ''+preffix+'_collection_time', timestamp, collectiontime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
                         if coltype == 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector':
@@ -109,7 +109,7 @@ def runcheck():
                             if ky is 1:
                                 value = j['value'][vl]
                                 v = check_null(value)
-                                jsondata.gen_data('storm_' + port + '_' + 'g1' + type + vl.lower(), timestamp, v, lib.pushdata.hostname, check_type, cluster_name)
+                                jsondata.gen_data('storm_' + port + '_' + 'g1' + type + vl.lower(), timestamp, v, lib.pushdata.hostname, check_type, cluster_name, -3)
             except Exception as e:
                 lib.puylogger.print_message(__name__ + ' Error : ' + str(e) + ' ' + str(port))
                 pass

@@ -27,7 +27,6 @@ def runcheck():
     try:
         urls=[tomcat_url+'?qry=java.lang:type=Memory', tomcat_url+'?qry=java.lang:type=Threading', tomcat_url+'?qry=java.lang:type=GarbageCollector,name=*']
 
-        #lib.puylogger.print_message(tmemstats)
         tmemstats = lib.commonclient.httpget(__name__, urls[0], tomcat_auth).splitlines()
         threadstats = lib.commonclient.httpget(__name__, urls[1], tomcat_auth).splitlines()
         gcstats = str(lib.commonclient.httpget(__name__, urls[2], tomcat_auth).splitlines())
@@ -57,11 +56,6 @@ def runcheck():
             jsondata.gen_data('tomcat_lastgc_' + str(index) , timestamp, s.split('=')[1], lib.pushdata.hostname, check_type, cluster_name)
 
         jsondata.put_json()
-
-        # del gcstats
-        # del threadstats
-        # del tmemstats
-
 
     except Exception as e:
         lib.puylogger.print_message(__name__ + ' Error : ' + str(e))

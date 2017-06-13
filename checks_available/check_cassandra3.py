@@ -6,13 +6,11 @@ import lib.pushdata
 import lib.record_rate
 import lib.puylogger
 
-
-
-
 jolokia_url = lib.getconfig.getparam('Cassandra', 'jolokia')
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'cassandra'
-reaction=-3
+reaction = -3
+
 
 def runcheck():
     try:
@@ -42,8 +40,6 @@ def runcheck():
 
         copaction_tasks = cassa_copmaction['value']['org.apache.cassandra.metrics:name=PendingTasks,type=Compaction']['Value']
         jsondata.gen_data('cassa_compaction_pending', timestamp, copaction_tasks, lib.pushdata.hostname, check_type, cluster_name)
-
-
 
         data_dict = json.loads(lib.commonclient.httpget(__name__, jolokia_url + '/java.lang:type=GarbageCollector,name=*'))
         ConcurrentMarkSweep = 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector'
@@ -153,15 +149,6 @@ def runcheck():
             name = 'cassa_' + thread_metric.lower()
             vlor = jolo_tjson['value'][thread_metric]
             jsondata.gen_data(name, timestamp, vlor, lib.pushdata.hostname, check_type, cluster_name)
-
-
-
-
-
-
-
-
-
 
         jsondata.put_json()
 

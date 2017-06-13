@@ -16,7 +16,7 @@ def runcheck():
     for line in procstats.xreadlines():
         if 'cpu' in line:
             cpucount += 1
-    cpucount -=1
+    cpucount -= 1
     procstats.close()
     check_type = 'system'
     jsondata=lib.pushdata.JonSon()

@@ -19,7 +19,6 @@ def runcheck():
         else:
             data = lib.commonclient.httpget(__name__, phpfpm_url)
 
-        #uptime=data.splitlines()[3].split(':')[1].replace(" ", "")
         connections = data.splitlines()[4].split(':')[1].replace(" ", "")
         proc_idle = data.splitlines()[8].split(':')[1].replace(" ", "")
         proc_active = data.splitlines()[9].split(':')[1].replace(" ", "")
@@ -31,7 +30,7 @@ def runcheck():
         jsondata.prepare_data()
         rate = lib.record_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
-        conns_per_sec=rate.record_value_rate('phpfpm_connections', connections, timestamp)
+        conns_per_sec = rate.record_value_rate('phpfpm_connections', connections, timestamp)
         jsondata.gen_data('phpfpm_conns_per_sec', timestamp, conns_per_sec, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
         jsondata.gen_data('phpfpm_proc_idle', timestamp, proc_idle, lib.pushdata.hostname, check_type, cluster_name)
         jsondata.gen_data('phpfpm_proc_active', timestamp, proc_active, lib.pushdata.hostname, check_type, cluster_name)

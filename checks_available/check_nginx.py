@@ -19,9 +19,9 @@ def runcheck():
         else:
             data = lib.commonclient.httpget(__name__, nginx_url)
 
-        jsondata=lib.pushdata.JonSon()
+        jsondata = lib.pushdata.JonSon()
         jsondata.prepare_data()
-        rate=lib.record_rate.ValueRate()
+        rate = lib.record_rate.ValueRate()
         check_type = 'nginx'
 
         timestamp = int(datetime.datetime.now().strftime("%s"))

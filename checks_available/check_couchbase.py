@@ -23,12 +23,12 @@ def runcheck():
     try:
         timestamp = int(datetime.datetime.now().strftime("%s"))
         for bucket in buckets:
-            jsondata=lib.pushdata.JonSon()
+            jsondata = lib.pushdata.JonSon()
             jsondata.prepare_data()
             stats_json = json.loads(lib.commonclient.httpget(__name__, couchbase_url + '/' + bucket))
 
             for x in range(0, len(stats_json['nodes'])):
-                longname=stats_json['nodes'][x]['hostname'].split(':')[0]
+                longname = stats_json['nodes'][x]['hostname'].split(':')[0]
 
                 def is_valid_hostname(hostname):
                     if len(hostname) > 255:

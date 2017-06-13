@@ -70,7 +70,7 @@ def runcheck():
                     if vl is None:
                         vl = 0
                     key = 'kafka_gc_young_' + name.lower()
-                    jsondata.gen_data(key, timestamp, vl, lib.pushdata.hostname, check_type, cluster_name)
+                    jsondata.gen_data(key, timestamp, vl, lib.pushdata.hostname, check_type, cluster_name, -3)
 
         for beans in jolo_mbeans:
             jolo_json = json.loads(lib.commonclient.httpget(__name__, jolokia_url+'/'+beans))

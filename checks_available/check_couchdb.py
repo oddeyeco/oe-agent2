@@ -14,6 +14,7 @@ check_type = 'couchdb'
 
 timestamp = int(datetime.datetime.now().strftime("%s"))
 
+
 def runcheck():
     try:
         stats_json = json.loads(lib.commonclient.httpget(__name__, couchdb_url))
@@ -29,7 +30,7 @@ def runcheck():
 
         for cs in couchdb_stats:
             if stats_json[sections[0]][cs]['current'] is not None:
-                csvalue= stats_json[sections[0]][cs]['current']
+                csvalue = stats_json[sections[0]][cs]['current']
                 csrate = rate.record_value_rate('couch_'+cs, csvalue, timestamp)
                 jsondata.gen_data('couchdb_' + cs, timestamp, csrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
@@ -39,7 +40,7 @@ def runcheck():
                 jsondata.gen_data('couchdb_' + hm.lower(), timestamp, hmrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
         for hc in httpd_codes:
-            hc=str(hc)
+            hc = str(hc)
             if stats_json[sections[2]][hc]['current'] is not None:
                 hcrate = rate.record_value_rate('couch_' + hc, stats_json[sections[2]][hc]['current'], timestamp)
                 jsondata.gen_data('couchdb_code' + hc, timestamp, hcrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')

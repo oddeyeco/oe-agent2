@@ -6,8 +6,6 @@ import lib.commonclient
 import datetime
 import json
 
-
-
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 host_group = lib.getconfig.getparam('SelfConfig', 'host_group')
 host = lib.getconfig.getparam('ElasticSearch', 'host')
@@ -26,7 +24,7 @@ def runcheck():
         data = {}
         rated_stats = {}
         timestamp = int(datetime.datetime.now().strftime("%s"))
-        # -------------------------------------------------------------------------------------------------------------------- #
+
         def send_special():
             eshealth_status = host + '/_cluster/health'
             try:
@@ -54,7 +52,7 @@ def runcheck():
                 err_type = 'ERROR'
             jsondata.send_special("ElasticSearch-Health", timestamp, health_value, eshealth_message, err_type)
         send_special()
-        # -------------------------------------------------------------------------------------------------------------------- #
+
         rated_stats.update({''
                     'search_total':stats_json['nodes'][node_keys]['indices']['search']['query_total'],
                     'index_total':stats_json['nodes'][node_keys]['indices']['indexing']['index_total'],
@@ -76,9 +74,9 @@ def runcheck():
                     'gc_young_count':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['young']['collection_count'],
                     })
 
-        for key, value in rated_stats.iteritems():
+        for key, value in rated_stats.items():
             reqrate=rate.record_value_rate('es_'+key, value, timestamp)
-            if reqrate >=0:
+            if reqrate >= 0:
                 jsondata.gen_data('elasticsearch_'+key, timestamp, reqrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
 
         data.update({''
@@ -89,7 +87,7 @@ def runcheck():
                     'elasticsearch_open_files':stats_json['nodes'][node_keys]['process']['open_file_descriptors'],
                     'elasticsearch_http_connections':stats_json['nodes'][node_keys]['http']['current_open']
                      })
-        for key, value in data.iteritems():
+        for key, value in data.items():
             if key == 'elasticsearch_non_heap_used' or key == 'elasticsearch_heap_used' or key == 'elasticsearch_non_heap_committed' or key == 'elasticsearch_heap_committed':
                 jsondata.gen_data(key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name, reaction)
             else:

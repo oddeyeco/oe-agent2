@@ -68,6 +68,8 @@ def runcheck():
                         heap_metrics=('max', 'init', 'committed', 'used')
                         for heap_values in heap_metrics:
                             jsondata.gen_data('hregion_heap_'+heap_values.lower(), timestamp, stats_keys[stats_index][values][heap_values], lib.pushdata.hostname, check_type, cluster_name)
+                    elif values == 'GcCount':
+                        jsondata.gen_data('hregion_node_' + values.lower(), timestamp, stats_keys[stats_index][values], lib.pushdata.hostname, check_type, cluster_name, -3)
                     else:
                         jsondata.gen_data('hregion_node_'+values.lower(), timestamp, stats_keys[stats_index][values], lib.pushdata.hostname, check_type, cluster_name)
 
