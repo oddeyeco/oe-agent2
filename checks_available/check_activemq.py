@@ -1,33 +1,30 @@
 import lib.record_rate
-import lib.pushdata
-import lib.puylogger
-import lib.jolostart
 import lib.commonclient
+import lib.puylogger
 import lib.getconfig
 import datetime
 import json
 
-
-hthrift_url = lib.getconfig.getparam('HBase-Thrift', 'url')
-
+stats_url = lib.getconfig.getparam('ActiveMQ', 'stats')
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
-java = lib.getconfig.getparam('HBase-Thrift', 'java')
-juser = lib.getconfig.getparam('HBase-Thrift', 'user')
-jclass = lib.getconfig.getparam('HBase-Thrift', 'class')
-check_type = 'hbase'
-reaction = -3
 
-lib.jolostart.do_joloikia(java, juser, jclass, hthrift_url)
+activemq_auth = lib.getconfig.getparam('ActiveMQ', 'user')+':'+lib.getconfig.getparam('ActiveMQ', 'pass')
+curl_auth = lib.getconfig.getparam('ActiveMQ', 'auth')
+brokername = lib.getconfig.getparam('ActiveMQ', 'brokername')
+
+
+
+check_type = 'activemq'
+reaction = -3
 
 
 def runcheck():
     local_vars = []
     try:
-        data_dict = json.loads(lib.commonclient.httpget(__name__, hthrift_url + '/java.lang:type=GarbageCollector,name=*'))
-
+        # lib.puylogger.print_message(stats_url + '/java.lang:type=GarbageCollector,name=*')
+        data_dict = json.loads(lib.commonclient.httpget(__name__, stats_url + '/java.lang:type=GarbageCollector,name=*', activemq_auth))
         ConcurrentMarkSweep = 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector'
         G1Gc = 'java.lang:name=G1 Young Generation,type=GarbageCollector'
-
         if ConcurrentMarkSweep in data_dict['value']:
             CMS = True
             G1 = False
@@ -41,21 +38,21 @@ def runcheck():
         rate = lib.record_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
         heam_mem = 'java.lang:type=Memory'
-        jolo_json = json.loads(lib.commonclient.httpget(__name__, hthrift_url + '/' + heam_mem))
+        jolo_json = json.loads(lib.commonclient.httpget(__name__, stats_url + '/' + heam_mem, activemq_auth))
         jolo_keys = jolo_json['value']
         metr_name = ('used', 'committed', 'max')
         heap_type = ('NonHeapMemoryUsage', 'HeapMemoryUsage')
         for heap in heap_type:
             for metr in metr_name:
                 if heap == 'NonHeapMemoryUsage':
-                    key = 'hthrift_nonheap_' + metr
+                    key = 'activemq_nonheap_' + metr
                     mon_values = jolo_keys[heap][metr]
                     if metr == 'used':
                         local_vars.append({'name': key, 'timestamp': timestamp, 'value': mon_values, 'check_type': check_type})
                     else:
                         local_vars.append({'name': key, 'timestamp': timestamp, 'value': mon_values, 'check_type': check_type, 'reaction': reaction})
                 else:
-                    key = 'hthrift_heap_' + metr
+                    key = 'activemq_heap_' + metr
                     mon_values = jolo_keys[heap][metr]
                     if metr == 'used':
                         local_vars.append({'name': key, 'timestamp': timestamp, 'value': mon_values, 'check_type': check_type})
@@ -64,18 +61,16 @@ def runcheck():
         if CMS is True:
             collector = ('java.lang:name=ParNew,type=GarbageCollector', 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector')
             for coltype in collector:
-                beans = json.loads(lib.commonclient.httpget(__name__, hthrift_url + '/' + coltype))
-                if beans['value']['LastGcInfo']:
-                    LastGcInfo = beans['value']['LastGcInfo']['duration']
+                beans = json.loads(lib.commonclient.httpget(__name__, stats_url + '/' + coltype, activemq_auth))
+                LastGcInfo = beans['value']['LastGcInfo']['duration']
                 CollectionCount = beans['value']['CollectionCount']
                 CollectionTime = beans['value']['CollectionTime']
 
                 def push_metrics(preffix):
-                    if 'LastGcInfo' in locals():
-                        local_vars.append({'name': 'hthrift_' + preffix + '_lastgcinfo', 'timestamp': timestamp, 'value': LastGcInfo, 'check_type': check_type})
-                    CollectionTime_rate = rate.record_value_rate('hthrift_' + preffix + '_collection_time', CollectionTime, timestamp)
-                    local_vars.append({'name': 'hthrift_' + preffix + '_collection_count', 'timestamp': timestamp, 'value': CollectionCount, 'check_type': check_type})
-                    local_vars.append({'name': 'hthrift_' + preffix + '_collection_time', 'timestamp': timestamp, 'value': CollectionTime_rate, 'check_type': check_type, 'chart_type': 'Rate'})
+                    CollectionTime_rate = rate.record_value_rate('activemq_' + preffix + '_CollectionTime', CollectionTime, timestamp)
+                    local_vars.append({'name': 'activemq_' + preffix + '_lastgcinfo', 'timestamp': timestamp, 'value': LastGcInfo, 'check_type': check_type})
+                    local_vars.append({'name': 'activemq_' + preffix + '_collection_count', 'timestamp': timestamp, 'value': CollectionCount, 'check_type': check_type})
+                    local_vars.append({'name': 'activemq_' + preffix + '_collectiontime', 'timestamp': timestamp, 'value': CollectionTime_rate, 'check_type': check_type, 'chart_type': 'Rate'})
 
                 if coltype == 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector':
                     push_metrics(preffix='cms')
@@ -93,7 +88,7 @@ def runcheck():
                     return value
 
             for k, v in enumerate(gc_g1):
-                j = json.loads(lib.commonclient.httpget(__name__, hthrift_url + v))
+                j = json.loads(lib.commonclient.httpget(__name__, stats_url + v, activemq_auth))
                 name = 'LastGcInfo'
                 if k is 0:
                     try:
@@ -102,16 +97,16 @@ def runcheck():
                     except:
                         v = 0
                         pass
-                    m_name = 'hthrift_g1_old_lastgcinfo'
+                    m_name = 'activemq_g1_old_lastgcinfo'
                 if k is 1:
                     value = j['value'][name]['duration']
                     v = check_null(value)
-                    m_name = 'hthrift_g1_young_Lastgcinfo'
+                    m_name = 'activemq_g1_young_lastgcinfo'
                 local_vars.append({'name': m_name, 'timestamp': timestamp, 'value': v, 'check_type': check_type})
 
             metr_keys = ('CollectionTime', 'CollectionCount')
             for k, v in enumerate(gc_g1):
-                j = json.loads(lib.commonclient.httpget(__name__, hthrift_url + v))
+                j = json.loads(lib.commonclient.httpget(__name__, stats_url + v, activemq_auth))
                 if k is 0:
                     type = '_old_'
                 if k is 1:
@@ -121,38 +116,31 @@ def runcheck():
                         value = j['value'][vl]
                         v = check_null(value)
                         rate_key = vl + type
-                        CollectionTime_rate = rate.record_value_rate('hthrift_' + rate_key, v, timestamp)
-                        local_vars.append({'name': 'hthrift_g1' + type + vl, 'timestamp': timestamp, 'value': CollectionTime_rate, 'check_type': check_type, 'chart_type': 'Rate'})
+                        CollectionTime_rate = rate.record_value_rate('activemq_' + rate_key, v, timestamp)
+                        local_vars.append({'name': 'activemq_g1' + type + vl.lower(), 'timestamp': timestamp, 'value': CollectionTime_rate, 'check_type': check_type, 'chart_type': 'Rate'})
                     if ky is 1:
                         value = j['value'][vl]
                         v = check_null(value)
-                        local_vars.append({'name': 'hthrift_g1' + type + vl, 'timestamp': timestamp, 'value': v, 'check_type': check_type})
+                        local_vars.append({'name': 'activemq_g1' + type + vl.lower(), 'timestamp': timestamp, 'value': v, 'check_type': check_type, 'reaction': reaction})
         jolo_threads = 'java.lang:type=Threading'
-        jolo_tjson = json.loads(lib.commonclient.httpget(__name__, hthrift_url + '/' + jolo_threads))
-        thread_metrics = ('TotalStartedThreadCount', 'PeakThreadCount', 'ThreadCount', 'DaemonThreadCount')
+        jolo_tjson = json.loads(lib.commonclient.httpget(__name__, stats_url + '/' + jolo_threads, activemq_auth))
+        thread_metrics = ('PeakThreadCount', 'ThreadCount', 'DaemonThreadCount')
         for thread_metric in thread_metrics:
-            name = 'hthrift_' + thread_metric.lower()
+            name = 'activemq_' + thread_metric.lower()
             vlor = jolo_tjson['value'][thread_metric]
             local_vars.append({'name': name, 'timestamp': timestamp, 'value': vlor, 'check_type': check_type})
 
-        jolo_thrift = 'hadoop:service=thrift,name=Thrift'
-        jolo_tjson = json.loads(lib.commonclient.httpget(__name__, hthrift_url + '/' + jolo_thrift))
-        hrmetrics = ('CorePoolSize', 'CountersMapSize', 'FailedIncrements', 'TotalIncrements',
-                     'MaxPoolSize', 'MaxQueueSize', 'PoolCompletedTaskCount', 'PoolLargestPoolSize', 'QueueSize'
-                     )
-        for thread_metric in hrmetrics:
-            name = 'hthrift_' + thread_metric.lower()
-            blor = jolo_tjson['value'][thread_metric]
-            local_vars.append({'name': name, 'timestamp': timestamp, 'value': blor, 'check_type': check_type})
+        brokerstats = json.loads(lib.commonclient.httpget(__name__, stats_url + '/org.apache.activemq:brokerName=' + brokername + ',type=Broker', activemq_auth))
+        bstats = ['TotalConnectionsCount', 'TotalMessageCount', 'MemoryPercentUsage', 'TotalProducerCount',
+                  'StorePercentUsage', 'TotalConsumerCount', 'TotalEnqueueCount', 'TotalDequeueCount']
+        for s in bstats:
+            local_vars.append({'name': 'activemq_' + s.lower(), 'timestamp': timestamp, 'value': brokerstats['value'][s], 'check_type': check_type})
+
+        #lib.puylogger.print_message(str(brokerstats['value']))
 
         return local_vars
-
     except Exception as e:
         lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
-        try:
-            lib.jolostart.do_joloikia(java, juser, jclass, hthrift_url)
-        except Exception as jolo:
-            lib.pushdata.print_error(__name__, (jolo))
         pass
 
 

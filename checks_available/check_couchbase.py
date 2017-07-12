@@ -1,7 +1,6 @@
 import lib.record_rate
 import lib.puylogger
 import lib.getconfig
-import lib.pushdata
 import lib.commonclient
 import datetime
 import json
@@ -13,18 +12,16 @@ buckets = lib.getconfig.getparam('CouchBase', 'buckets').replace(' ', '').split(
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'couchbase'
 
-# timestamp = int(datetime.datetime.now().strftime("%s"))
 
 stats = ('cmd_get', 'couch_docs_data_size', 'curr_items', 'curr_items_tot', 'ep_bg_fetched', 'get_hits', 'mem_used', 'ops', 'vb_replica_curr_items')
 basicstats = ('quotaPercentUsed', 'opsPerSec', 'hitRatio', 'itemCount', 'memUsed')
 
 
 def runcheck():
+    local_vars = []
     try:
         timestamp = int(datetime.datetime.now().strftime("%s"))
         for bucket in buckets:
-            jsondata = lib.pushdata.JonSon()
-            jsondata.prepare_data()
             stats_json = json.loads(lib.commonclient.httpget(__name__, couchbase_url + '/' + bucket))
 
             for x in range(0, len(stats_json['nodes'])):
@@ -46,14 +43,14 @@ def runcheck():
                 for stat in stats:
                     name = 'couchbase_' + nodename + '_' + stat
                     value = float(stats_json['nodes'][x]['interestingStats'][stat])
-                    jsondata.gen_data(name.lower(), timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
+                    local_vars.append({'name': name.lower(), 'timestamp': timestamp, 'value': value, 'check_type': check_type})
 
             for bstat in basicstats:
                 name = 'couchbase_clusterwide_' + bstat
                 value = float(stats_json['basicStats'][bstat])
-                jsondata.gen_data(name.lower(), timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
+                local_vars.append({'name': name.lower(), 'timestamp': timestamp, 'value': value, 'check_type': check_type})
 
-            jsondata.put_json()
+            return local_vars
     except Exception as e:
         lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass

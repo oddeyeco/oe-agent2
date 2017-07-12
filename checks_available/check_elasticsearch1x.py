@@ -17,12 +17,13 @@ reaction = -3
 
 
 def runcheck():
+    local_vars = []
     try:
         rate = lib.record_rate.ValueRate()
         jsondata = lib.pushdata.JonSon()
         jsondata.prepare_data()
         stats_json = json.loads(lib.commonclient.httpget(__name__, elastic_url))
-        node_keys = stats_json['nodes'].keys()[0]
+        node_keys = list(stats_json['nodes'].keys())[0]
         data = {}
         rated_stats = {}
         timestamp = int(datetime.datetime.now().strftime("%s"))
@@ -78,10 +79,10 @@ def runcheck():
                     'gc_old_count':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['old']['collection_count']
                             })
 
-        for key, value in rated_stats.items():
+        for key, value in list(rated_stats.items()):
             reqrate = rate.record_value_rate('es_'+key, value, timestamp)
             if reqrate >= 0:
-                jsondata.gen_data('elasticsearch_'+key, timestamp, reqrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+                local_vars.append({'name': 'elasticsearch_' + key, 'timestamp': timestamp, 'value': reqrate, 'check_type': check_type, 'chart_type': 'Rate'})
 
         data.update({''
                     'elasticsearch_heap_committed':stats_json['nodes'][node_keys]['jvm']['mem']['heap_committed_in_bytes'],
@@ -91,13 +92,13 @@ def runcheck():
                     'elasticsearch_open_files':stats_json['nodes'][node_keys]['process']['open_file_descriptors'],
                     'elasticsearch_http_connections':stats_json['nodes'][node_keys]['http']['current_open']
                      })
-        for key, value in data.items():
+        for key, value in list(data.items()):
             if key == 'elasticsearch_non_heap_used' or key == 'elasticsearch_heap_used' or key == 'elasticsearch_non_heap_committed' or key == 'elasticsearch_heap_committed':
-                jsondata.gen_data(key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name, reaction)
+                local_vars.append({'name': key, 'timestamp': timestamp, 'value': value, 'check_type': check_type, 'reaction': reaction})
             else:
-                jsondata.gen_data(key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
-        jsondata.put_json()
+                local_vars.append({'name': key, 'timestamp': timestamp, 'value': value, 'check_type': check_type})
 
+        return local_vars
     except Exception as e:
         lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass

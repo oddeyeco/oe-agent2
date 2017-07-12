@@ -18,8 +18,9 @@ maxcache = int(lib.getconfig.getparam('SelfConfig', 'max_cache'))
 tsdb_type = lib.getconfig.getparam('TSDB', 'tsdtype')
 tmpdir = lib.getconfig.getparam('SelfConfig', 'tmpdir')
 log_file = lib.getconfig.getparam('SelfConfig', 'log_file')
-
+location = lib.getconfig.getparam('SelfConfig', 'location')
 hostname = socket.getfqdn()
+
 c = pycurl.Curl()
 global pycurl_response
 
@@ -68,9 +69,9 @@ else:
 class JonSon(object):
     def gen_data(self, name, timestamp, value, tag_hostname, tag_type, cluster_name, reaction=0, metric_type='None'):
         if tsdb_type == 'KairosDB':
-            self.data['metric'].append({"name": name, "timestamp": timestamp * 1000, "value": value, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group}})
+            self.data['metric'].append({"name": name, "timestamp": timestamp * 1000, "value": value, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
         elif tsdb_type == 'OpenTSDB':
-            self.data['metric'].append({"metric": name, "timestamp": timestamp, "value": value, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group}})
+            self.data['metric'].append({"metric": name, "timestamp": timestamp, "value": value, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
         elif tsdb_type == 'BlueFlood':
             raise NotImplementedError('BlueFlood is not supported yet')
         elif tsdb_type == 'Carbon':
@@ -82,14 +83,15 @@ class JonSon(object):
                 value = str(value) + 'i'
             else:
                 value = str(value)
-            self.data.append(name + ',host=' + tag_hostname + ',cluster=' + cluster_name + ',group=' + host_group + ',type=' + tag_type + ' value=' + value + ' ' + str_nano + '\n')
+            self.data.append(name + ',host=' + tag_hostname + ',cluster=' + cluster_name + ',group=' + host_group + ',location=' + location + ',type=' + tag_type + ' value=' + value + ' ' + str_nano + '\n')
         elif tsd_oddeye is True:
-            self.data['metric'].append({"metric": name, "timestamp": timestamp, "value": value, "reaction": reaction, "type": metric_type, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group}})
+            self.data['metric'].append({"metric": name, "timestamp": timestamp, "value": value, "reaction": reaction, "type": metric_type, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
 
         else:
-            print 'Please set TSDB type'
+            print ('Please set TSDB type')
 
     def prepare_data(self):
+        #def do_prepare():
         if tsd_rest is True:
             try:
                 self.data = {'metric': []}
@@ -114,6 +116,7 @@ class JonSon(object):
             except:
                 lib.puylogger.print_message('Recreating data in except block')
                 self.data = {'metric': []}
+    # ------------------------------------------- #
 
     def httt_set_opt(self,url, data):
         pycurl_response = cStringIO.StringIO()
@@ -176,6 +179,7 @@ class JonSon(object):
         if tsd_oddeye is True:
             json_data = json.dumps(self.data['metric'])
             send_data = barlus_style + json_data
+            #zdata = zlib.compress(send_data)
             self.httt_set_opt(tsdb_url, send_data)
             self.upload_it(send_data)
             if lib.puylogger.debug_log:
@@ -217,6 +221,7 @@ class JonSon(object):
             if lib.puylogger.debug_log:
                 lib.puylogger.print_message('\n' + line_data)
 
+# ------------------------------------------------------------------------------- #
     def send_special(self, module, timestamp, value, error_msg, mytype, reaction=0):
         try:
             if tsd_oddeye is True:
@@ -239,7 +244,7 @@ class JonSon(object):
                 del send_err_msg
         except:
                 logging.critical(" %s : " % module + str(send_err_msg))
-
+# ------------------------------------------------------------------------------- #
 
 def print_error(module, e):
     logging.basicConfig(filename=log_file, level=logging.DEBUG)
@@ -291,3 +296,4 @@ def print_error(module, e):
 
     except Exception as err:
         logging.critical(" %s : " % "Cannot send error" + str(err))
+

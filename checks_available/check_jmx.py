@@ -14,12 +14,13 @@ cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 java = lib.getconfig.getparam('JMX', 'java')
 juser = lib.getconfig.getparam('JMX', 'user')
 jclass = lib.getconfig.getparam('JMX', 'class')
-check_type = 'JMX'
+check_type = 'jmx'
 reaction = -3
 
 lib.jolostart.do_joloikia(java, juser, jclass, jmx_url)
 
 def runcheck():
+    local_vars = []
     try:
         data_dict = json.loads(lib.commonclient.httpget(__name__, jmx_url + '/java.lang:type=GarbageCollector,name=*'))
         ConcurrentMarkSweep = 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector'
@@ -35,8 +36,6 @@ def runcheck():
             CMS = False
             G1 = False
 
-        jsondata = lib.pushdata.JonSon()
-        jsondata.prepare_data()
         rate = lib.record_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
         heam_mem = 'java.lang:type=Memory'
@@ -50,16 +49,16 @@ def runcheck():
                     key = 'jmx_nonheap_' + metr
                     mon_values = jolo_keys[heap][metr]
                     if metr == 'used':
-                        jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name)
+                        local_vars.append({'name': key, 'timestamp': timestamp, 'value': mon_values, 'check_type': check_type})
                     else:
-                        jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name, reaction)
+                        local_vars.append({'name': key, 'timestamp': timestamp, 'value': mon_values, 'check_type': check_type, 'reaction': reaction})
                 else:
                     key = 'jmx_heap_' + metr
                     mon_values = jolo_keys[heap][metr]
                     if metr == 'used':
-                        jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name)
+                        local_vars.append({'name': key, 'timestamp': timestamp, 'value': mon_values, 'check_type': check_type})
                     else:
-                        jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name, reaction)
+                        local_vars.append({'name': key, 'timestamp': timestamp, 'value': mon_values, 'check_type': check_type, 'reaction': reaction})
         if CMS is True:
             collector = ('java.lang:name=ParNew,type=GarbageCollector', 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector')
             for coltype in collector:
@@ -70,11 +69,14 @@ def runcheck():
                 CollectionTime = beans['value']['CollectionTime']
 
                 def push_metrics(preffix):
-                    jsondata.gen_data('jmx_' + preffix + '_collection_count', timestamp, CollectionCount, lib.pushdata.hostname, check_type, cluster_name)
                     CollectionTime_rate = rate.record_value_rate('jmx_' + preffix + '_collection_time', CollectionTime, timestamp)
-                    jsondata.gen_data('jmx_' + preffix + '_collection_time', timestamp, CollectionTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
                     if 'LastGcInfo' in locals():
-                        jsondata.gen_data('jmx_' + preffix + '_lastgcinfo', timestamp, LastGcInfo, lib.pushdata.hostname, check_type, cluster_name)
+                        local_vars.append({'name': 'jmx_' + preffix + '_lastgcinfo', 'timestamp': timestamp, 'value': LastGcInfo, 'check_type': check_type})
+
+                    local_vars.append({'name': 'jmx_' + preffix + '_collection_count', 'timestamp': timestamp, 'value': CollectionCount, 'check_type': check_type})
+                    local_vars.append({'name': 'jmx_' + preffix + '_collection_time', 'timestamp': timestamp, 'value': CollectionTime_rate, 'check_type': check_type, 'chart_type': 'Rate'})
+
+
 
                 if coltype == 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector':
                     push_metrics(preffix='cms')
@@ -106,7 +108,7 @@ def runcheck():
                     value = j['value'][name]['duration']
                     v = check_null(value)
                     m_name = 'jmx_G1_young_LastGcInfo'
-                jsondata.gen_data(m_name, timestamp, v, lib.pushdata.hostname, check_type, cluster_name)
+                local_vars.append({'name': m_name, 'timestamp': timestamp, 'value': v, 'check_type': check_type})
 
             metr_keys = ('CollectionTime', 'CollectionCount')
             for k, v in enumerate(gc_g1):
@@ -121,27 +123,27 @@ def runcheck():
                         v = check_null(value)
                         rate_key = vl + type
                         CollectionTime_rate = rate.record_value_rate('jmx_' + rate_key, v, timestamp)
-                        jsondata.gen_data('jmx_g1' + type + vl, timestamp, CollectionTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+                        local_vars.append({'name': 'jmx_g1' + type + vl, 'timestamp': timestamp, 'value': CollectionTime_rate, 'check_type': check_type, 'chart_type': 'Rate'})
                     if ky is 1:
                         value = j['value'][vl]
                         v = check_null(value)
-                        jsondata.gen_data('jmx_g1' + type + vl, timestamp, v, lib.pushdata.hostname, check_type, cluster_name)
+                        local_vars.append({'name': 'jmx_g1' + type + vl, 'timestamp': timestamp, 'value': v, 'check_type': check_type})
         jolo_threads = 'java.lang:type=Threading'
         jolo_tjson = json.loads(lib.commonclient.httpget(__name__, jmx_url + '/' + jolo_threads))
         thread_metrics = ('TotalStartedThreadCount', 'PeakThreadCount', 'ThreadCount', 'DaemonThreadCount')
         for thread_metric in thread_metrics:
             name = 'jmx_' + thread_metric.lower()
             vlor = jolo_tjson['value'][thread_metric]
-            jsondata.gen_data(name, timestamp, vlor, lib.pushdata.hostname, check_type, cluster_name)
+            local_vars.append({'name': name, 'timestamp': timestamp, 'value': vlor, 'check_type': check_type})
 
-        jsondata.put_json()
+        return local_vars
 
     except Exception as e:
         lib.pushdata.print_error(__name__, (e))
         try:
             lib.jolostart.do_joloikia(java, juser, jclass, jmx_url)
         except Exception as jolo:
-            lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
+            lib.puylogger.print_message(__name__ + ' Error : ' + str(jolo))
         pass
 
 

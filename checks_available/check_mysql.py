@@ -9,23 +9,22 @@ pip install MySQL-python
 import MySQLdb
 import datetime
 import lib.getconfig
-from lib.pushdata import JonSon,hostname,print_error
-from lib.record_rate import ValueRate
+import lib.puylogger
+import lib.record_rate
 
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
-
 mysql_host = lib.getconfig.getparam('MySQL', 'host')
 mysql_user = lib.getconfig.getparam('MySQL', 'user')
 mysql_pass = lib.getconfig.getparam('MySQL', 'pass')
+check_type = 'mysql'
+
 
 def runcheck():
+    local_vars = []
     try:
-        check_type = 'mysql'
         db = MySQLdb.connect(host=mysql_host, user=mysql_user, passwd=mysql_pass, )
         cur = db.cursor()
-        jsondata = JonSon()
-        jsondata.prepare_data()
-        rate = ValueRate()
+        rate = lib.record_rate.ValueRate()
         raw_mysqlstats = cur.execute("SHOW GLOBAL STATUS WHERE Variable_name='Connections'"
                             "OR Variable_name='Com_select' "
                             "OR Variable_name='Com_delete_multi' "
@@ -53,18 +52,16 @@ def runcheck():
         timestamp = int(datetime.datetime.now().strftime("%s"))
         non_rate_metrics = ('Max_used_connections', 'Slow_queries', 'Open_files', 'Threads_connected')
         for row in cur.fetchall():
-            mytype = row[0].lower()
+            mytype = row[0]
             myvalue = row[1]
-            if mytype not in non_rate_metrics:
-                myvalue = rate.record_value_rate('mysql_'+mytype, myvalue, timestamp)
-                jsondata.gen_data('mysql_' + mytype, timestamp, myvalue, hostname, check_type, cluster_name, 0, 'Rate')
+            if mytype in non_rate_metrics:
+                local_vars.append({'name': 'mysql_'+ mytype.lower(), 'timestamp': timestamp, 'value': myvalue, 'check_type': check_type, })
             else:
-                jsondata.gen_data('mysql_'+mytype, timestamp, myvalue, hostname, check_type, cluster_name)
+                vrate = rate.record_value_rate('mysql_' + mytype, myvalue, timestamp)
+                local_vars.append({'name': 'mysql_' + mytype.lower(), 'timestamp': timestamp, 'value': vrate, 'check_type': check_type, 'chart_type': 'Rate'})
         cur.close()
         db.close()
-        jsondata.put_json()
+        return local_vars
     except Exception as e:
-        print_error(__name__ , (e))
+        lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass
-
-

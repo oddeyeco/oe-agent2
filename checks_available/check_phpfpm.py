@@ -1,5 +1,4 @@
 import lib.record_rate
-import lib.pushdata
 import lib.commonclient
 import lib.getconfig
 import lib.puylogger
@@ -14,6 +13,7 @@ check_type = 'php-fpm'
 
 def runcheck():
     try:
+        local_vars = []
         if curl_auth is True:
             data = lib.commonclient.httpget(__name__, phpfpm_url, phpfpm_auth)
         else:
@@ -26,19 +26,20 @@ def runcheck():
         max_active = data.splitlines()[11].split(':')[1].replace(" ", "")
         max_children = data.splitlines()[12].split(':')[1].replace(" ", "")
         slow_request = data.splitlines()[13].split(':')[1].replace(" ", "")
-        jsondata = lib.pushdata.JonSon()
-        jsondata.prepare_data()
         rate = lib.record_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
         conns_per_sec = rate.record_value_rate('phpfpm_connections', connections, timestamp)
-        jsondata.gen_data('phpfpm_conns_per_sec', timestamp, conns_per_sec, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
-        jsondata.gen_data('phpfpm_proc_idle', timestamp, proc_idle, lib.pushdata.hostname, check_type, cluster_name)
-        jsondata.gen_data('phpfpm_proc_active', timestamp, proc_active, lib.pushdata.hostname, check_type, cluster_name)
-        jsondata.gen_data('phpfpm_proc_total', timestamp, proc_total, lib.pushdata.hostname, check_type, cluster_name)
-        jsondata.gen_data('phpfpm_max_active', timestamp, max_active, lib.pushdata.hostname, check_type, cluster_name)
-        jsondata.gen_data('phpfpm_max_children', timestamp, max_children, lib.pushdata.hostname, check_type, cluster_name)
-        jsondata.gen_data('phpfpm_slow_request', timestamp, slow_request, lib.pushdata.hostname, check_type, cluster_name)
-        jsondata.put_json()
+
+        local_vars.append({'name': 'phpfpm_conns_per_sec', 'timestamp': timestamp, 'value': conns_per_sec, 'check_type': check_type, 'chart_type': 'Rate'})
+        local_vars.append({'name': 'phpfpm_proc_idle', 'timestamp': timestamp, 'value': proc_idle, 'check_type': check_type})
+        local_vars.append({'name': 'phpfpm_proc_active', 'timestamp': timestamp, 'value': proc_active, 'check_type': check_type})
+        local_vars.append({'name': 'phpfpm_proc_total', 'timestamp': timestamp, 'value': proc_total, 'check_type': check_type})
+        local_vars.append({'name': 'phpfpm_max_active', 'timestamp': timestamp, 'value': max_active, 'check_type': check_type})
+        local_vars.append({'name': 'phpfpm_max_children', 'timestamp': timestamp, 'value': max_children, 'check_type': check_type})
+        local_vars.append({'name': 'phpfpm_slow_request', 'timestamp': timestamp, 'value': slow_request, 'check_type': check_type})
+
+
+        return local_vars
     except Exception as e:
         lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass

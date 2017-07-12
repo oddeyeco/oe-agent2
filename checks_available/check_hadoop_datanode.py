@@ -1,5 +1,4 @@
 import lib.record_rate
-import lib.pushdata
 import lib.commonclient
 import lib.getconfig
 import lib.puylogger
@@ -14,11 +13,10 @@ warn_level = 20
 
 
 def runcheck():
+    local_vars = []
     try:
         hadoop_datanode_stats = json.loads(lib.commonclient.httpget(__name__, hadoop_datanode_url))
         rate = lib.record_rate.ValueRate()
-        jsondata = lib.pushdata.JonSon()
-        jsondata.prepare_data()
         timestamp = int(datetime.datetime.now().strftime("%s"))
 
         stats_keys = hadoop_datanode_stats['beans']
@@ -52,18 +50,18 @@ def runcheck():
                 if values in stats_keys[stats_index]:
                     stack_value = stats_keys[stats_index][values]
                     reqrate = rate.record_value_rate('datanode_'+values, stack_value, timestamp)
-                    jsondata.gen_data('datanode_'+values.lower(), timestamp, reqrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+                    local_vars.append({'name': 'datanode_'+values.lower(), 'timestamp': timestamp, 'value': reqrate, 'check_type': check_type, 'chart_type': 'Rate'})
 
-        for key in mon_values.keys():
+        for key in list(mon_values.keys()):
             if key is 'datanode_dfsused' or key is 'datanode_space_remaining':
-                jsondata.gen_data(key.lower(), timestamp, mon_values[key], lib.pushdata.hostname, check_type, cluster_name, reaction)
+                local_vars.append({'name': key.lower(), 'timestamp': timestamp, 'value': mon_values[key], 'check_type': check_type, 'reaction': reaction, 'chart_type': 'Rate'})
             else:
-                jsondata.gen_data(key, timestamp, mon_values[key], lib.pushdata.hostname, check_type, cluster_name)
+                local_vars.append({'name': key.lower(), 'timestamp': timestamp, 'value': mon_values[key], 'check_type': check_type, 'reaction': reaction})
 
         data_du_percent = mon_values['datanode_dfsused']*100/(mon_values['datanode_dfsused']+mon_values['datanode_space_remaining'])
-        jsondata.gen_data('datanode_du_percent', timestamp, data_du_percent, lib.pushdata.hostname, check_type, cluster_name, warn_level, 'Percent')
+        local_vars.append({'name': 'datanode_du_percent', 'timestamp': timestamp, 'value':data_du_percent, 'check_type': check_type, 'reaction': reaction, 'chart_type': 'Percent'})
 
-        jsondata.put_json()
+        return local_vars
     except Exception as e:
         lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass

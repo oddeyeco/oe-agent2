@@ -6,13 +6,10 @@ import lib.record_rate
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 host_group = lib.getconfig.getparam('SelfConfig', 'host_group')
 
-# ---------------------- #
 rated = True
-#reaction = -3
 values_type = 'Percent'
 warn_level = 90
 crit_level = 100
-# ---------------------- #
 
 '''
 0: user: normal processes executing in user mode
@@ -24,9 +21,11 @@ crit_level = 100
 6: softirq: servicing softirqs
 '''
 
+check_type = 'system'
+
 
 def runcheck():
-    check_type = 'system'
+    local_vars = []
     jsondata = lib.pushdata.JonSon()
     jsondata.prepare_data()
     rate = lib.record_rate.ValueRate()
@@ -52,11 +51,13 @@ def runcheck():
                 reaction = -3
             if rated is True:
                 values_rate = rate.record_value_rate(name, value, timestamp)/cpucount
-                jsondata.gen_data(name, timestamp, values_rate, lib.pushdata.hostname, check_type, cluster_name, reaction, values_type)
+                local_vars.append({'name': name, 'timestamp': timestamp, 'value': values_rate, 'chart_type': values_type, 'reaction': reaction})
             else:
-                jsondata.gen_data(name, timestamp, int(value)/cpucount, lib.pushdata.hostname, check_type, cluster_name, reaction, values_type)
+                local_vars.append({'name': name, 'timestamp': timestamp, 'value': int(value)/cpucount, 'chart_type': values_type, 'reaction': reaction})
 
-        jsondata.put_json()
+        return  local_vars
     except Exception as e:
         lib.pushdata.print_error(__name__ , (e))
         pass
+
+

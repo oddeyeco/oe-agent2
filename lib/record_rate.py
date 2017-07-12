@@ -1,5 +1,10 @@
 import lib.puylogger
 
+# def init():
+#     global last_value
+#     last_value = {}
+#     return last_value
+
 last_value = {}
 
 class ValueRate(object):

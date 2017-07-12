@@ -1,7 +1,6 @@
 import lib.commonclient
 import lib.record_rate
 import lib.getconfig
-import lib.pushdata
 import lib.puylogger
 import datetime
 import json
@@ -17,10 +16,9 @@ check_type = 'rabbitmq'
 
 
 def runcheck():
+    local_vars = []
     try:
         url1 = rabbit_url+'/api/overview'
-        jsondata = lib.pushdata.JonSon()
-        jsondata.prepare_data()
         stats_json = json.loads(lib.commonclient.httpget(__name__, url1, rabbit_auth))
         timestamp = int(datetime.datetime.now().strftime("%s"))
         message_stats = ('publish','ack','deliver_get','redeliver','deliver')
@@ -29,7 +27,7 @@ def runcheck():
             try:
                 stats_name = 'rabbitmq_'+stats+'_rate'
                 stats_value = stats_json['message_stats'][stats+'_details']['rate']
-                jsondata.gen_data(stats_name, timestamp, stats_value, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+                local_vars.append({'name': stats_name, 'timestamp': timestamp, 'value': stats_value, 'chart_type': 'Rate', 'check_type': check_type})
             except Exception as e:
                 lib.puylogger.print_message('Cannot get stats for ' + str(e))
                 pass
@@ -37,7 +35,7 @@ def runcheck():
         for queue in queue_totals:
             queue_name = 'rabbitmq_'+queue
             queue_value = stats_json['queue_totals'][queue]
-            jsondata.gen_data(queue_name, timestamp, queue_value, lib.pushdata.hostname, check_type, cluster_name)
+            local_vars.append({'name': queue_name, 'timestamp': timestamp, 'value': queue_value, 'check_type': check_type})
 
         if queue_details is True :
             url2 = rabbit_url + '/api/queues'
@@ -46,7 +44,7 @@ def runcheck():
             for name in range(len(rabbit_queues)):
                 mname = 'rabbitmq_'+re.sub('[^a-zA-Z0-9]', '_', str(rabbit_queues[name]['name']))
                 mvalue = str(rabbit_queues[name]['messages'])
-                jsondata.gen_data(mname, timestamp, mvalue, lib.pushdata.hostname, check_type, cluster_name)
+                local_vars.append({'name': mname, 'timestamp': timestamp, 'value': mvalue, 'check_type': check_type})
                 details = ('publish_details', 'deliver_details')
                 for detail in details :
                     if 'message_stats' in rabbit_queues[name]:
@@ -54,8 +52,8 @@ def runcheck():
                             rname = 'rabbitmq_' + str(rabbit_queues[name]['name']) + '_'+ detail
                             rnamesub  = 'rabbitmq_'+re.sub('[^a-zA-Z0-9]', '_', rname)
                             rvalue = rabbit_queues[name]['message_stats'][detail]['rate']
-                            jsondata.gen_data(rnamesub, timestamp, rvalue, lib.pushdata.hostname, check_type, cluster_name)
-        jsondata.put_json()
+                            local_vars.append({'name': rnamesub, 'timestamp': timestamp, 'value': rvalue, 'check_type': check_type})
+        return  local_vars
     except Exception as e:
         lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass

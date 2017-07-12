@@ -1,6 +1,5 @@
 import lib.getconfig
 import datetime
-import lib.pushdata
 import lib.record_rate
 import lib.puylogger
 import lib.commonclient
@@ -11,19 +10,18 @@ apache_url = lib.getconfig.getparam('Apache', 'url')
 apache_auth = lib.getconfig.getparam('Apache', 'user')+':'+lib.getconfig.getparam('Apache', 'pass')
 curl_auth = lib.getconfig.getparam('Apache', 'auth')
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
-
+check_type = 'apache'
 
 def runcheck():
+    local_vars = []
     try:
         if curl_auth is True:
             data = lib.commonclient.httpget(__name__, apache_url, apache_auth)
         else:
             data = lib.commonclient.httpget(__name__, apache_url)
 
-        jsondata = lib.pushdata.JonSon()
-        jsondata.prepare_data()
         rate = lib.record_rate.ValueRate()
-        check_type = 'apache'
+
         metrics_rated = ('Total Accesses', 'Total kBytes')
         metrics_stuck = ('ReqPerSec', 'BytesPerSec', 'BytesPerReq', 'BusyWorkers', 'IdleWorkers')
         timestamp = int(datetime.datetime.now().strftime("%s"))
@@ -32,17 +30,16 @@ def runcheck():
                 if searchitem in line:
                     key = line.split(' ')[0].replace(':', '')
                     value = line.split(' ')[1]
-                    jsondata.gen_data('apache_'+key.lower(), timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
-            for searchitem in metrics_rated:
+                    local_vars.append({'name': 'apache_'+key.lower(), 'timestamp': timestamp, 'value': value, 'check_type': check_type})
+            for searchitem in  metrics_rated:
                 reaction = 0
-                metr_type = 'Rate'
                 if searchitem in line:
                     key = line.split(' ')[0]+line.split(' ')[1].replace(':', '')
                     value = line.split(' ')[2]
                     value_rate = rate.record_value_rate(key, value, timestamp)
-                    jsondata.gen_data('apache_'+key.lower(), timestamp, value_rate, lib.pushdata.hostname, check_type, cluster_name, reaction, metr_type)
+                    local_vars.append({'name': 'apache_' + key.lower(), 'timestamp': timestamp, 'value': value_rate, 'check_type': check_type, 'chart_type': 'Rate'})
 
-        jsondata.put_json()
+        return local_vars
     except Exception as e:
         lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass

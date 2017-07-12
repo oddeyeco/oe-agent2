@@ -1,5 +1,4 @@
 import lib.record_rate
-import lib.pushdata
 import lib.getconfig
 import lib.commonclient
 import lib.puylogger
@@ -16,9 +15,7 @@ message = "INFO\r\n"
 
 def runcheck():
     try:
-
-        jsondata = lib.pushdata.JonSon()
-        jsondata.prepare_data()
+        local_vars = []
         rate = lib.record_rate.ValueRate()
         raw_data = lib.commonclient.socketget(__name__, buffer_size, redis_host, redis_port, message)
         timestamp = int(datetime.datetime.now().strftime("%s"))
@@ -35,18 +32,18 @@ def runcheck():
                 line2 = line.split(":")
                 datadict.update({line2[0]: line2[1]})
 
-        for key, value in datadict.items():
+        for key, value in list(datadict.items()):
             if key in ms:
                 try:
                     value = int(value)
                 except:
                     pass
-                jsondata.gen_data('redis_' + key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
+                local_vars.append({'name': 'redis_' + key, 'timestamp': timestamp, 'value': value, 'check_type': check_type})
             if key in ms_rated:
                 vrate = rate.record_value_rate('redis_' + key , value, timestamp)
-                jsondata.gen_data('redis_' + key, timestamp, vrate, lib.pushdata.hostname, check_type, cluster_name)
+                local_vars.append({'name':'redis_' + key, 'timestamp': timestamp, 'value': value, 'check_type': check_type, 'chart_type': 'Rate'})
 
-        jsondata.put_json()
+        return local_vars
     except Exception as e:
         lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass

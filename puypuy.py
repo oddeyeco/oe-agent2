@@ -44,13 +44,39 @@ for checks in checklist:
 modules = map(__import__, module_names)
 
 
+cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
+extra_tags = ('chart_type', 'check_type')
+jsondata = lib.pushdata.JonSon()
+
+
+
 def run_scripts():
-    for modol in modules:
-        start_time = time.time()
-        modol.runcheck()
-        time_elapsed = "{:.9f}".format(time.time() - start_time) +  " seconds"
-        message = time_elapsed +' ' + str(modol).split("'")[1]
-        lib.puylogger.print_message(message)
+    try:
+        start_gtime = time.time()
+        jsondata.prepare_data()
+        for modol in modules:
+            try:
+                # jsondata.prepare_data()
+                start_time = time.time()
+                a = modol.runcheck()
+                time_elapsed = "{:.9f}".format(time.time() - start_time) + " seconds"
+                message = time_elapsed + ' ' + str(modol).split("'")[1]
+                for b in a:
+                    if 'reaction' not in b:
+                        b.update({'reaction': 0})
+                    for extra_tag in extra_tags:
+                        if extra_tag not in b:
+                            b.update({extra_tag: 'None'})
+                    jsondata.gen_data(b['name'], b['timestamp'], b['value'], lib.pushdata.hostname, b['check_type'], cluster_name, b['reaction'], b['chart_type'])
+                # jsondata.put_json()
+                lib.puylogger.print_message(message)
+            except Exception as e:
+                lib.puylogger.print_message(str(e))
+        jsondata.put_json()
+        time_elapsed2 = '{:.9f}'.format(time.time() - start_gtime) + ' seconds '
+        lib.puylogger.print_message('Spent ' + time_elapsed2 + 'to complete interation')
+    except Exception as e:
+        lib.puylogger.print_message(str(e))
 
 
 def upload_cache():
@@ -60,7 +86,7 @@ def upload_cache():
 class App(Daemon):
     def run(self):
         backends = ('OddEye', 'InfluxDB', 'KairosDB', 'OpenTSDB')
-        self.hast = 0
+        self.hast = 1
         if tsdb_type in backends:
             def run_normal():
                 while True:
@@ -72,8 +98,11 @@ class App(Daemon):
                         lib.puylogger.print_message(str(run_shell_scripts))
                     if self.hast % 25 == 0:
                           gc.collect()
+                          self.hast = 1
+                    else:
+                        self.hast += 1
                     time.sleep(cron_interval)
-                    lib.puylogger.print_message('----------------------------------------')
+                    #lib.puylogger.print_message('----------------------------------------')
 
             def run_cache():
                 while True:

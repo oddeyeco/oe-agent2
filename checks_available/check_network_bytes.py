@@ -3,18 +3,17 @@ import glob
 import lib.getconfig
 import lib.pushdata
 import lib.record_rate
+import lib.puylogger
 
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
-
 check_localhost = False
 rated = True
+check_type = 'system'
+rate = lib.record_rate.ValueRate()
+
 
 def runcheck():
-
-    check_type = 'system'
-    jsondata = lib.pushdata.JonSon()
-    jsondata.prepare_data()
-    rate = lib.record_rate.ValueRate()
+    local_vars = []
     timestamp = int(datetime.datetime.now().strftime("%s"))
     try:
         ifaces = glob.glob("/sys/class/net/*")
@@ -40,14 +39,15 @@ def runcheck():
                 if rated is True:
                     rxrate = rate.record_value_rate(rxname, rx, timestamp)
                     txrate = rate.record_value_rate(txname, tx, timestamp)
-                    jsondata.gen_data(txname, timestamp, txrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
-                    jsondata.gen_data(rxname, timestamp, rxrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+                    local_vars.append({'name':rxname, 'timestamp': timestamp, 'value':rxrate, 'chart_type': 'Rate', 'check_type': check_type, 'reaction': 0})
+                    local_vars.append({'name':txname, 'timestamp': timestamp, 'value':txrate, 'chart_type': 'Rate', 'check_type': check_type, 'reaction': 0})
                 else:
-                    jsondata.gen_data(txname, timestamp, tx, lib.pushdata.hostname, check_type, cluster_name, 0, 'Counter')
-                    jsondata.gen_data(rxname, timestamp, rx, lib.pushdata.hostname, check_type, cluster_name, 0, 'Counter')
+                    local_vars.append({'name':rxname, 'timestamp': timestamp, 'value':rxrate, 'chart_type': 'Counter', 'check_type': check_type, 'reaction': 0})
+                    local_vars.append({'name':txname, 'timestamp': timestamp, 'value':txrate, 'chart_type': 'Counter', 'check_type': check_type, 'reaction': 0})
+
             rxb.close()
             txb.close()
-        jsondata.put_json()
+        return local_vars
     except Exception as e:
         lib.pushdata.print_error(__name__ , (e))
         pass

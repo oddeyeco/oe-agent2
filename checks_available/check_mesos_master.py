@@ -1,5 +1,4 @@
 import lib.record_rate
-import lib.pushdata
 import lib.commonclient
 import lib.getconfig
 import lib.puylogger
@@ -12,10 +11,9 @@ check_type = 'mesos'
 
 
 def runcheck():
+    local_vars = []
     try:
         timestamp = int(datetime.datetime.now().strftime("%s"))
-        jsondata = lib.pushdata.JonSon()
-        jsondata.prepare_data()
         stats_json = json.loads(lib.commonclient.httpget(__name__, mesos_url))
         metrics = ('master/cpus_percent', 'master/cpus_revocable_percent', 'master/cpus_used',
                   'master/disk_percent', 'master/disk_revocable_percent', 'master/disk_used',
@@ -27,8 +25,8 @@ def runcheck():
                   'allocator/mesos/allocation_run_ms', 'allocator/mesos/allocation_run_ms/p99', 'registrar/state_fetch_ms', 'registrar/state_store_ms/p99')
         for metric in metrics:
             if metric in stats_json:
-                jsondata.gen_data('mesos_'+metric.replace('/','_'), timestamp, stats_json[metric], lib.pushdata.hostname, check_type, cluster_name)
-        jsondata.put_json()
+                local_vars.append({'name': 'mesos_'+metric.replace('/','_'), 'timestamp': timestamp, 'value': stats_json[metric], 'check_type': check_type})
+        return local_vars
     except Exception as e:
         lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass

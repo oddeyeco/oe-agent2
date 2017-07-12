@@ -1,24 +1,20 @@
 import lib.record_rate
-import lib.pushdata
 import lib.getconfig
 import lib.puylogger
 import lib.commonclient
 import datetime
 
-
 memcached_host = lib.getconfig.getparam('Memcached', 'host')
 memcached_port = int(lib.getconfig.getparam('Memcached', 'port'))
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'memcached'
-
 buffer_size = 1024
 message = "stats\nquit"
 
-def runcheck():
-    try:
 
-        jsondata = lib.pushdata.JonSon()
-        jsondata.prepare_data()
+def runcheck():
+    local_vars = []
+    try:
         rate = lib.record_rate.ValueRate()
         raw_data = lib.commonclient.socketget(__name__, buffer_size, memcached_host, memcached_port, message)
         timestamp = int(datetime.datetime.now().strftime("%s"))
@@ -29,14 +25,14 @@ def runcheck():
                 if searchitem in line:
                     key = line.split(' ')[1]
                     value = line.split(' ')[2].rstrip('\r')
-                    jsondata.gen_data('memcached_'+key, timestamp, value, lib.pushdata.hostname, check_type, cluster_name)
+                    local_vars.append({'name': 'memcached_' + key, 'timestamp': timestamp, 'value': value, 'check_type': check_type})
             for searchitem in metrics_rated:
                 if searchitem in line:
                     key = line.split(' ')[1]
                     value = line.split(' ')[2].rstrip('\r')
                     value_rate = rate.record_value_rate(key, value, timestamp)
-                    jsondata.gen_data('memcached_'+key, timestamp, value_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
-        jsondata.put_json()
+                    local_vars.append({'name': 'memcached_' + key, 'timestamp': timestamp, 'value': value_rate, 'check_type': check_type, 'chart_type': 'Rate'})
+        return local_vars
     except Exception as e:
-        lib.pushdata.print_error(__name__ , (e))
+        lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass

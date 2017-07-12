@@ -2,7 +2,6 @@ import lib.getconfig
 import datetime
 import json
 import lib.commonclient
-import lib.pushdata
 import lib.record_rate
 import lib.puylogger
 
@@ -13,9 +12,8 @@ reaction = -3
 
 
 def runcheck():
+    local_vars = []
     try:
-        jsondata = lib.pushdata.JonSon()
-        jsondata.prepare_data()
         rate = lib.record_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
         cassa_cql_metrics = json.loads(lib.commonclient.httpget(__name__, jolokia_url+'/org.apache.cassandra.metrics:type=CQL,name=*'))
@@ -27,19 +25,19 @@ def runcheck():
             mon_name = 'cassa_cql_'+cql_statement
             if mon_value is not None:
                 if mon_value is 0:
-                    jsondata.gen_data(mon_name, timestamp, mon_value, lib.pushdata.hostname, check_type, cluster_name)
+                    local_vars.append({'name': mon_name.lower(), 'timestamp': timestamp, 'value': mon_value, 'check_type': check_type})
                 else:
                     value_rate=rate.record_value_rate('cql_'+mon_name, mon_value, timestamp)
-                    jsondata.gen_data(mon_name.lower(), timestamp, value_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+                    local_vars.append({'name': mon_name.lower(), 'timestamp': timestamp, 'value': value_rate, 'check_type': check_type, 'chart_type': 'Rate'})
 
         cache_metrics = ('Hits,scope=KeyCache', 'Requests,scope=KeyCache', 'Requests,scope=RowCache', 'Hits,scope=RowCache')
         for cache_metric in cache_metrics:
             mon_value = cassa_cache_metrics['value']['org.apache.cassandra.metrics:name=' + cache_metric + ',type=Cache']['OneMinuteRate']
             mon_name = 'cassa_'+ str(cache_metric).replace(',scope=', '_')
-            jsondata.gen_data(mon_name.lower(), timestamp, mon_value, lib.pushdata.hostname, check_type, cluster_name)
+            local_vars.append({'name': mon_name.lower(), 'timestamp': timestamp, 'value': mon_value, 'check_type': check_type})
 
         copaction_tasks = cassa_copmaction['value']['org.apache.cassandra.metrics:name=PendingTasks,type=Compaction']['Value']
-        jsondata.gen_data('cassa_compaction_pending', timestamp, copaction_tasks, lib.pushdata.hostname, check_type, cluster_name)
+        local_vars.append({'name': 'cassa_compaction_pending', 'timestamp': timestamp, 'value': copaction_tasks, 'check_type': check_type})
 
         data_dict = json.loads(lib.commonclient.httpget(__name__, jolokia_url + '/java.lang:type=GarbageCollector,name=*'))
         ConcurrentMarkSweep = 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector'
@@ -66,16 +64,16 @@ def runcheck():
                     key = 'cassa_nonheap_' + metr
                     mon_values = jolo_keys[heap][metr]
                     if metr == 'used':
-                        jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name)
+                        local_vars.append({'name': key, 'timestamp': timestamp, 'value': mon_values, 'check_type': check_type})
                     else:
-                        jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name, reaction)
+                        local_vars.append({'name': key, 'timestamp': timestamp, 'value': mon_values, 'check_type': check_type, 'reaction': reaction})
                 else:
                     key = 'cassa_heap_' + metr
                     mon_values = jolo_keys[heap][metr]
                     if metr == 'used':
-                        jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name)
+                        local_vars.append({'name': key, 'timestamp': timestamp, 'value': mon_values, 'check_type': check_type})
                     else:
-                        jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name, reaction)
+                        local_vars.append({'name': 'cassa_compaction_pending', 'timestamp': timestamp, 'value': copaction_tasks, 'check_type': check_type, 'reaction': 'reaction'})
         if CMS is True:
             collector = ('java.lang:name=ParNew,type=GarbageCollector', 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector')
             for coltype in collector:
@@ -86,11 +84,11 @@ def runcheck():
                 CollectionTime = beans['value']['CollectionTime']
 
                 def push_metrics(preffix):
-                    jsondata.gen_data('cassa_' + preffix + '_collection_count', timestamp, CollectionCount, lib.pushdata.hostname, check_type, cluster_name)
+                    local_vars.append({'name': 'cassa_' + preffix + '_collection_count', 'timestamp': timestamp, 'value': CollectionCount, 'check_type': check_type})
                     CollectionTime_rate = rate.record_value_rate('cassa_' + preffix + '_collection_time', CollectionTime, timestamp)
-                    jsondata.gen_data('cassa_' + preffix + '_collection_time', timestamp, CollectionTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+                    local_vars.append({'name': 'cassa_' + preffix + '_collection_time', 'timestamp': timestamp, 'value': CollectionTime_rate, 'check_type': check_type, 'chart_type': 'Rate'})
                     if 'LastGcInfo' in locals():
-                        jsondata.gen_data('cassa_' + preffix + '_lastgcinfo', timestamp, LastGcInfo, lib.pushdata.hostname, check_type, cluster_name)
+                        local_vars.append({'name': 'cassa_' + preffix + '_lastgcinfo', 'timestamp': timestamp, 'value': LastGcInfo, 'check_type': check_type})
 
                 if coltype == 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector':
                     push_metrics(preffix='cms')
@@ -122,7 +120,7 @@ def runcheck():
                     value = j['value'][name]['duration']
                     v = check_null(value)
                     m_name = 'cassa_G1_young_LastGcInfo'
-                jsondata.gen_data(m_name, timestamp, v, lib.pushdata.hostname, check_type, cluster_name)
+                local_vars.append({'name': m_name, 'timestamp': timestamp, 'value': v, 'check_type': check_type})
 
             metr_keys = ('CollectionTime', 'CollectionCount')
             for k, v in enumerate(gc_g1):
@@ -137,20 +135,20 @@ def runcheck():
                         v = check_null(value)
                         rate_key = vl + type
                         CollectionTime_rate = rate.record_value_rate('cassa_' + rate_key, v, timestamp)
-                        jsondata.gen_data('cassa_g1' + type + vl, timestamp, CollectionTime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+                        local_vars.append({'name': 'cassa_g1' + type + vl, 'timestamp': timestamp, 'value': CollectionTime_rate, 'check_type': check_type, 'chart_type': 'Rate'})
                     if ky is 1:
                         value = j['value'][vl]
                         v = check_null(value)
-                        jsondata.gen_data('cassa_g1' + type + vl, timestamp, v, lib.pushdata.hostname, check_type, cluster_name)
+                        local_vars.append({'name': 'cassa_g1' + type + vl, 'timestamp': timestamp, 'value': v, 'check_type': check_type})
         jolo_threads = 'java.lang:type=Threading'
         jolo_tjson = json.loads(lib.commonclient.httpget(__name__, jolokia_url + '/' + jolo_threads))
         thread_metrics = ('TotalStartedThreadCount', 'PeakThreadCount', 'ThreadCount', 'DaemonThreadCount')
         for thread_metric in thread_metrics:
             name = 'cassa_' + thread_metric.lower()
             vlor = jolo_tjson['value'][thread_metric]
-            jsondata.gen_data(name, timestamp, vlor, lib.pushdata.hostname, check_type, cluster_name)
+            local_vars.append({'name': name, 'timestamp': timestamp, 'value': vlor, 'check_type': check_type})
 
-        jsondata.put_json()
+        return local_vars
 
     except Exception as e:
         lib.puylogger.print_message(__name__ + ' Error : ' + str(e))

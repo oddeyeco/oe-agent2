@@ -16,8 +16,7 @@ check_type = 'Storm'
 
 def runcheck():
     try:
-        jsondata = lib.pushdata.JonSon()
-        jsondata.prepare_data()
+        local_vars = []
         rate = lib.record_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
 
@@ -46,11 +45,12 @@ def runcheck():
                         if heap == 'NonHeapMemoryUsage':
                             key = 'storm_' + port + '_' + 'nonheap_'+ metr
                             mon_values = jolo_keys[heap][metr]
-                            jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name)
+                            local_vars.append({'name':key, 'timestamp': timestamp, 'value':mon_values, 'check_type': check_type})
+
                         else:
                             key = 'storm_' + port + '_' + 'heap_'+ metr
                             mon_values = jolo_keys[heap][metr]
-                            jsondata.gen_data(key, timestamp, mon_values, lib.pushdata.hostname, check_type, cluster_name)
+                            local_vars.append({'name': key, 'timestamp': timestamp, 'value': mon_values, 'check_type': check_type})
                 if CMS is True:
                     collector = ('java.lang:name=ParNew,type=GarbageCollector', 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector')
                     for coltype in collector:
@@ -60,10 +60,13 @@ def runcheck():
                         collectioncount = beans['value']['CollectionCount']
                         collectiontime = beans['value']['CollectionTime']
                         def push_metrics(preffix):
-                            jsondata.gen_data('storm_' + port + '_' + ''+preffix+'_lastgcinfo', timestamp, lastgcinfo, lib.pushdata.hostname, check_type, cluster_name)
-                            jsondata.gen_data('storm_' + port + '_' + ''+preffix+'_collection_count', timestamp, collectioncount, lib.pushdata.hostname, check_type, cluster_name, -3)
                             collectiontime_rate = rate.record_value_rate('storm_' + port + '_' + ''+preffix+'_collection_time', collectiontime, timestamp)
-                            jsondata.gen_data('storm_' + port + '_' + ''+preffix+'_collection_time', timestamp, collectiontime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+
+                            local_vars.append({'name': 'storm_' + port + '_' + '' + preffix + '_lastgcinfo', 'timestamp': timestamp, 'value': lastgcinfo, 'check_type': check_type})
+                            local_vars.append({'name': 'storm_' + port + '_' + ''+preffix+'_collection_count', 'timestamp': timestamp, 'value': collectioncount, 'check_type': check_type})
+                            local_vars.append({'name': 'storm_' + port + '_' + ''+preffix+'_collection_time', 'timestamp': timestamp, 'value': collectiontime_rate, 'check_type': check_type})
+
+
                         if coltype == 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector':
                             push_metrics(preffix='cms')
                         if coltype == 'java.lang:name=ParNew,type=GarbageCollector':
@@ -90,7 +93,7 @@ def runcheck():
                             value = j['value'][name]['duration']
                             v = check_null(value)
                             m_name = 'storm_' + port + '_' + 'g1_young_lastgcinfo'
-                        jsondata.gen_data(m_name, timestamp, v, lib.pushdata.hostname, check_type, cluster_name)
+                        local_vars.append({'name': m_name, 'timestamp': timestamp, 'value': v, 'check_type': check_type})
 
                     metr_keys = ('CollectionTime', 'CollectionCount')
                     for k, v in enumerate(gc_g1):
@@ -105,16 +108,15 @@ def runcheck():
                                 v = check_null(value)
                                 rate_key = vl+type
                                 collectiontime_rate = rate.record_value_rate('storm_' + port + '_' + '' + rate_key, v, timestamp)
-                                jsondata.gen_data('storm_' + port + '_' + 'g1' + type + vl.lower(), timestamp, collectiontime_rate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+                                local_vars.append({'name': 'storm_' + port + '_' + 'g1' + type + vl.lower(), 'timestamp': timestamp, 'value': collectiontime_rate, 'chart_type': 'Rate', 'check_type': check_type})
                             if ky is 1:
                                 value = j['value'][vl]
                                 v = check_null(value)
-                                jsondata.gen_data('storm_' + port + '_' + 'g1' + type + vl.lower(), timestamp, v, lib.pushdata.hostname, check_type, cluster_name, -3)
+                                local_vars.append({'name': 'storm_' + port + '_' + 'g1' + type + vl.lower(), 'timestamp': timestamp, 'value': v, 'check_type': check_type, 'reaction': -3})
             except Exception as e:
                 lib.puylogger.print_message(__name__ + ' Error : ' + str(e) + ' ' + str(port))
                 pass
-
-        jsondata.put_json()
+        return local_vars
 
     except Exception as e:
         lib.puylogger.print_message(__name__ + ' Error : ' + str(e))

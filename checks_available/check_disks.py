@@ -9,15 +9,14 @@ import re
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'system'
 
-# ------------------------ #
 reaction = -3
 warn_percent = 80
 rated = True
 io_warning_percent = 40
-# ------------------------ #
 
 
 def runcheck():
+    local_vars = []
     jsondata = lib.pushdata.JonSon()
     jsondata.prepare_data()
     rate = lib.record_rate.ValueRate()
@@ -30,7 +29,7 @@ def runcheck():
                 devices_blocks[device] = devblk.readline().rstrip('\n')
                 devblk.close()
 
-        for key, value in devices_blocks.items():
+        for key, value in list(devices_blocks.items()):
             statsfile = open('/sys/block/' + key + '/stat', 'r')
             stats = statsfile.readline().split()
             read_bytes = int(stats[2]) * int(value)
@@ -40,24 +39,28 @@ def runcheck():
             if rated is True:
                 read_rate = rate.record_value_rate(reads, read_bytes, timestamp)
                 write_rate = rate.record_value_rate(writes, write_bytes, timestamp)
+                local_vars.append({'name': reads, 'timestamp': timestamp, 'value': read_rate, 'reaction': reaction})
+                local_vars.append({'name': writes, 'timestamp': timestamp, 'value': write_rate, 'reaction': reaction})
 
-                jsondata.gen_data(reads,  timestamp, read_rate, lib.pushdata.hostname, check_type, cluster_name, reaction)
-                jsondata.gen_data(writes, timestamp, write_rate, lib.pushdata.hostname, check_type, cluster_name, reaction)
             else:
-                jsondata.gen_data(reads,  timestamp, read_bytes, lib.pushdata.hostname, check_type, cluster_name, reaction)
-                jsondata.gen_data(writes, timestamp, write_bytes, lib.pushdata.hostname, check_type, cluster_name, reaction)
+                local_vars.append({'name': reads, 'timestamp': timestamp, 'value': read_bytes, 'reaction': reaction})
+                local_vars.append({'name': writes, 'timestamp': timestamp, 'value': write_bytes, 'reaction': reaction})
+
             statsfile.close()
 
         command = 'df'
         p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, universal_newlines=True)
-        #p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
         output, err = p.communicate()
         for i in output.split("\n"):
             if i.startswith('/'):
                 u = re.sub(' +', ' ', i).split(" ")
-                jsondata.gen_data('drive' + u[0].replace('/dev/', '_') + '_bytes_used', timestamp, u[2], lib.pushdata.hostname, check_type, cluster_name, reaction)
-                jsondata.gen_data('drive' + u[0].replace('/dev/', '_') + '_bytes_available', timestamp, u[3], lib.pushdata.hostname, check_type, cluster_name, reaction)
-                jsondata.gen_data('drive' + u[0].replace('/dev/', '_') + '_percent_used', timestamp, u[4].replace('%', ''), lib.pushdata.hostname, check_type, cluster_name, warn_percent, 'Percent')
+
+                local_vars.append({'name': 'drive' + u[0].replace('/dev/', '_') + '_bytes_used',
+                                   'timestamp': timestamp, 'value': u[2], 'reaction': reaction})
+                local_vars.append({'name': 'drive' + u[0].replace('/dev/', '_') + '_bytes_available',
+                                   'timestamp': timestamp, 'value': u[3], 'reaction': reaction})
+                local_vars.append({'name': 'drive' + u[0].replace('/dev/', '_') + '_percent_used',
+                                   'timestamp': timestamp, 'value': u[4].replace('%', ''), 'chart_type': 'Percent'})
 
         proc_stats = open('/proc/diskstats')
         for line in proc_stats:
@@ -70,10 +73,9 @@ def runcheck():
                     reqrate = rate.record_value_rate(name, value, timestamp)
                     if isinstance(reqrate, int):
                         diskrate = reqrate/10
-                        jsondata.gen_data(name, timestamp, diskrate, lib.pushdata.hostname, check_type, cluster_name,0 ,'Percent')
+                        local_vars.append({'name': name, 'timestamp': timestamp, 'value': diskrate,  'chart_type': 'Percent'})
         proc_stats.close()
-        jsondata.put_json()
-
+        return  local_vars
     except Exception as e:
         lib.pushdata.print_error(__name__ , (e))
         pass

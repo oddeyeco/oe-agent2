@@ -2,6 +2,7 @@ import os
 import pycurl
 import lib.pushdata
 import lib.getconfig
+import lib.puylogger
 
 tmpdir = lib.getconfig.getparam('SelfConfig', 'tmpdir')
 tsdb_type = lib.getconfig.getparam('TSDB', 'tsdtype')
@@ -40,6 +41,7 @@ def upload_files(myfile):
                 pass
             if response_code in http_response_codes:
                 os.remove(filepath)
+                lib.puylogger.print_message('Cache Uploader: ' + filepath + ' file processed')
                 return True
             else:
                 return False

@@ -1,5 +1,4 @@
 import lib.record_rate
-import lib.pushdata
 import lib.getconfig
 import lib.commonclient
 import lib.puylogger
@@ -11,17 +10,15 @@ haproxy_auth = lib.getconfig.getparam('HAProxy', 'user')+':'+lib.getconfig.getpa
 curl_auth = lib.getconfig.getparam('HAProxy', 'auth')
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 haproxy_upstream = lib.getconfig.getparam('HAProxy', 'upstream').split(',')
-
+check_type = 'haproxy'
 
 def runcheck():
+    local_vars = []
     try:
         if curl_auth is True:
             t = lib.commonclient.httpget(__name__, haproxy_url, haproxy_auth)
         else:
             t = lib.commonclient.httpget(__name__, haproxy_url)
-        jsondata = lib.pushdata.JonSon()
-        jsondata.prepare_data()
-        check_type = 'haproxy'
         lazy_totals = ("FRONTEND", "BACKEND")
         timestamp = int(datetime.datetime.now().strftime("%s"))
         for line in t.split('\n'):
@@ -31,9 +28,9 @@ def runcheck():
                         upstream = line.split(',')[1]
                         sessions = line.split(',')[4]
                         connrate = line.split(',')[33]
-                        jsondata.gen_data('haproxy_connrate_'+upstream, timestamp, connrate, lib.pushdata.hostname, check_type, cluster_name)
-                        jsondata.gen_data('haproxy_sessions_'+upstream, timestamp, sessions, lib.pushdata.hostname, check_type, cluster_name)
-        jsondata.put_json()
+                        local_vars.append({'name': 'haproxy_connrate_' + upstream, 'timestamp': timestamp, 'value': connrate, 'check_type': check_type, 'chart_type': 'Rate'})
+                        local_vars.append({'name': 'haproxy_sessions_' + upstream, 'timestamp': timestamp, 'value': sessions, 'check_type': check_type})
+        return local_vars
     except Exception as e:
         lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass

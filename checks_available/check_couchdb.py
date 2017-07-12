@@ -1,6 +1,5 @@
 import lib.puylogger
 import lib.record_rate
-import lib.pushdata
 import lib.getconfig
 import lib.commonclient
 import datetime
@@ -16,10 +15,9 @@ timestamp = int(datetime.datetime.now().strftime("%s"))
 
 
 def runcheck():
+    local_vars = []
     try:
         stats_json = json.loads(lib.commonclient.httpget(__name__, couchdb_url))
-        jsondata = lib.pushdata.JonSon()
-        jsondata.prepare_data()
         rate = lib.record_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
         sections = ('couchdb', 'httpd_request_methods', 'httpd_status_codes', 'httpd')
@@ -32,25 +30,25 @@ def runcheck():
             if stats_json[sections[0]][cs]['current'] is not None:
                 csvalue = stats_json[sections[0]][cs]['current']
                 csrate = rate.record_value_rate('couch_'+cs, csvalue, timestamp)
-                jsondata.gen_data('couchdb_' + cs, timestamp, csrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+                local_vars.append({'name': 'couchdb_' + cs, 'timestamp': timestamp, 'value': csrate, 'check_type': check_type, 'chart_type': 'Rate'})
 
         for hm in httpd_methods:
             if stats_json[sections[1]][hm]['current'] is not None:
                 hmrate = rate.record_value_rate('couch_' + hm, stats_json[sections[1]][hm]['current'], timestamp)
-                jsondata.gen_data('couchdb_' + hm.lower(), timestamp, hmrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+                local_vars.append({'name': 'couchdb_' + hm.lower(), 'timestamp': timestamp, 'value': hmrate, 'check_type': check_type, 'chart_type': 'Rate'})
 
         for hc in httpd_codes:
             hc = str(hc)
             if stats_json[sections[2]][hc]['current'] is not None:
                 hcrate = rate.record_value_rate('couch_' + hc, stats_json[sections[2]][hc]['current'], timestamp)
-                jsondata.gen_data('couchdb_code' + hc, timestamp, hcrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+                local_vars.append({'name': 'couchdb_' + hc.lower(), 'timestamp': timestamp, 'value': hcrate, 'check_type': check_type, 'chart_type': 'Rate'})
 
         for hs in httpd_stats:
             if stats_json[sections[3]][hs]['current'] is not None:
                 hsrate = rate.record_value_rate('couch_' + hs, stats_json[sections[3]][hs]['current'], timestamp)
-                jsondata.gen_data('couchdb_' + hs, timestamp, hsrate, lib.pushdata.hostname, check_type, cluster_name, 0, 'Rate')
+                local_vars.append({'name': 'couchdb_' + hs.lower(), 'timestamp': timestamp, 'value': hsrate, 'check_type': check_type, 'chart_type': 'Rate'})
 
-        jsondata.put_json()
+        return local_vars
     except Exception as e:
         lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass
