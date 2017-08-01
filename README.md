@@ -1,7 +1,7 @@
 **PuyPuy**
 ---------
 
-PuyPuy is python2 metrics collection daemon for OddEye, which also works with KairosDB, OpenTDB, Graphite and InfluxDB, For InfluxDB, KairosDB and OpenTSDB it uses REST interface, for Graphite Pickle.
+PuyPuy3 is python3 metrics collection daemon for OddEye, which also works with KairosDB, OpenTDB, Graphite and InfluxDB, For InfluxDB, KairosDB and OpenTSDB it uses REST interface, for Graphite Pickle.
 
 Main idea behind PuyPuy is simplicity and less as possible dependencies, it is tested on Debian and Ubuntu systems, but should work on any Linux system.   
 
