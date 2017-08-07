@@ -3,17 +3,18 @@
 
 OddEye Agent is python2 metrics collection daemon for OddEye monitoring suite.
 
-[OddEye](#OddEye)
+[OddEye](#oddeye)
 
 We have developed OE-Agent to support number of other OpenSource backends :
 
-[KairosDB](#back-end-config)
+[OpenTDB](#opentsdb)
+[KairosDB](#kairosdb)
+[InfluxDB](#influxdb)
+[Graphite](#graphite-carbon)
 
-OpenTDB
-Graphite
-InfluxDB
 
-It uses REST and Pickle protocols to talk to endpoints 
+It uses REST and Pickle protocols with bulk uploads to talk to endpoints, 
+so make sure your endpoint i configured properly. 
 
 Main idea behind OddEye Agent is simplicity and less as possible dependencies, it is tested on Debian and Ubuntu systems, but should work on any Linux system.   
 
