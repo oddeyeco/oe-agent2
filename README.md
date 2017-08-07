@@ -65,7 +65,7 @@ To make it run you need to change **uuid** to one which you got during registrat
 
 OddEye server is native backend, but OddEye Agent can for with number of other open source backends. All configs are done at TSDB section of config.ini. Only one TSDB can be set at once, so make sure that all other are ether commented out or deleted from config file. 
 
-####**OddEye** 
+#### **OddEye** 
 
     [TSDB]
     tsdtype = OddEye
@@ -78,7 +78,7 @@ As OddEye Agent send metrics with small bulks you should enable chunked requests
 
 	tsd.http.request.enable_chunked = true
 
-####**OpenTSDB**
+#### **OpenTSDB**
 
 	[TSDB]
 	tsdtype: OpenTSDB
@@ -90,7 +90,7 @@ As OddEye Agent send metrics with small bulks you should enable chunked requests
 
 OpenTSDB is designed to run in private networks and does not supports authentication, but if you want it to be public available, you can use any proxy server like Haproxy or NginX with basic auth enabled and configure credentials in  config.ini. If you do not need authentication, just set auth param to False and some placeholders as user/pass.  **Do not delete user/pass/auth parameters.**
 
-####**KairosDB** 
+#### **KairosDB** 
  
 	[TSDB]
 	address: http://kairosdb_address:8088
@@ -102,7 +102,7 @@ OpenTSDB is designed to run in private networks and does not supports authentica
 
 Enable or disable auth: in accordance to your KairosDB setup 
 
-####**InfluxDB**
+#### **InfluxDB**
 
     [TSDB]
     address: http://influxdb_address:8086
@@ -114,7 +114,7 @@ Enable or disable auth: in accordance to your KairosDB setup
 
 Enable or disable authentication.
  
-####**Graphite Carbon** 
+#### **Graphite Carbon** 
 
 	[TSDB]
 	address: carbon_host:2004
