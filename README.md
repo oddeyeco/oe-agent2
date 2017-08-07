@@ -4,7 +4,7 @@
 OddEye Agent is python2 metrics collection daemon for OddEye monitoring suite,
 We have developed OE-Agent to support number of other OpenSource backends :
 
-[KairosDB](README.md#back-end-config)
+[KairosDB](#back-end-config)
 
 OpenTDB
 Graphite
