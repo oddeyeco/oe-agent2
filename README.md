@@ -8,8 +8,11 @@ OddEye Agent is python2 metrics collection daemon for OddEye monitoring suite.
 We have developed OE-Agent to support number of other OpenSource backends :
 
 [OpenTDB](#opentsdb)
+
 [KairosDB](#kairosdb)
+
 [InfluxDB](#influxdb)
+
 [Graphite](#graphite-carbon)
 
 
@@ -133,9 +136,9 @@ So **Do not delete authentication parameters**,  just write something meaningles
 
 ### Configure modules
 
-By default all checks are disabled . To enable check you need to create symlink  or copy check module from PUYPUY_HOME/checks_available to PUYPUY_HOME/checks_enable checks-available
+By default all checks are disabled . To enable check you need to create symlink  or copy check module from OE-AGENT_HOME/checks_available to OE-AGENT_HOME/checks_enable checks-available
 
-    cd $PUYPUY_HOME/checks_enabled
+    cd $OE-AGENT_HOME/checks_enabled
     ln -s ../checks_available/check_cpustats.py ./
     ../puypuy.sh restart 
 
