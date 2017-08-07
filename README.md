@@ -1,7 +1,7 @@
 **OddEye Agent**
 ---------
 
-OddEye Agent is python2 metrics collection daemon for OddEye monitoring suite.
+OE-Agent2 is python2 metrics collection daemon for OddEye monitoring suite.
 
 [OddEye](#oddeye)
 
