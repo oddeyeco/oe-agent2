@@ -48,21 +48,6 @@ def runcheck():
 
             statsfile.close()
 
-        # command = 'df'
-        # p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, universal_newlines=True)
-        # output, err = p.communicate()
-        # for i in output.split("\n"):
-        #     if i.startswith('/'):
-        #         u = re.sub(' +', ' ', i).split(" ")
-        #
-                # local_vars.append({'name': 'drive' + u[0].replace('/dev/', '_') + '_bytes_used',
-                #                    'timestamp': timestamp, 'value': u[2], 'reaction': reaction})
-                # local_vars.append({'name': 'drive' + u[0].replace('/dev/', '_') + '_bytes_available',
-                #                    'timestamp': timestamp, 'value': u[3], 'reaction': reaction})
-                # local_vars.append({'name': 'drive' + u[0].replace('/dev/', '_') + '_percent_used',
-                #                    'timestamp': timestamp, 'value': u[4].replace('%', ''), 'chart_type': 'Percent'})
-
-
         d = []
         mount = open('/proc/mounts', 'r')
 
@@ -91,8 +76,6 @@ def runcheck():
             local_vars.append({'name': 'drive' + name + '_bytes_used', 'timestamp': timestamp, 'value': mrtrics[1], 'reaction': reaction})
             local_vars.append({'name': 'drive' + name + '_bytes_available', 'timestamp': timestamp, 'value': mrtrics[2], 'reaction': reaction})
             local_vars.append({'name': 'drive' + name + '_percent_used','timestamp': timestamp, 'value': mrtrics[3], 'chart_type': 'Percent'})
-            # print(disk_usage(u))
-
 
         proc_stats = open('/proc/diskstats')
         for line in proc_stats:
