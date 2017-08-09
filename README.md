@@ -43,7 +43,7 @@ Python pip:
     
 Make your changes if needed in config.ini and run 
 
-    ./puypuy.sh start
+    ./oddeye.sh start
 Python daemon process will start, run all python scripts from checks_available directory as well as all check_* files scripts_available directory. 
 
 ### Main Config
@@ -63,9 +63,9 @@ cluster_name and host_group are placeholders for tags for better manageability.
 In section [TSDB] you should set correct backend and uri. 
 
 ### Back End Config
-To make it run you need to change **uuid** to one which you got during registration and start OddEye Agent, optionally change run user from puypuy.sh and start 
+To make it run you need to change **uuid** to one which you got during registration and start OddEye Agent, optionally change run user from oddeye.sh and start 
 
-    ./puypuy.sh start 
+    ./oddeye.sh start 
 
 OddEye server is native backend, but OddEye Agent can for with number of other open source backends. All configs are done at TSDB section of config.ini. Only one TSDB can be set at once, so make sure that all other are ether commented out or deleted from config file. 
 
@@ -140,7 +140,7 @@ By default all checks are disabled . To enable check you need to create symlink 
 
     cd $OE-AGENT_HOME/checks_enabled
     ln -s ../checks_available/check_cpustats.py ./
-    ../puypuy.sh restart 
+    ../oddeye.sh restart 
 
 Some of checks needs to be configured before you can use it, for example `check_nginx.py` needs to know NginX status url and username password if authentication on NginX status is enabled. All config files are located in conf directory. `conf/webservers.ini`is where `check_nginx.py` will look for configuration parameters. 
 
@@ -230,7 +230,7 @@ As OddEye is completely push based and our servers does not have any direct acce
 
     cd ${puypuy_home}/checks enabled
     ln -s ../checks-available/check_oddeye.py ./ 
-    ../puypuy.sh restart 
+    ../oddeye.sh restart 
 
 OddEye is dynamic system based on machine learning, but if you want to have statically defined alerts you can use  `send_special` method in python module. Example below demonstrates how custom alerts can be configured its taken from check_load_average: 
 
