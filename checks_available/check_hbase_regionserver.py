@@ -18,7 +18,9 @@ def runcheck():
         node_rated_keys=('totalRequestCount','readRequestCount','writeRequestCount', 'Delete_num_ops', 'Mutate_num_ops', 'FlushTime_num_ops',
                          'GcTimeMillis','compactedCellsCount', 'majorCompactedCellsCount', 'compactedCellsSize', 'majorCompactedCellsSize',
                          'blockCacheHitCount', 'blockCacheMissCount', 'blockCacheEvictionCount')
-        node_stuck_keys=('GcCount','HeapMemoryUsage', 'OpenFileDescriptorCount', 'blockCacheCount')
+        node_stuck_keys=('GcCount', 'HeapMemoryUsage', 'OpenFileDescriptorCount',
+                         'blockCacheCount', 'blockCacheSize', 'blockCacheFreeSize', 'blockCacheExpressHitPercent', 'blockCountHitPercent',
+                         'slowAppendCount', 'slowGetCount', 'slowPutCount', 'slowIncrementCount', 'slowDeleteCount')
         rate=lib.record_rate.ValueRate()
         timestamp = int(datetime.datetime.now().strftime("%s"))
 
@@ -67,7 +69,9 @@ def runcheck():
                         for heap_values in heap_metrics:
                             local_vars.append({'name': 'hregion_heap_'+heap_values.lower(), 'timestamp': timestamp, 'value': stats_keys[stats_index][values][heap_values], 'check_type': check_type})
                     elif values == 'GcCount':
-                        local_vars.append({'name': 'hregion_node_' + values.lower(), 'timestamp': timestamp, 'value': stats_keys[stats_index][values], 'check_type': check_type, 'reaction': -3})
+                        local_vars.append({'name': 'hregion_node_' + values.lower(), 'timestamp': timestamp, 'value': stats_keys[stats_index][values], 'check_type': check_type, 'reaction': -3, 'chart_type': 'Counter'})
+                    elif values.startswith('slow'):
+                        local_vars.append({'name': 'hregion_node_' + values.lower(), 'timestamp': timestamp, 'value': stats_keys[stats_index][values], 'check_type': check_type, 'chart_type': 'Counter'})
                     else:
                         local_vars.append({'name': 'hregion_node_'+values.lower(), 'timestamp': timestamp, 'value': stats_keys[stats_index][values], 'check_type': check_type})
 
