@@ -43,7 +43,6 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *,cover
-.idea
 
 # Translations
 *.mo
@@ -57,4 +56,4 @@ docs/_build/
 
 # PyBuilder
 target/
-
+.idea/
