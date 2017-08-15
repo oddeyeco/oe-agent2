@@ -63,8 +63,8 @@ def runcheck():
                             collectiontime_rate = rate.record_value_rate('storm_' + port + '_' + ''+preffix+'_collection_time', collectiontime, timestamp)
 
                             local_vars.append({'name': 'storm_' + port + '_' + '' + preffix + '_lastgcinfo', 'timestamp': timestamp, 'value': lastgcinfo, 'check_type': check_type})
-                            local_vars.append({'name': 'storm_' + port + '_' + ''+preffix+'_collection_count', 'timestamp': timestamp, 'value': collectioncount, 'check_type': check_type})
-                            local_vars.append({'name': 'storm_' + port + '_' + ''+preffix+'_collection_time', 'timestamp': timestamp, 'value': collectiontime_rate, 'check_type': check_type})
+                            local_vars.append({'name': 'storm_' + port + '_' + '' + preffix + '_collection_count', 'timestamp': timestamp, 'value': collectioncount, 'check_type': check_type})
+                            local_vars.append({'name': 'storm_' + port + '_' + '' + preffix + '_collection_time', 'timestamp': timestamp, 'value': collectiontime_rate, 'check_type': check_type})
 
 
                         if coltype == 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector':
@@ -82,8 +82,10 @@ def runcheck():
                         else:
                             return value
 
+
+
                     for k, v in enumerate(gc_g1):
-                        j = json.loads(storm_url + v)
+                        j = json.loads(lib.commonclient.httpget(__name__, storm_url + v))
                         name='LastGcInfo'
                         if k is 0:
                             value = j['value'][name]
@@ -97,7 +99,7 @@ def runcheck():
 
                     metr_keys = ('CollectionTime', 'CollectionCount')
                     for k, v in enumerate(gc_g1):
-                        j = json.loads(storm_url + v)
+                        j = json.loads(lib.commonclient.httpget(__name__, storm_url + v))
                         if k is 0 :
                             type='_old_'
                         if k is 1:
