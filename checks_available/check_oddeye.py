@@ -6,7 +6,7 @@ import lib.commonclient
 import time
 import datetime
 
-check_site = 'https://barlus.oddeye.co/ok.txt'
+check_site = 'https://api.oddeye.co/ok.txt'
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 err_handler = int(lib.getconfig.getparam('TSDB', 'err_handler'))
 
