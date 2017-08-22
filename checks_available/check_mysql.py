@@ -1,16 +1,26 @@
 '''
-This check required Python MySQLDB, On Debian like systems do
-apt-get install python-mysqldb
-or
-pip install MySQL-python
+This check requires Python MySQLDB or pymysql, On Debian like systems do
+APT: apt-get install python-mysqldb, or apt-get install python-pymysql
+PIP: pip install MySQL-python or pip install pymysql
 '''
 
-
-import MySQLdb
 import datetime
 import lib.getconfig
 import lib.puylogger
 import lib.record_rate
+
+
+try:
+    import MySQLdb
+    mysqldriver = MySQLdb
+    lib.puylogger.print_message(__name__ + ' Using MySQLdb to connect to MySQL server')
+except:
+    try:
+        import pymysql
+        mysqldriver = pymysql
+        lib.puylogger.print_message(__name__ + ' Using pymysql to connect to MySQL server')
+    except:
+        lib.puylogger.print_message(__name__ + ' Error : Cannot load MySQL module, please install MySQLdb or pymysql ')
 
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 mysql_host = lib.getconfig.getparam('MySQL', 'host')
@@ -22,7 +32,7 @@ check_type = 'mysql'
 def runcheck():
     local_vars = []
     try:
-        db = MySQLdb.connect(host=mysql_host, user=mysql_user, passwd=mysql_pass, )
+        db = mysqldriver.connect(host=mysql_host, user=mysql_user, passwd=mysql_pass, )
         cur = db.cursor()
         rate = lib.record_rate.ValueRate()
         raw_mysqlstats = cur.execute("SHOW GLOBAL STATUS WHERE Variable_name='Connections'"
