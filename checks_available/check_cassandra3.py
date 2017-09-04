@@ -73,7 +73,7 @@ def runcheck():
                     if metr == 'used':
                         local_vars.append({'name': key, 'timestamp': timestamp, 'value': mon_values, 'check_type': check_type})
                     else:
-                        local_vars.append({'name': 'cassa_compaction_pending', 'timestamp': timestamp, 'value': copaction_tasks, 'check_type': check_type, 'reaction': 'reaction'})
+                        local_vars.append({'name': 'cassa_compaction_pending', 'timestamp': timestamp, 'value': copaction_tasks, 'check_type': check_type, 'reaction': reaction})
         if CMS is True:
             collector = ('java.lang:name=ParNew,type=GarbageCollector', 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector')
             for coltype in collector:

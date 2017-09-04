@@ -1,7 +1,7 @@
 import lib.getconfig
 import lib.pushdata
 import lib.record_rate
-import subprocess
+import lib.puylogger
 import datetime
 import os
 import re
@@ -10,9 +10,10 @@ cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'system'
 
 reaction = -3
-warn_percent = 80
+warn_percent = float(lib.getconfig.getparam('System Thresholds', 'du_high'))
+crit_percent = float(lib.getconfig.getparam('System Thresholds', 'du_severe'))
 rated = True
-io_warning_percent = 40
+# io_warning_percent = 40
 
 
 def runcheck():
@@ -63,7 +64,7 @@ def runcheck():
             free = st.f_bavail * st.f_frsize
             total = st.f_blocks * st.f_frsize
             used = (st.f_blocks - st.f_bfree) * st.f_frsize
-            du = '{:.2f}'.format(used * 100 / float(total))
+            du = '{:.2f}'.format(used * 100 / total)
             return total, used, free, du
 
         for u in d:
@@ -72,10 +73,27 @@ def runcheck():
                 name = '_rootfs'
             else:
                 name = u.replace('/', '_')
+            if float(mrtrics[3]) < warn_percent:
+                health_value = 0
+                err_type = 'OK'
+                # health_message = err_type + ': System Load average is at ' + str(curr_level) + ' percent of available  resources'
+                health_message = err_type + ': Storage usage of ' + u + ' is at ' + str(mrtrics[3]) + ' percent of available  space'
+                jsondata.send_special("Disk-Usage", timestamp, health_value, health_message, err_type)
+            if warn_percent <= float(mrtrics[3]) < crit_percent:
+                err_type = 'WARNING'
+                health_value = 8
+                health_message = err_type + ': Storage usage of ' + u + ' is at ' + str(mrtrics[3]) + ' percent of available  space'
+                jsondata.send_special("Disk-Usage", timestamp, health_value, health_message, err_type)
+            if float(mrtrics[3]) >= crit_percent:
+                health_value = 16
+                err_type = 'ERROR'
+                health_message = err_type + ': Storage usage of ' + u + ' is at ' + str(mrtrics[3]) + ' percent of available  space'
+                jsondata.send_special("Disk-Usage", timestamp, health_value, health_message, err_type)
 
             local_vars.append({'name': 'drive' + name + '_bytes_used', 'timestamp': timestamp, 'value': mrtrics[1], 'reaction': reaction})
             local_vars.append({'name': 'drive' + name + '_bytes_available', 'timestamp': timestamp, 'value': mrtrics[2], 'reaction': reaction})
             local_vars.append({'name': 'drive' + name + '_percent_used','timestamp': timestamp, 'value': mrtrics[3], 'chart_type': 'Percent'})
+
 
         proc_stats = open('/proc/diskstats')
         for line in proc_stats:

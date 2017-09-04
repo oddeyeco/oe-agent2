@@ -2,14 +2,14 @@ import datetime
 import lib.getconfig
 import lib.pushdata
 
+
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 host_group = lib.getconfig.getparam('SelfConfig', 'host_group')
 
-reaction = -3
-warn_level = 90
-crit_level = 100
+warn_level = int(lib.getconfig.getparam('System Thresholds', 'load_high'))
+crit_level = int(lib.getconfig.getparam('System Thresholds', 'load_severe'))
 check_type = 'system'
-
+reaction = -3
 
 def runcheck():
     local_vars = []
@@ -30,10 +30,12 @@ def runcheck():
 
         # def send_special():
         curr_level = float(proc_loadavg[0]) * 100 / cpucount
-        # if curr_level < warn_level:
-        #     health_value = 0
-        #     err_type = 'OK'
-        if curr_level >= warn_level < crit_level:
+        if curr_level < warn_level:
+            health_value = 0
+            err_type = 'OK'
+            health_message = err_type + ': System Load average is at ' + str(curr_level) + ' percent of available  resources'
+            jsondata.send_special("Load-Average", timestamp, health_value, health_message, err_type)
+        if warn_level <= curr_level < crit_level:
             health_value = 8
             err_type = 'WARNING'
             health_message = err_type + ': System Load average is at ' + str(curr_level) + ' percent of available  resources'
