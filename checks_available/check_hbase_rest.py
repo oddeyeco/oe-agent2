@@ -135,13 +135,18 @@ def runcheck():
         jolo_thrift = 'Hadoop:service=HBase,name=REST'
         jolo_tjson = json.loads(lib.commonclient.httpget(__name__, hrest_url + '/' + jolo_thrift))
         hrmetrics = ('requests', 'PauseTimeWithGc_99th_percentile', 'PauseTimeWithGc_90th_percentile',
-                     'PauseTimeWithoutGc_90th_percentile', 'PauseTimeWithoutGc_99th_percentile',
-                     'successfulDelete', 'successfulGet', 'successfulPut', 'successfulScanCount',
-                     'failedDelete', 'failedGet', 'failedPut', 'failedScanCount'
-                     )
+                     'PauseTimeWithoutGc_90th_percentile', 'PauseTimeWithoutGc_99th_percentile')
+
+        hrmetrics_rated = ('successfulDelete', 'successfulGet', 'successfulPut', 'successfulScanCount',
+                     'failedDelete', 'failedGet', 'failedPut', 'failedScanCount')
         for thread_metric in hrmetrics:
             name = 'hrest_' + thread_metric.lower()
             blor = jolo_tjson['value'][thread_metric]
+            local_vars.append({'name': name, 'timestamp': timestamp, 'value': blor, 'check_type': check_type})
+
+        for rated_metric in hrmetrics_rated:
+            name = 'hrest_' + rated_metric.lower()
+            blor = rate.record_value_rate('hrest_' + rated_metric + '_collection_time', jolo_tjson['value'][thread_metric], timestamp)
             local_vars.append({'name': name, 'timestamp': timestamp, 'value': blor, 'check_type': check_type})
 
         return local_vars
