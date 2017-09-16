@@ -134,10 +134,10 @@ def runcheck():
 
         jolo_thrift = 'Hadoop:service=HBase,name=REST'
         jolo_tjson = json.loads(lib.commonclient.httpget(__name__, hrest_url + '/' + jolo_thrift))
-        hrmetrics = ('requests', 'PauseTimeWithGc_99th_percentile', 'PauseTimeWithGc_90th_percentile',
+        hrmetrics = ('PauseTimeWithGc_99th_percentile', 'PauseTimeWithGc_90th_percentile',
                      'PauseTimeWithoutGc_90th_percentile', 'PauseTimeWithoutGc_99th_percentile')
 
-        hrmetrics_rated = ('successfulDelete', 'successfulGet', 'successfulPut', 'successfulScanCount',
+        hrmetrics_rated = ('requests', 'successfulDelete', 'successfulGet', 'successfulPut', 'successfulScanCount',
                      'failedDelete', 'failedGet', 'failedPut', 'failedScanCount')
         for thread_metric in hrmetrics:
             name = 'hrest_' + thread_metric.lower()
