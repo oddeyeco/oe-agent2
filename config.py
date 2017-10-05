@@ -1,5 +1,6 @@
 from ConfigParser import SafeConfigParser
 import os
+import pwd
 
 class bcolors:
     HEADER = '\033[95m'
@@ -30,13 +31,34 @@ max_cache = 50000
 
 
 uuid = raw_input("Please enter your UID: ")
-run_user = raw_input("unprivileged system account for Agent: ")
-log_file = raw_input("Full path for log file (Should be writable for Agent's system user): ")
-pid_file = raw_input("Full path for pid file(Should be writable for Agent's system user): ")
-tmpdir = raw_input("Full path for temp files(Should be writable for Agent's system user): ")
+run_user = raw_input("unprivileged system account for Agent (defaults to current running user): ")
+input_base_dir = raw_input("Please input directory name for storing runtime files (defaults to current working directory):")
+
+if input_base_dir == '':
+    input_base_dir = os.getcwd()
+
+base_dir = input_base_dir.rstrip('/')
+os.mkdir(base_dir + '/var')
+log_file = base_dir + '/var/oddeye.log'
+pid_file = base_dir + '/var/oddeye.pid'
+tmpdir = base_dir + '/var/oddeye_tmp'
 location = raw_input("Your servers location(Aka : us-east-1): ")
 cluster_name = raw_input("Friendly name of your cluster: ")
 host_group = raw_input("Grouping TAG of hosts: ")
+os.mkdir(tmpdir)
+
+if run_user == '':
+    uid = os.getuid()
+    gid = os.getgid()
+else:
+    uid = pwd.getpwnam(run_user).pw_uid
+    gid = pwd.getpwnam(run_user).pw_gid
+
+for root, dirs, files in os.walk(base_dir, topdown=False):
+    for name in files:
+        os.chown((os.path.join(root, name)), uid, gid)
+    for name in dirs:
+        os.chown((os.path.join(root, name)), uid, gid)
 
 
 conf_system_checks = raw_input("Do you want me to enable basic system checks (yes/no): ")
