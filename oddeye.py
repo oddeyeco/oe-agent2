@@ -2,7 +2,6 @@ import glob
 import os
 import sys
 import time
-import logging
 import threading
 from lib.daemon import Daemon
 import lib.upload_cached
@@ -25,13 +24,6 @@ library_list = []
 os.chdir("checks_enabled")
 
 checklist = glob.glob("check_*.py")
-
-logger = logging.getLogger("PuyPuy")
-logger.setLevel(logging.INFO)
-formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-handler = logging.FileHandler(log_file)
-handler.setFormatter(formatter)
-logger.addHandler(handler)
 
 
 def run_shell_scripts():

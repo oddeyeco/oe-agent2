@@ -1,6 +1,7 @@
 from ConfigParser import SafeConfigParser
 import os
 import pwd
+import getpass
 
 class bcolors:
     HEADER = '\033[95m'
@@ -50,6 +51,7 @@ os.mkdir(tmpdir)
 if run_user == '':
     uid = os.getuid()
     gid = os.getgid()
+    run_user = getpass.getuser()
 else:
     uid = pwd.getpwnam(run_user).pw_uid
     gid = pwd.getpwnam(run_user).pw_gid
@@ -80,11 +82,13 @@ parser.set('TSDB', 'sandbox', 'False')
 parser.set('TSDB', 'err_handler', '2')
 parser.set('TSDB', 'tsdtype', 'OddEye')
 parser.set('SelfConfig','check_period_seconds', str(check_period))
-parser.set('SelfConfig', 'log_file', log_file)
 parser.set('SelfConfig', 'pid_file', pid_file)
+parser.set('SelfConfig', 'tmpdir', tmpdir)
+parser.set('SelfConfig', 'log_file', log_file)
+parser.set('SelfConfig', 'log_rotate_seconds', str(3600))
+parser.set('SelfConfig', 'log_rotate_backups', str(24))
 parser.set('SelfConfig', 'cluster_name', cluster_name)
 parser.set('SelfConfig', 'host_group', host_group)
-parser.set('SelfConfig', 'tmpdir', tmpdir)
 parser.set('SelfConfig', 'debug_log', 'False')
 parser.set('SelfConfig', 'run_user', run_user)
 parser.set('SelfConfig', 'max_cache', '50000')
