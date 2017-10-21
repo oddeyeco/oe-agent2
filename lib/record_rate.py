@@ -1,22 +1,19 @@
 import lib.puylogger
 
-# def init():
-#     global last_value
-#     last_value = {}
-#     return last_value
-
 last_value = {}
+
 
 class ValueRate(object):
 
-    metrics_value_rate = 0
+    metrics_value_rate = 0.0
+
     def __init__(self):
-        self.metrics_value_rate = 0
+        self.metrics_value_rate = 0.0
 
     def record_value_rate(self, mytype, myvalue, timestamp):
         if mytype not in last_value:
             last_value.update({mytype:myvalue, mytype+'_timestamp':timestamp})
-            return 0
+            return 0.0
         else:
             try:
                 value_delta = int(myvalue) - int(last_value[mytype])
@@ -26,10 +23,10 @@ class ValueRate(object):
                 ValueRate.metrics_value_rate = mytype+'_timestamp'
                 last_value.update({ValueRate.metrics_value_rate:timestamp})
                 if lib.puylogger.debug_log:
-                    lib.puylogger.print_message(__name__ + ' ' + str(mytype) + ' ' + str(last_value))
-                if metrics_rate < 0:
-                    metrics_rate = 1
-                return metrics_rate
+                    lib.puylogger.print_message(__name__ + ' ' + str(mytype) + ' ' + str(last_value) + ' ' + str("{:.2f}".format(metrics_rate)))
+                if metrics_rate < 0.0:
+                    metrics_rate = 1.0
+                return float("{:.2f}".format(metrics_rate))
             except Exception as e:
                 push = __import__('pushdata')
                 push.print_error(__name__, (e))
@@ -39,4 +36,26 @@ class ValueRate(object):
         pass
 
 
+prev_value = {}
+
+
+class GetPrevValue(object):
+    metrics_last_value = 0.0
+    def __init__(self):
+        self.metrics_last_value = 0.0
+    def return_last_value(self, mytype, myvalue):
+        try:
+            if mytype not in prev_value:
+                prev_value.update({mytype: myvalue})
+                return 0.0
+            else:
+                lastvalue = prev_value[mytype]
+                prev_value.update({mytype: myvalue})
+                if lib.puylogger.debug_log:
+                    lib.puylogger.print_message(__name__ + ' Prev List : '+ str(mytype) + ' ' + str(lastvalue))
+                return lastvalue
+        except Exception as e:
+            push = __import__('pushdata')
+            push.print_error(__name__, (e))
+            pass
 

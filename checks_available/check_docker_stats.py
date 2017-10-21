@@ -13,6 +13,7 @@ prettynames = lib.getconfig.getparam('Docker', 'prettynames')
 memstats = lib.getconfig.getparam('Docker', 'memstats')
 check_type = 'docker'
 
+
 def runcheck():
     local_vars = []
     containers = []
@@ -36,9 +37,19 @@ def runcheck():
             cpu_sage = float("{0:.3f}".format(cpu_delta / system_delta * 100))
             throttled_periods = data['cpu_stats']['throttling_data']['throttled_periods']
             throttled_time = data['cpu_stats']['throttling_data']['throttled_time']
-            local_vars.append({'name': check_type + '_' + container_name + '_cpu_usae', 'timestamp': timestamp, 'value': cpu_sage,'chart_type': 'Percent', 'check_type': check_type})
+            local_vars.append({'name': check_type + '_' + container_name + '_master_cpu_usage', 'timestamp': timestamp, 'value': cpu_sage,'chart_type': 'Percent', 'check_type': check_type})
             local_vars.append({'name': check_type + '_' + container_name + '_cpu_throttled_periods', 'timestamp': timestamp, 'value': throttled_periods, 'check_type': check_type})
             local_vars.append({'name': check_type + '_' + container_name + '_cpu_throttled_time', 'timestamp': timestamp, 'value': throttled_time, 'check_type': check_type})
+            getval = lib.record_rate.GetPrevValue()
+            prev_cpu_usage = getval.return_last_value('cpu_total_usage_' + container_name, data['cpu_stats']['cpu_usage']['total_usage'])
+            prev_system_usage = getval.return_last_value('cpu_system_usage_'+ container_name, data['cpu_stats']['system_cpu_usage'])
+
+            cpudelta = data['cpu_stats']['cpu_usage']['total_usage'] - prev_cpu_usage
+            systemdelta = data['cpu_stats']['system_cpu_usage'] - prev_system_usage
+            num_cpu = len(data['precpu_stats']['cpu_usage']['percpu_usage'])
+
+            cpu_percent = (float(cpudelta) / systemdelta) * num_cpu * 100.0
+            local_vars.append({'name': check_type + '_' + container_name + '_container_cpu_usage', 'timestamp': timestamp, 'value': float("{:.2f}".format(cpu_percent)), 'chart_type': 'Percent', 'check_type': check_type})
 
             network = data['networks']
             for k, v in network.items():
