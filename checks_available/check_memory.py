@@ -10,7 +10,6 @@ warn_percent = float(lib.getconfig.getparam('System Thresholds', 'memory_high'))
 crit_percent = float(lib.getconfig.getparam('System Thresholds', 'memory_severe'))
 
 
-reaction = 0
 check_type = 'system'
 
 
@@ -33,8 +32,11 @@ def runcheck():
                     u=re.sub(' +', ' ', i).split(" ")
                     if len(u) > 1:
                         memorytimes['mem_'+u[0].replace(':','').replace('Mem','').lower()] = 1024*int(u[1])
-
         for key, value in list(memorytimes.items()):
+            if key == 'mem_buffers':
+                reaction = -3
+            else:
+                reaction = 0
             local_vars.append({'name': key, 'timestamp': timestamp, 'value': value, 'reaction': reaction})
         if 'mem_available' in memorytimes:
             mem_used_percent = 100 - ((memorytimes['mem_available'] * 100) / memorytimes['mem_total'])
