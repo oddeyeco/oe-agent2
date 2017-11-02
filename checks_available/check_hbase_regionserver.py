@@ -71,7 +71,7 @@ def runcheck():
                     elif values == 'GcCount':
                         local_vars.append({'name': 'hregion_node_' + values.lower(), 'timestamp': timestamp, 'value': stats_keys[stats_index][values], 'check_type': check_type, 'reaction': -3, 'chart_type': 'Counter'})
                     elif values.startswith('slow'):
-                        local_vars.append({'name': 'hregion_node_' + values.lower(), 'timestamp': timestamp, 'value': stats_keys[stats_index][values], 'check_type': check_type, 'chart_type': 'Counter'})
+                        local_vars.append({'name': 'hregion_node_' + values.lower(), 'timestamp': timestamp, 'value': stats_keys[stats_index][values], 'check_type': check_type, 'reaction': -1, 'chart_type': 'Counter'})
                     else:
                         local_vars.append({'name': 'hregion_node_'+values.lower(), 'timestamp': timestamp, 'value': stats_keys[stats_index][values], 'check_type': check_type})
 
