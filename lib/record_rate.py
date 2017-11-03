@@ -2,7 +2,6 @@ import lib.puylogger
 
 last_value = {}
 
-
 class ValueRate(object):
 
     metrics_value_rate = 0.0
@@ -26,6 +25,27 @@ class ValueRate(object):
                     lib.puylogger.print_message(__name__ + ' ' + str(mytype) + ' ' + str(last_value) + ' ' + str("{:.2f}".format(metrics_rate)))
                 if metrics_rate < 0.0:
                     metrics_rate = 1.0
+                return float("{:.2f}".format(metrics_rate))
+            except Exception as e:
+                push = __import__('pushdata')
+                push.print_error(__name__, (e))
+                pass
+
+    def update_timestamp(self, timestamp):
+        pass
+
+
+    def record_value_delta(self, mytype, myvalue):
+        if mytype not in last_value:
+            last_value.update({mytype:myvalue})
+            return 0.0
+        else:
+            try:
+                value_delta = float(myvalue) - float(last_value[mytype])
+                metrics_rate = value_delta
+                last_value.update({mytype:myvalue})
+                if lib.puylogger.debug_log:
+                    lib.puylogger.print_message(__name__ + ' ' + str(mytype) + ' ' + str(last_value) + ' ' + str("{:.2f}".format(metrics_rate)))
                 return float("{:.2f}".format(metrics_rate))
             except Exception as e:
                 push = __import__('pushdata')

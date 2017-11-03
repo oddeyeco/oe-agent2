@@ -25,13 +25,11 @@ def runcheck():
                 if searchitem in line:
                     key = line.split(' ')[1]
                     value = line.split(' ')[2].rstrip('\r')
-                    lib.puylogger.print_message(key + ' ' + str(value))
                     local_vars.append({'name': 'memcached_' + key, 'timestamp': timestamp, 'value': value, 'check_type': check_type})
             for searchitem in metrics_rated:
                 if searchitem in line:
                     key = line.split(' ')[1]
                     value = line.split(' ')[2].rstrip('\r')
-                    lib.puylogger.print_message( key + ' ' + str(value))
                     value_rate = rate.record_value_rate('memcached' + key, value, timestamp)
                     local_vars.append({'name': 'memcached_' + key, 'timestamp': timestamp, 'value': value_rate, 'check_type': check_type, 'chart_type': 'Rate'})
         return local_vars

@@ -3,7 +3,6 @@ import lib.getconfig
 import logging.handlers
 import logging
 
-
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 host_group = lib.getconfig.getparam('SelfConfig', 'host_group')
 debug_log = lib.getconfig.getparam('SelfConfig', 'debug_log')

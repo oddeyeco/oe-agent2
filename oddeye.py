@@ -54,13 +54,7 @@ def run_scripts():
                 time_elapsed = "{:.9f}".format(time.time() - start_time) + " seconds"
                 message = time_elapsed + ' ' + str(modol).split("'")[1]
                 for b in a:
-                    if 'reaction' not in b:
-                        b.update({'reaction': 0})
-                    for extra_tag in extra_tags:
-                        if extra_tag not in b:
-                            b.update({extra_tag: 'None'})
-                    jsondata.gen_data(b['name'], b['timestamp'], b['value'], lib.pushdata.hostname, b['check_type'], cluster_name, b['reaction'], b['chart_type'])
-                # jsondata.put_json()
+                    jsondata.gen_data_json(b, lib.pushdata.hostname, cluster_name)
                 lib.puylogger.print_message(message)
             except Exception as e:
                 lib.puylogger.print_message(str(e))

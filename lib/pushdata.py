@@ -67,6 +67,51 @@ else:
 
 
 class JonSon(object):
+    def gen_data_json(self, b,tag_hostname,cluster_name):
+        if 'check_type' in b:
+            tag_type = b['check_type'];
+        else:
+            tag_type = 'None';
+        if tsdb_type == 'KairosDB':
+            self.data['metric'].append({"name": b["name"], "timestamp": b["timestamp"] * 1000, "value": b["value"], "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
+        elif tsdb_type == 'OpenTSDB':
+            self.data['metric'].append({"metric": b["name"], "timestamp": b["timestamp"], "value": b["value"], "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
+        elif tsdb_type == 'BlueFlood':
+            raise NotImplementedError('BlueFlood is not supported yet')
+        elif tsdb_type == 'Carbon':
+            self.data.append((cluster_name + '.' + host_group + '.' + path + '.' + b["name"], (b["timestamp"], b["value"])))
+        elif tsdb_type == 'InfluxDB':
+            nanotime = lambda: int(round(time.time() * 1000000000))
+            str_nano = str(nanotime())
+            if type(b["value"]) is int:
+                value = str(b["value"]) + 'i'
+            else:
+                value = str(b["value"])
+            self.data.append(b["name"] + ',host=' + tag_hostname + ',cluster=' + cluster_name + ',group=' + host_group + ',location=' + location + ',type=' + tag_type + ' value=' + value + ' ' + str_nano + '\n')
+        elif tsd_oddeye is True:
+            local_data = {"metric": b["name"], "timestamp":b["timestamp"] , "value":b["value"],
+                          "tags": {"host": tag_hostname, "cluster": cluster_name, "group": host_group, "location": location}};
+
+            if 'chart_type' in b:
+              local_data["type"]= b['chart_type'];
+            else:
+              local_data["type"] = 'None';
+
+            if 'reaction' in b:
+              local_data["reaction"]= b['reaction'];
+            else:
+              local_data["reaction"] = 0;
+
+            if 'check_type' in b:
+              local_data["tags"]["type"] = b['check_type'];
+            else:
+              local_data["tags"]["type"] = 'None';
+
+            if 'device' in b:
+                local_data["tags"]["device"] = b['device'];
+
+            self.data['metric'].append(local_data)
+
     def gen_data(self, name, timestamp, value, tag_hostname, tag_type, cluster_name, reaction=0, metric_type='None'):
         if tsdb_type == 'KairosDB':
             self.data['metric'].append({"name": name, "timestamp": timestamp * 1000, "value": value, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
@@ -85,7 +130,9 @@ class JonSon(object):
                 value = str(value)
             self.data.append(name + ',host=' + tag_hostname + ',cluster=' + cluster_name + ',group=' + host_group + ',location=' + location + ',type=' + tag_type + ' value=' + value + ' ' + str_nano + '\n')
         elif tsd_oddeye is True:
-            self.data['metric'].append({"metric": name, "timestamp": timestamp, "value": value, "reaction": reaction, "type": metric_type, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
+            local_data = {"metric": name, "timestamp": timestamp, "value": value, "reaction": reaction, "type": metric_type, "tags": {"host": tag_hostname, "cluster": cluster_name, "group": host_group, "location": location}};
+            local_data["tags"]["type"]=tag_type;
+            self.data['metric'].append(local_data)
 
         else:
             print ('Please set TSDB type')

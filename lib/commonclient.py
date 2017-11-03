@@ -3,13 +3,13 @@ import socket
 import lib.puylogger
 import lib.pushdata
 
+
 class CurlBuffer:
    def __init__(self):
        self.contents = ''
 
    def body_callback(self, buf):
        self.contents = self.contents + buf
-
 
 def httpget(name, url, auth=None):
     try:
@@ -48,5 +48,3 @@ def socketget(name, buff, host, port, message):
         lib.puylogger.print_message(name + ' ' + str(err))
         lib.pushdata.print_error(name, err)
 
-# def hostname():
-#     return socket.getfqdn()
