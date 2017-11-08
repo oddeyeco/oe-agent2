@@ -10,7 +10,7 @@ import time
 import uuid
 import lib.puylogger
 import lib.getconfig
-import cStringIO
+from io import BytesIO
 
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 host_group = lib.getconfig.getparam('SelfConfig', 'host_group')
@@ -19,11 +19,11 @@ tsdb_type = lib.getconfig.getparam('TSDB', 'tsdtype')
 tmpdir = lib.getconfig.getparam('SelfConfig', 'tmpdir')
 log_file = lib.getconfig.getparam('SelfConfig', 'log_file')
 location = lib.getconfig.getparam('SelfConfig', 'location')
+
 hostname = socket.getfqdn()
-
 c = pycurl.Curl()
-global pycurl_response
 
+extra_tags = ('device', 'container')
 if (tsdb_type == 'KairosDB' or tsdb_type == 'OpenTSDB'):
     tsdb_url = lib.getconfig.getparam('TSDB', 'address') + lib.getconfig.getparam('TSDB', 'datapoints')
     tsdb_auth = lib.getconfig.getparam('TSDB', 'user') + ':' + lib.getconfig.getparam('TSDB', 'pass')
@@ -51,7 +51,7 @@ if tsdb_type == 'InfluxDB':
 else:
     tsd_influx = False
 
-if (tsdb_type == 'OddEye'):
+if tsdb_type == 'OddEye':
     tsdb_url = lib.getconfig.getparam('TSDB', 'url')
     oddeye_uuid = lib.getconfig.getparam('TSDB', 'uuid')
     tsd_oddeye = True
@@ -69,17 +69,30 @@ else:
 class JonSon(object):
     def gen_data_json(self, b,tag_hostname,cluster_name):
         if 'check_type' in b:
-            tag_type = b['check_type'];
+            tag_type = b['check_type']
         else:
-            tag_type = 'None';
+            tag_type = 'None'
+
         if tsdb_type == 'KairosDB':
-            self.data['metric'].append({"name": b["name"], "timestamp": b["timestamp"] * 1000, "value": b["value"], "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
+            local_data = {"name": b["name"], "timestamp": b["timestamp"] * 1000, "value": b["value"], "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}}
+            if 'extra_tag' in b:
+                for a in b['extra_tag']:
+                    local_data["tags"][a] = b['extra_tag'][a]
+            self.data['metric'].append(local_data )
         elif tsdb_type == 'OpenTSDB':
-            self.data['metric'].append({"metric": b["name"], "timestamp": b["timestamp"], "value": b["value"], "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
+            local_data = {"metric": b["name"], "timestamp": b["timestamp"], "value": b["value"], "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}}
+            if 'extra_tag' in b:
+                for a in b['extra_tag']:
+                    local_data["tags"][a] = b['extra_tag'][a]
+            self.data['metric'].append(local_data)
         elif tsdb_type == 'BlueFlood':
             raise NotImplementedError('BlueFlood is not supported yet')
         elif tsdb_type == 'Carbon':
-            self.data.append((cluster_name + '.' + host_group + '.' + path + '.' + b["name"], (b["timestamp"], b["value"])))
+            s = cluster_name + '.' + host_group + '.' + path + '.' + location + '.' + tag_type
+            if 'extra_tag' in b:
+                for a in b['extra_tag']:
+                    s = s + '.' + str(b['extra_tag'][a])
+            self.data.append((s + "." + b["name"], (b["timestamp"], b["value"])))
         elif tsdb_type == 'InfluxDB':
             nanotime = lambda: int(round(time.time() * 1000000000))
             str_nano = str(nanotime())
@@ -87,30 +100,36 @@ class JonSon(object):
                 value = str(b["value"]) + 'i'
             else:
                 value = str(b["value"])
-            self.data.append(b["name"] + ',host=' + tag_hostname + ',cluster=' + cluster_name + ',group=' + host_group + ',location=' + location + ',type=' + tag_type + ' value=' + value + ' ' + str_nano + '\n')
+            s = b["name"] + ',host=' + tag_hostname + ',cluster=' + cluster_name + ',group=' + host_group + ',location=' + location + ',type=' + tag_type;
+            if 'extra_tag' in b:
+                for a in b['extra_tag']:
+                    s = s + ',' + str(a) + '=' + str(b['extra_tag'][a])
+            self.data.append(s  + ' value=' + value + ' ' + str_nano+ '\n')
         elif tsd_oddeye is True:
             local_data = {"metric": b["name"], "timestamp":b["timestamp"] , "value":b["value"],
                           "tags": {"host": tag_hostname, "cluster": cluster_name, "group": host_group, "location": location}};
 
             if 'chart_type' in b:
-              local_data["type"]= b['chart_type'];
+              local_data["type"]= b['chart_type']
             else:
-              local_data["type"] = 'None';
+              local_data["type"] = 'None'
 
             if 'reaction' in b:
-              local_data["reaction"]= b['reaction'];
+              local_data["reaction"] = b['reaction']
             else:
-              local_data["reaction"] = 0;
+              local_data["reaction"] = 0
 
             if 'check_type' in b:
-              local_data["tags"]["type"] = b['check_type'];
+              local_data["tags"]["type"] = b['check_type']
             else:
-              local_data["tags"]["type"] = 'None';
+              local_data["tags"]["type"] = 'None'
 
-            if 'device' in b:
-                local_data["tags"]["device"] = b['device'];
+            if 'extra_tag' in b:
+                for a in b['extra_tag']:
+                    local_data["tags"][a] = b['extra_tag'][a]
 
             self.data['metric'].append(local_data)
+
 
     def gen_data(self, name, timestamp, value, tag_hostname, tag_type, cluster_name, reaction=0, metric_type='None'):
         if tsdb_type == 'KairosDB':
@@ -124,21 +143,19 @@ class JonSon(object):
         elif tsdb_type == 'InfluxDB':
             nanotime = lambda: int(round(time.time() * 1000000000))
             str_nano = str(nanotime())
+            #lib.puylogger.print_message(str(type(value)) + ' ' + str(value))
             if type(value) is int:
                 value = str(value) + 'i'
             else:
                 value = str(value)
             self.data.append(name + ',host=' + tag_hostname + ',cluster=' + cluster_name + ',group=' + host_group + ',location=' + location + ',type=' + tag_type + ' value=' + value + ' ' + str_nano + '\n')
         elif tsd_oddeye is True:
-            local_data = {"metric": name, "timestamp": timestamp, "value": value, "reaction": reaction, "type": metric_type, "tags": {"host": tag_hostname, "cluster": cluster_name, "group": host_group, "location": location}};
-            local_data["tags"]["type"]=tag_type;
-            self.data['metric'].append(local_data)
+            self.data['metric'].append({"metric": name, "timestamp": timestamp, "value": value, "reaction": reaction, "type": metric_type, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
 
         else:
             print ('Please set TSDB type')
 
     def prepare_data(self):
-        #def do_prepare():
         if tsd_rest is True:
             try:
                 self.data = {'metric': []}
@@ -164,9 +181,7 @@ class JonSon(object):
                 lib.puylogger.print_message('Recreating data in except block')
                 self.data = {'metric': []}
     # ------------------------------------------- #
-
     def httt_set_opt(self,url, data):
-        pycurl_response = cStringIO.StringIO()
         c.setopt(pycurl.URL, url)
         c.setopt(pycurl.POST, 0)
         c.setopt(pycurl.POSTFIELDS, data)
@@ -175,17 +190,22 @@ class JonSon(object):
         c.setopt(pycurl.NOSIGNAL, 5)
         c.setopt(pycurl.USERAGENT, 'PuyPuy v.02')
         c.setopt(pycurl.ENCODING, "gzip,deflate")
-        if tsd_oddeye is True:
-            c.setopt(pycurl.WRITEFUNCTION, pycurl_response.write)
-        else:
-            c.setopt(pycurl.WRITEFUNCTION, lambda x: None)
-
 
     def upload_it(self, data):
         http_response_codes = [100, 101, 102, 200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]
         http_oddeye_errors = [406, 411, 415, 424]
+        buffer = BytesIO()
+
+        if tsd_oddeye is True:
+            c.setopt(c.WRITEDATA, buffer)
+        else:
+            c.setopt(pycurl.WRITEFUNCTION, lambda x: None)
+
+        response_code = c.getinfo(pycurl.RESPONSE_CODE)
+
         try:
             c.perform()
+
             try:
                 response_code = int(c.getinfo(pycurl.RESPONSE_CODE))
                 response_exists = True
@@ -200,12 +220,14 @@ class JonSon(object):
                 else:
                     filename = tmpdir + '/' + str(uuid.uuid4()) + '.cached'
                     file = open(filename, "w")
-                    file.write(data)
+                    file.write(str(data))
                     file.close()
+
 
             if response_code not in http_response_codes and response_exists is True:
                 if response_code in http_oddeye_errors:
-                    logging.critical(" %s : " % "OddEye Error" + str(response_code) + pycurl_response.getvalue().replace('\n',''))
+                    lib.puylogger.print_message("%s : " % "OddEye Error" + str(response_code))
+                    logging.critical(" %s : " % "OddEye Error" +  str(buffer.getvalue().decode('iso-8859-1')).replace('\n',''))
                 else:
                     start_cache(data)
 
@@ -215,18 +237,19 @@ class JonSon(object):
                 if len(os.listdir(tmpdir)) > maxcache:
                     logging.critical('Too many cached files')
                 else:
+                    lib.puylogger.print_message(str(e))
                     filename = tmpdir + '/' + str(uuid.uuid4()) + '.cached'
                     file = open(filename, "w")
-                    file.write(data)
+                    file.write(str(data))
                     file.close()
-            except:
-                pass
+            except Exception as e:
+                lib.puylogger.print_message(str(e))
 
     def put_json(self):
         if tsd_oddeye is True:
             json_data = json.dumps(self.data['metric'])
             send_data = barlus_style + json_data
-            #zdata = zlib.compress(send_data)
+            #zdata = zlib.compress(send_data.encode("utf-8"))
             self.httt_set_opt(tsdb_url, send_data)
             self.upload_it(send_data)
             if lib.puylogger.debug_log:
@@ -290,7 +313,7 @@ class JonSon(object):
                 del error_data
                 del send_err_msg
         except:
-                logging.critical(" %s : " % module + str(send_err_msg))
+                logging.critical(" %s : " % module + 'Cannot send error data')
 # ------------------------------------------------------------------------------- #
 
 def print_error(module, e):
@@ -315,23 +338,23 @@ def print_error(module, e):
                 lib.puylogger.print_message(str(error_data))
             try:
                 send_err_msg = json.dumps(error_data)
-            except Exception as  dddd:
+                if sandbox is True:
+                    barlus_style = 'UUID=' + oddeye_uuid + '&sandbox=true&data='
+                else:
+                    barlus_style = 'UUID=' + oddeye_uuid + '&data='
+
+                send_error_data = barlus_style + send_err_msg
+                jonson=JonSon()
+                jonson.httt_set_opt(tsdb_url, send_error_data)
+                c.setopt(pycurl.POSTFIELDS, send_error_data)
+                c.perform()
+                del error_msg
+                del error_data
+                del send_error_data
+            except Exception as dddd:
                 logging.critical(" %s : " % str(dddd))
                 pass
 
-            if sandbox is True:
-                barlus_style = 'UUID=' + oddeye_uuid + '&sandbox=true&data='
-            else:
-                barlus_style = 'UUID=' + oddeye_uuid + '&data='
-
-            send_error_data = barlus_style + send_err_msg
-            jonson=JonSon()
-            jonson.httt_set_opt(tsdb_url, send_error_data)
-            c.setopt(pycurl.POSTFIELDS, send_error_data)
-            c.perform()
-            del error_msg
-            del error_data
-            del send_error_data
         else:
             logging.critical(" %s : " % module + str(e))
     try:

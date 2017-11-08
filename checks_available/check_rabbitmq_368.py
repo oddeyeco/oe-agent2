@@ -35,10 +35,10 @@ def runcheck():
         queue_totals = ('messages','messages_ready','messages_unacknowledged')
         queue_rates = ('messages_details','messages_ready_details','messages_unacknowledged_details')
         for queue in queue_totals:
-            local_vars.append({'name': 'rabbitmq_'+queue, 'timestamp': timestamp, 'value': stats_json['queue_totals'][queue], 'check_type': check_type})
+            local_vars.append({'name': 'rabbitmq_'+queue, 'timestamp': timestamp, 'value': stats_json['queue_totals'][queue], 'check_type': check_type, 'extra_tag':{'queue': 'all'}})
 
         for qrate in queue_rates:
-            local_vars.append({'name': 'rabbitmq_'+ qrate, 'timestamp': timestamp, 'value': stats_json['queue_totals'][qrate]['rate'], 'check_type': check_type})
+            local_vars.append({'name': 'rabbitmq_'+ qrate, 'timestamp': timestamp, 'value': stats_json['queue_totals'][qrate]['rate'], 'check_type': check_type, 'extra_tag':{'queue': 'all'}})
 
         if queue_details is True:
             url2 = rabbit_url + '/api/queues'
@@ -50,17 +50,19 @@ def runcheck():
                 nme = str(rabbit_queues[index]['name'])
                 if nme in rabbit_queues_needed and all_queues is False:
                     for stat in stats :
-                        name = 'rabbitmq_' + stat + '_' + re.sub('[^a-zA-Z0-9]', '_', str(rabbit_queues[index]['name']))
+                        nn = 'rabbitmq_' + stat
+                        name = re.sub('[^a-zA-Z0-9]', '_', str(rabbit_queues[index]['name']))
                         value = rabbit_queues[index][stat]
-                        local_vars.append({'name': name, 'timestamp': timestamp, 'value': value, 'check_type': check_type})
+                        local_vars.append({'name': nn, 'timestamp': timestamp, 'value': value, 'check_type': check_type, 'extra_tag':{'queue': name}})
+
                 if all_queues is True:
                     for stat in stats :
-                        name = 'rabbitmq_' + stat + '_' + re.sub('[^a-zA-Z0-9]', '_', str(rabbit_queues[index]['name']))
+                        nn = 'rabbitmq_' + stat
+                        name = re.sub('[^a-zA-Z0-9]', '_', str(rabbit_queues[index]['name']))
                         value = rabbit_queues[index][stat]
-                        local_vars.append({'name': name, 'timestamp': timestamp, 'value': value, 'check_type': check_type})
+                        local_vars.append({'name': nn, 'timestamp': timestamp, 'value': value, 'check_type': check_type, 'extra_tag':{'queue': name}})
 
         return local_vars
     except Exception as e:
         lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
         pass
-

@@ -32,7 +32,7 @@ def calcperraw(cpu_stats,rate,timestamp,local_vars,metrinames, device="all"):
     rate_cpu_time = rate.record_value_delta("cpu_load"+device, cpu_stats[0] + cpu_stats[1] + cpu_stats[2])
     cpu_load = rate_cpu_time / rate_time * 100;
     local_vars.append(
-        {'name': "cpu_load", 'timestamp': timestamp, 'value': cpu_load, 'chart_type': values_type, 'reaction': 0,"device":device})
+        {'name': "cpu_load", 'timestamp': timestamp, 'value': cpu_load, 'chart_type': values_type, 'reaction': 0, 'extra_tag':{'device': device}})
     try:
         for index in range(0, len(metrinames)):
             name = metrinames[index]+device
@@ -44,7 +44,7 @@ def calcperraw(cpu_stats,rate,timestamp,local_vars,metrinames, device="all"):
 
             values_rate = rate.record_value_delta(name, value)
             values_percent = (values_rate / rate_time *100)
-            local_vars.append({'name': metrinames[index], 'timestamp': timestamp, 'value': values_percent, 'chart_type': values_type, 'reaction': reaction,"device":device})
+            local_vars.append({'name': metrinames[index], 'timestamp': timestamp, 'value': values_percent, 'chart_type': values_type, 'reaction': reaction, 'check_type': check_type, 'extra_tag':{'device': device}})
     except Exception as e:
         lib.pushdata.print_error(__name__ , (e))
         pass

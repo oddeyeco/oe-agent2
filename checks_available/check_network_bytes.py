@@ -34,16 +34,18 @@ def runcheck():
             tx = int(txb.read())
 
             if rx is not 0 or tx is not 0:
-                txname = 'bytes_tx_' + nic
-                rxname = 'bytes_rx_' + nic
+                # txname = 'bytes_tx_' + nic
+                # rxname = 'bytes_rx_' + nic
+                txname = 'bytes_tx'
+                rxname = 'bytes_rx'
                 if rated is True:
-                    rxrate = rate.record_value_rate(rxname, rx, timestamp)
-                    txrate = rate.record_value_rate(txname, tx, timestamp)
-                    local_vars.append({'name':rxname, 'timestamp': timestamp, 'value':rxrate, 'chart_type': 'Rate', 'check_type': check_type, 'reaction': 0})
-                    local_vars.append({'name':txname, 'timestamp': timestamp, 'value':txrate, 'chart_type': 'Rate', 'check_type': check_type, 'reaction': 0})
+                    rxrate = rate.record_value_rate(rxname + nic, rx, timestamp)
+                    txrate = rate.record_value_rate(txname + nic, tx, timestamp)
+                    local_vars.append({'name':rxname, 'timestamp': timestamp, 'value':rxrate, 'chart_type': 'Rate', 'check_type': check_type, 'reaction': 0, 'extra_tag':{'device': nic}})
+                    local_vars.append({'name':txname, 'timestamp': timestamp, 'value':txrate, 'chart_type': 'Rate', 'check_type': check_type, 'reaction': 0, 'extra_tag':{'device': nic}})
                 else:
-                    local_vars.append({'name':rxname, 'timestamp': timestamp, 'value':rxrate, 'chart_type': 'Counter', 'check_type': check_type, 'reaction': 0})
-                    local_vars.append({'name':txname, 'timestamp': timestamp, 'value':txrate, 'chart_type': 'Counter', 'check_type': check_type, 'reaction': 0})
+                    local_vars.append({'name':rxname, 'timestamp': timestamp, 'value':rxrate, 'chart_type': 'Counter', 'check_type': check_type, 'reaction': 0, 'extra_tag':{'device': nic}})
+                    local_vars.append({'name':txname, 'timestamp': timestamp, 'value':txrate, 'chart_type': 'Counter', 'check_type': check_type, 'reaction': 0, 'extra_tag':{'device': nic}})
 
             rxb.close()
             txb.close()

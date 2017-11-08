@@ -42,17 +42,17 @@ def runcheck():
             rabbit_queues = json.loads(lib.commonclient.httpget(__name__, url2, rabbit_auth))
             import re
             for name in range(len(rabbit_queues)):
-                mname = 'rabbitmq_'+re.sub('[^a-zA-Z0-9]', '_', str(rabbit_queues[name]['name']))
+                mname = re.sub('[^a-zA-Z0-9]', '_', str(rabbit_queues[name]['name']))
                 mvalue = str(rabbit_queues[name]['messages'])
-                local_vars.append({'name': mname, 'timestamp': timestamp, 'value': mvalue, 'check_type': check_type})
+                local_vars.append({'name': 'rabbitmq_perqueue_messages', 'timestamp': timestamp, 'value': mvalue, 'check_type': check_type, 'extra_tag':{'queue': mname}})
                 details = ('publish_details', 'deliver_details')
                 for detail in details :
                     if 'message_stats' in rabbit_queues[name]:
                         if detail in rabbit_queues[name]['message_stats']:
                             rname = 'rabbitmq_' + str(rabbit_queues[name]['name']) + '_'+ detail
-                            rnamesub  = 'rabbitmq_'+re.sub('[^a-zA-Z0-9]', '_', rname)
+                            rnamesub  = re.sub('[^a-zA-Z0-9]', '_', rname)
                             rvalue = rabbit_queues[name]['message_stats'][detail]['rate']
-                            local_vars.append({'name': rnamesub, 'timestamp': timestamp, 'value': rvalue, 'check_type': check_type})
+                            local_vars.append({'name': 'rabbitmq_perqueue_' + detail.replace('_details', ''), 'timestamp': timestamp, 'value': rvalue, 'check_type': check_type, 'extra_tag':{'queue': rnamesub}})
         return  local_vars
     except Exception as e:
         lib.puylogger.print_message(__name__ + ' Error : ' + str(e))

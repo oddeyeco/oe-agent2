@@ -35,17 +35,17 @@ def runcheck():
             stats = statsfile.readline().split()
             read_bytes = int(stats[2]) * int(value)
             write_bytes = int(stats[6]) * int(value)
-            reads = 'drive_' + key + '_bytes_read'
-            writes = 'drive_' + key + '_bytes_write'
+            # reads = 'drive_' + key + '_bytes_read'
+            # writes = 'drive_' + key + '_bytes_write'
             if rated is True:
-                read_rate = rate.record_value_rate(reads, read_bytes, timestamp)
-                write_rate = rate.record_value_rate(writes, write_bytes, timestamp)
-                local_vars.append({'name': reads, 'timestamp': timestamp, 'value': read_rate, 'reaction': reaction})
-                local_vars.append({'name': writes, 'timestamp': timestamp, 'value': write_rate, 'reaction': reaction})
+                read_rate = rate.record_value_rate('drive_reads_' + key, read_bytes, timestamp)
+                write_rate = rate.record_value_rate('drive_writes_' + key, write_bytes, timestamp)
+                local_vars.append({'name': 'drive_reads', 'timestamp': timestamp, 'value': read_rate, 'reaction': reaction, 'extra_tag':{'device': key}})
+                local_vars.append({'name': 'drive_writes', 'timestamp': timestamp, 'value': write_rate, 'reaction': reaction, 'extra_tag':{'device': key}})
 
             else:
-                local_vars.append({'name': reads, 'timestamp': timestamp, 'value': read_bytes, 'reaction': reaction})
-                local_vars.append({'name': writes, 'timestamp': timestamp, 'value': write_bytes, 'reaction': reaction})
+                local_vars.append({'name': 'drive_reads', 'timestamp': timestamp, 'value': read_bytes, 'reaction': reaction, 'extra_tag':{'device': key}})
+                local_vars.append({'name': 'drive_writes', 'timestamp': timestamp, 'value': write_bytes, 'reaction': reaction, 'extra_tag':{'device': key}})
 
             statsfile.close()
 
@@ -70,9 +70,9 @@ def runcheck():
         for u in d:
             mrtrics = disk_usage(u)
             if u == '/':
-                name = '_rootfs'
+                name = 'rootfs'
             else:
-                name = u.replace('/', '_')
+                name = u.replace('/', '')
             if float(mrtrics[3]) < warn_percent:
                 health_value = 0
                 err_type = 'OK'
@@ -90,9 +90,9 @@ def runcheck():
                 health_message = err_type + ': Storage usage of ' + u + ' is at ' + str(mrtrics[3]) + ' percent of available  space'
                 jsondata.send_special("Disk-Usage", timestamp, health_value, health_message, err_type)
 
-            local_vars.append({'name': 'drive' + name + '_bytes_used', 'timestamp': timestamp, 'value': mrtrics[1], 'reaction': reaction})
-            local_vars.append({'name': 'drive' + name + '_bytes_available', 'timestamp': timestamp, 'value': mrtrics[2], 'reaction': reaction})
-            local_vars.append({'name': 'drive' + name + '_percent_used','timestamp': timestamp, 'value': mrtrics[3], 'chart_type': 'Percent'})
+            local_vars.append({'name': 'drive_bytes_used', 'timestamp': timestamp, 'value': mrtrics[1], 'reaction': reaction , 'extra_tag':{'device': name}})
+            local_vars.append({'name': 'drive_bytes_available', 'timestamp': timestamp, 'value': mrtrics[2], 'reaction': reaction, 'extra_tag': {'device': name}})
+            local_vars.append({'name': 'drive_percent_used','timestamp': timestamp, 'value': mrtrics[3], 'chart_type': 'Percent', 'extra_tag': {'device': name}})
 
 
         proc_stats = open('/proc/diskstats')
@@ -104,9 +104,9 @@ def runcheck():
                 if regexp.search(name) is None:
                     value = fields[12]
                     reqrate = rate.record_value_rate(name, value, timestamp)
-                    if isinstance(reqrate, int):
-                        diskrate = reqrate/10
-                        local_vars.append({'name': name, 'timestamp': timestamp, 'value': diskrate,  'chart_type': 'Percent'})
+                    # if isinstance(reqrate, int):
+                    diskrate = reqrate/10
+                    local_vars.append({'name': 'drive_io_percent_used', 'timestamp': timestamp, 'value': diskrate,  'chart_type': 'Percent', 'extra_tag': {'device': fields[2]}})
         proc_stats.close()
         return  local_vars
     except Exception as e:
