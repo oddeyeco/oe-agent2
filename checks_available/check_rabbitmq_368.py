@@ -40,6 +40,9 @@ def runcheck():
         for qrate in queue_rates:
             local_vars.append({'name': 'rabbitmq_'+ qrate, 'timestamp': timestamp, 'value': stats_json['queue_totals'][qrate]['rate'], 'check_type': check_type, 'extra_tag':{'queue': 'all'}})
 
+        local_vars.append({'name': 'rabbitmq_publish_rate', 'timestamp': timestamp, 'value': stats_json['message_stats']['publish_details']['rate'], 'check_type': check_type, 'extra_tag': {'queue': 'all'}})
+        local_vars.append({'name': 'rabbitmq_deliver_rate', 'timestamp': timestamp, 'value': stats_json['message_stats']['deliver_details']['rate'], 'check_type': check_type, 'extra_tag': {'queue': 'all'}})
+
         if queue_details is True:
             url2 = rabbit_url + '/api/queues'
             rabbit_queues = json.loads(lib.commonclient.httpget(__name__, url2, rabbit_auth))
