@@ -10,7 +10,7 @@ import time
 import uuid
 import lib.puylogger
 import lib.getconfig
-from io import BytesIO
+import cStringIO
 
 cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 host_group = lib.getconfig.getparam('SelfConfig', 'host_group')
@@ -51,7 +51,7 @@ if tsdb_type == 'InfluxDB':
 else:
     tsd_influx = False
 
-if tsdb_type == 'OddEye':
+if (tsdb_type == 'OddEye'):
     tsdb_url = lib.getconfig.getparam('TSDB', 'url')
     oddeye_uuid = lib.getconfig.getparam('TSDB', 'uuid')
     tsd_oddeye = True
@@ -143,7 +143,6 @@ class JonSon(object):
         elif tsdb_type == 'InfluxDB':
             nanotime = lambda: int(round(time.time() * 1000000000))
             str_nano = str(nanotime())
-            #lib.puylogger.print_message(str(type(value)) + ' ' + str(value))
             if type(value) is int:
                 value = str(value) + 'i'
             else:
@@ -181,7 +180,9 @@ class JonSon(object):
                 lib.puylogger.print_message('Recreating data in except block')
                 self.data = {'metric': []}
     # ------------------------------------------- #
+
     def httt_set_opt(self,url, data):
+        pycurl_response = cStringIO.StringIO()
         c.setopt(pycurl.URL, url)
         c.setopt(pycurl.POST, 0)
         c.setopt(pycurl.POSTFIELDS, data)
@@ -190,22 +191,17 @@ class JonSon(object):
         c.setopt(pycurl.NOSIGNAL, 5)
         c.setopt(pycurl.USERAGENT, 'PuyPuy v.02')
         c.setopt(pycurl.ENCODING, "gzip,deflate")
+        if tsd_oddeye is True:
+            c.setopt(pycurl.WRITEFUNCTION, pycurl_response.write)
+        else:
+            c.setopt(pycurl.WRITEFUNCTION, lambda x: None)
+
 
     def upload_it(self, data):
         http_response_codes = [100, 101, 102, 200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]
         http_oddeye_errors = [406, 411, 415, 424]
-        buffer = BytesIO()
-
-        if tsd_oddeye is True:
-            c.setopt(c.WRITEDATA, buffer)
-        else:
-            c.setopt(pycurl.WRITEFUNCTION, lambda x: None)
-
-        response_code = c.getinfo(pycurl.RESPONSE_CODE)
-
         try:
             c.perform()
-
             try:
                 response_code = int(c.getinfo(pycurl.RESPONSE_CODE))
                 response_exists = True
@@ -220,7 +216,7 @@ class JonSon(object):
                 else:
                     filename = tmpdir + '/' + str(uuid.uuid4()) + '.cached'
                     file = open(filename, "w")
-                    file.write(str(data))
+                    file.write(data)
                     file.close()
 
 
@@ -242,8 +238,8 @@ class JonSon(object):
                     file = open(filename, "w")
                     file.write(str(data))
                     file.close()
-            except Exception as e:
-                lib.puylogger.print_message(str(e))
+            except:
+                pass
 
     def put_json(self):
         if tsd_oddeye is True:
