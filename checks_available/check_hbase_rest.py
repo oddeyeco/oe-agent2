@@ -134,14 +134,16 @@ def runcheck():
 
         jolo_thrift = 'Hadoop:service=HBase,name=REST'
         jolo_tjson = json.loads(lib.commonclient.httpget(__name__, hrest_url + '/' + jolo_thrift))
-        hrmetrics = ('PauseTimeWithGc_99th_percentile', 'PauseTimeWithGc_90th_percentile',
+        hrmetrics = ('requests', 'PauseTimeWithGc_99th_percentile', 'PauseTimeWithGc_90th_percentile',
                      'PauseTimeWithoutGc_90th_percentile', 'PauseTimeWithoutGc_99th_percentile')
 
-        hrmetrics_rated = ('requests', 'successfulDelete', 'successfulGet', 'successfulPut', 'successfulScanCount',
+        hrmetrics_rated = ('successfulDelete', 'successfulGet', 'successfulPut', 'successfulScanCount',
                      'failedDelete', 'failedGet', 'failedPut', 'failedScanCount')
         for thread_metric in hrmetrics:
             name = 'hrest_' + thread_metric.lower()
             blor = jolo_tjson['value'][thread_metric]
+            if thread_metric == 'requests':
+                local_vars.append({'name': name, 'timestamp': timestamp, 'value': blor, 'check_type': check_type, 'chart_type': 'Counter'})
             local_vars.append({'name': name, 'timestamp': timestamp, 'value': blor, 'check_type': check_type})
 
         for rated_metric in hrmetrics_rated:
@@ -158,5 +160,3 @@ def runcheck():
         except Exception as jolo:
             lib.pushdata.print_error(__name__, (jolo))
         pass
-
-
