@@ -41,7 +41,6 @@ extra_tags = ('chart_type', 'check_type')
 jsondata = lib.pushdata.JonSon()
 
 
-
 def run_scripts():
     try:
         start_gtime = time.time()
@@ -50,11 +49,19 @@ def run_scripts():
             try:
                 # jsondata.prepare_data()
                 start_time = time.time()
-                a = modol.runcheck()
+                a = modol.Check().runcheck()
                 time_elapsed = "{:.9f}".format(time.time() - start_time) + " seconds"
                 message = time_elapsed + ' ' + str(modol).split("'")[1]
                 for b in a:
-                    jsondata.gen_data_json(b, lib.pushdata.hostname, cluster_name)
+                #     if 'reaction' not in b:
+                #         b.update({'reaction': 0})
+                #     for extra_tag in extra_tags:
+                #         if extra_tag not in b:
+                #             b.update({extra_tag: 'None'})
+                    # jsondata.gen_data(b['name'], b['timestamp'], b['value'], lib.pushdata.hostname, b['check_type'], cluster_name, b['reaction'], b['chart_type'])
+                    jsondata.gen_data_json(b, b['host'], cluster_name)
+
+                # lib.puylogger.print_message(json.dumps(jsondata.data, indent=4))
                 lib.puylogger.print_message(message)
             except Exception as e:
                 lib.puylogger.print_message(str(e))

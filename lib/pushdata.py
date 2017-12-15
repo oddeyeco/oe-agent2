@@ -67,7 +67,7 @@ else:
 
 
 class JonSon(object):
-    def gen_data_json(self, b,tag_hostname,cluster_name):
+    def gen_data_json(self, b, tag_hostname, cluster_name):
         if 'check_type' in b:
             tag_type = b['check_type']
         else:
@@ -110,7 +110,7 @@ class JonSon(object):
                           "tags": {"host": tag_hostname, "cluster": cluster_name, "group": host_group, "location": location}};
 
             if 'chart_type' in b:
-              local_data["type"]= b['chart_type']
+              local_data["type"] = b['chart_type']
             else:
               local_data["type"] = 'None'
 
@@ -131,28 +131,28 @@ class JonSon(object):
             self.data['metric'].append(local_data)
 
 
-    def gen_data(self, name, timestamp, value, tag_hostname, tag_type, cluster_name, reaction=0, metric_type='None'):
-        if tsdb_type == 'KairosDB':
-            self.data['metric'].append({"name": name, "timestamp": timestamp * 1000, "value": value, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
-        elif tsdb_type == 'OpenTSDB':
-            self.data['metric'].append({"metric": name, "timestamp": timestamp, "value": value, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
-        elif tsdb_type == 'BlueFlood':
-            raise NotImplementedError('BlueFlood is not supported yet')
-        elif tsdb_type == 'Carbon':
-            self.data.append((cluster_name + '.' + host_group + '.' + path + '.' + name, (timestamp, value)))
-        elif tsdb_type == 'InfluxDB':
-            nanotime = lambda: int(round(time.time() * 1000000000))
-            str_nano = str(nanotime())
-            if type(value) is int:
-                value = str(value) + 'i'
-            else:
-                value = str(value)
-            self.data.append(name + ',host=' + tag_hostname + ',cluster=' + cluster_name + ',group=' + host_group + ',location=' + location + ',type=' + tag_type + ' value=' + value + ' ' + str_nano + '\n')
-        elif tsd_oddeye is True:
-            self.data['metric'].append({"metric": name, "timestamp": timestamp, "value": value, "reaction": reaction, "type": metric_type, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
-
-        else:
-            print ('Please set TSDB type')
+    # def gen_data(self, name, timestamp, value, tag_hostname, tag_type, cluster_name, reaction=0, metric_type='None'):
+    #     if tsdb_type == 'KairosDB':
+    #         self.data['metric'].append({"name": name, "timestamp": timestamp * 1000, "value": value, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
+    #     elif tsdb_type == 'OpenTSDB':
+    #         self.data['metric'].append({"metric": name, "timestamp": timestamp, "value": value, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
+    #     elif tsdb_type == 'BlueFlood':
+    #         raise NotImplementedError('BlueFlood is not supported yet')
+    #     elif tsdb_type == 'Carbon':
+    #         self.data.append((cluster_name + '.' + host_group + '.' + path + '.' + name, (timestamp, value)))
+    #     elif tsdb_type == 'InfluxDB':
+    #         nanotime = lambda: int(round(time.time() * 1000000000))
+    #         str_nano = str(nanotime())
+    #         if type(value) is int:
+    #             value = str(value) + 'i'
+    #         else:
+    #             value = str(value)
+    #         self.data.append(name + ',host=' + tag_hostname + ',cluster=' + cluster_name + ',group=' + host_group + ',location=' + location + ',type=' + tag_type + ' value=' + value + ' ' + str_nano + '\n')
+    #     elif tsd_oddeye is True:
+    #         self.data['metric'].append({"metric": name, "timestamp": timestamp, "value": value, "reaction": reaction, "type": metric_type, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
+    #
+    #     else:
+    #         print ('Please set TSDB type')
 
     def prepare_data(self):
         if tsd_rest is True:

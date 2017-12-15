@@ -2,7 +2,7 @@ import lib.commonclient
 import lib.record_rate
 import lib.getconfig
 import lib.puylogger
-import datetime
+import lib.basecheck
 import json
 import re
 
@@ -26,46 +26,46 @@ cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'rabbitmq'
 
 
-def runcheck():
-    local_vars = []
-    try:
-        url1 = rabbit_url+'/api/overview'
-        stats_json = json.loads(lib.commonclient.httpget(__name__, url1, rabbit_auth))
-        timestamp = int(datetime.datetime.now().strftime("%s"))
-        queue_totals = ('messages','messages_ready','messages_unacknowledged')
-        queue_rates = ('messages_details','messages_ready_details','messages_unacknowledged_details')
-        for queue in queue_totals:
-            local_vars.append({'name': 'rabbitmq_'+queue, 'timestamp': timestamp, 'value': stats_json['queue_totals'][queue], 'check_type': check_type, 'extra_tag':{'queue': 'all'}})
+class Check(lib.basecheck.CheckBase):
 
-        for qrate in queue_rates:
-            local_vars.append({'name': 'rabbitmq_'+ qrate, 'timestamp': timestamp, 'value': stats_json['queue_totals'][qrate]['rate'], 'check_type': check_type, 'extra_tag':{'queue': 'all'}})
-
-        local_vars.append({'name': 'rabbitmq_publish_rate', 'timestamp': timestamp, 'value': stats_json['message_stats']['publish_details']['rate'], 'check_type': check_type, 'extra_tag': {'queue': 'all'}})
-        local_vars.append({'name': 'rabbitmq_deliver_rate', 'timestamp': timestamp, 'value': stats_json['message_stats']['deliver_details']['rate'], 'check_type': check_type, 'extra_tag': {'queue': 'all'}})
-
-        if queue_details is True:
-            url2 = rabbit_url + '/api/queues'
-            rabbit_queues = json.loads(lib.commonclient.httpget(__name__, url2, rabbit_auth))
-            stats = ('messages', 'messages_unacknowledged', 'messages_ready',
-                     'message_bytes_persistent', 'message_bytes_ram',
-                     'messages_persistent', 'messages_ram')
-            for index in range(len(rabbit_queues)):
-                nme = str(rabbit_queues[index]['name'])
-                if nme in rabbit_queues_needed and all_queues is False:
-                    for stat in stats :
-                        nn = 'rabbitmq_' + stat
-                        name = re.sub('[^a-zA-Z0-9]', '_', str(rabbit_queues[index]['name']))
-                        value = rabbit_queues[index][stat]
-                        local_vars.append({'name': nn, 'timestamp': timestamp, 'value': value, 'check_type': check_type, 'extra_tag':{'queue': name}})
-
-                if all_queues is True:
-                    for stat in stats :
-                        nn = 'rabbitmq_' + stat
-                        name = re.sub('[^a-zA-Z0-9]', '_', str(rabbit_queues[index]['name']))
-                        value = rabbit_queues[index][stat]
-                        local_vars.append({'name': nn, 'timestamp': timestamp, 'value': value, 'check_type': check_type, 'extra_tag':{'queue': name}})
-
-        return local_vars
-    except Exception as e:
-        lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
-        pass
+    def precheck(self):
+        
+        try:
+            url1 = rabbit_url+'/api/overview'
+            stats_json = json.loads(lib.commonclient.httpget(__name__, url1, rabbit_auth))
+            queue_totals = ('messages','messages_ready','messages_unacknowledged')
+            queue_rates = ('messages_details','messages_ready_details','messages_unacknowledged_details')
+            for queue in queue_totals:
+                self.local_vars.append({'name': 'rabbitmq_'+queue, 'timestamp': self.timestamp, 'value': stats_json['queue_totals'][queue], 'check_type': check_type, 'extra_tag':{'queue': 'all'}})
+    
+            for qrate in queue_rates:
+                self.local_vars.append({'name': 'rabbitmq_'+ qrate, 'timestamp': self.timestamp, 'value': stats_json['queue_totals'][qrate]['rate'], 'check_type': check_type, 'extra_tag':{'queue': 'all'}})
+    
+            self.local_vars.append({'name': 'rabbitmq_publish_rate', 'timestamp': self.timestamp, 'value': stats_json['message_stats']['publish_details']['rate'], 'check_type': check_type, 'extra_tag': {'queue': 'all'}})
+            self.local_vars.append({'name': 'rabbitmq_deliver_rate', 'timestamp': self.timestamp, 'value': stats_json['message_stats']['deliver_details']['rate'], 'check_type': check_type, 'extra_tag': {'queue': 'all'}})
+    
+            if queue_details is True:
+                url2 = rabbit_url + '/api/queues'
+                rabbit_queues = json.loads(lib.commonclient.httpget(__name__, url2, rabbit_auth))
+                stats = ('messages', 'messages_unacknowledged', 'messages_ready',
+                         'message_bytes_persistent', 'message_bytes_ram',
+                         'messages_persistent', 'messages_ram')
+                for index in range(len(rabbit_queues)):
+                    nme = str(rabbit_queues[index]['name'])
+                    if nme in rabbit_queues_needed and all_queues is False:
+                        for stat in stats :
+                            nn = 'rabbitmq_' + stat
+                            name = re.sub('[^a-zA-Z0-9]', '_', str(rabbit_queues[index]['name']))
+                            value = rabbit_queues[index][stat]
+                            self.local_vars.append({'name': nn, 'timestamp': self.timestamp, 'value': value, 'check_type': check_type, 'extra_tag':{'queue': name}})
+    
+                    if all_queues is True:
+                        for stat in stats :
+                            nn = 'rabbitmq_' + stat
+                            name = re.sub('[^a-zA-Z0-9]', '_', str(rabbit_queues[index]['name']))
+                            value = rabbit_queues[index][stat]
+                            self.local_vars.append({'name': nn, 'timestamp': self.timestamp, 'value': value, 'check_type': check_type, 'extra_tag':{'queue': name}})
+    
+        except Exception as e:
+            lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
+            pass

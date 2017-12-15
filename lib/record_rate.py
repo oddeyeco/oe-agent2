@@ -2,6 +2,12 @@ import lib.puylogger
 
 last_value = {}
 
+# def init():
+#     global last_value
+#     last_value = {}
+#     return last_value
+
+
 class ValueRate(object):
 
     metrics_value_rate = 0.0
