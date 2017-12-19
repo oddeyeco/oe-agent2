@@ -9,11 +9,18 @@ import re
 check_type = 'system'
 
 reaction = -3
-warn_percent = float(lib.getconfig.getparam('System Thresholds', 'du_high'))
-crit_percent = float(lib.getconfig.getparam('System Thresholds', 'du_severe'))
+warn_percent = float(lib.getconfig.getparam('Disk Stats', 'high'))
+crit_percent = float(lib.getconfig.getparam('Disk Stats', 'severe'))
+static_alerts = lib.getconfig.getparam('Disk Stats', 'static_enabled')
 rated = True
 # io_warning_percent = 40
 
+'''
+[Disk Stats]
+static_enabled: True
+high : 80
+severe : 90
+'''
 class Check(lib.basecheck.CheckBase):
 
     def precheck(self):
@@ -69,22 +76,22 @@ class Check(lib.basecheck.CheckBase):
                     name = 'rootfs'
                 else:
                     name = u.strip('/').replace('/', '_')
-                if float(mrtrics[3]) < warn_percent:
-                    health_value = 0
-                    err_type = 'OK'
-                    # health_message = err_type + ': System Load average is at ' + str(curr_level) + ' percent of available  resources'
-                    health_message = err_type + ': Storage usage of ' + u + ' is at ' + str(mrtrics[3]) + ' percent of available  space'
-                    self.jsondata.send_special("Disk-Usage-" + name, self.timestamp, health_value, health_message, err_type)
-                if warn_percent <= float(mrtrics[3]) < crit_percent:
-                    err_type = 'WARNING'
-                    health_value = 8
-                    health_message = err_type + ': Storage usage of ' + u + ' is at ' + str(mrtrics[3]) + ' percent of available  space'
-                    self.jsondata.send_special("Disk-Usage-" + name, self.timestamp, health_value, health_message, err_type)
-                if float(mrtrics[3]) >= crit_percent:
-                    health_value = 16
-                    err_type = 'ERROR'
-                    health_message = err_type + ': Storage usage of ' + u + ' is at ' + str(mrtrics[3]) + ' percent of available  space'
-                    self.jsondata.send_special("Disk-Usage-" + name, self.timestamp, health_value, health_message, err_type)
+                if static_alerts:
+                    # if float(mrtrics[3]) < warn_percent:
+                    #     health_value = 0
+                    #     err_type = 'OK'
+                    #     health_message = err_type + ': Storage usage of ' + u + ' is at ' + str(mrtrics[3]) + ' percent of available  space'
+                    #     self.jsondata.send_special("Disk-Usage-" + name, self.timestamp, health_value, health_message, err_type, -self.error_handler)
+                    if warn_percent <= float(mrtrics[3]) < crit_percent:
+                        err_type = 'WARNING'
+                        health_value = 8
+                        health_message = err_type + ': Storage usage of ' + u + ' is at ' + str(mrtrics[3]) + ' percent of available  space'
+                        self.jsondata.send_special("Disk-Usage-" + name, self.timestamp, health_value, health_message, err_type, -self.error_handler)
+                    if float(mrtrics[3]) >= crit_percent:
+                        err_type = 'ERROR'
+                        health_value = 16
+                        health_message = err_type + ': Storage usage of ' + u + ' is at ' + str(mrtrics[3]) + ' percent of available  space'
+                        self.jsondata.send_special("Disk-Usage-" + name, self.timestamp, health_value, health_message, err_type, -self.error_handler)
 
                 self.local_vars.append({'name': 'drive_bytes_used', 'timestamp': self.timestamp, 'value': mrtrics[1], 'reaction': reaction , 'extra_tag':{'device': name}})
                 self.local_vars.append({'name': 'drive_bytes_available', 'timestamp': self.timestamp, 'value': mrtrics[2], 'reaction': reaction, 'extra_tag': {'device': name}})

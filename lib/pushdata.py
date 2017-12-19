@@ -55,8 +55,8 @@ if (tsdb_type == 'OddEye'):
     tsdb_url = lib.getconfig.getparam('TSDB', 'url')
     oddeye_uuid = lib.getconfig.getparam('TSDB', 'uuid')
     tsd_oddeye = True
-    err_handler = int(lib.getconfig.getparam('TSDB', 'err_handler'))
-    negative_handler = err_handler * -1
+    error_handler = int(lib.getconfig.getparam('SelfConfig', 'error_handler'))
+    negative_handler = error_handler * -1
     sandbox = bool(lib.getconfig.getparam('TSDB', 'sandbox'))
     if sandbox is True:
         barlus_style = 'UUID=' + oddeye_uuid + '&sandbox=true&data='

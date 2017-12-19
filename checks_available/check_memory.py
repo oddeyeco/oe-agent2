@@ -5,21 +5,21 @@ import lib.record_rate
 import lib.puylogger
 import lib.basecheck
 
-# cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
-warn_percent = float(lib.getconfig.getparam('System Thresholds', 'memory_high'))
-crit_percent = float(lib.getconfig.getparam('System Thresholds', 'memory_severe'))
-
-
+warn_percent = float(lib.getconfig.getparam('Memory Stats', 'high'))
+crit_percent = float(lib.getconfig.getparam('Memory Stats', 'severe'))
+static_alerts = lib.getconfig.getparam('Memory Stats', 'static_enabled')
 check_type = 'system'
+
+'''
+[Memory Stats]
+static_enabled: True
+high : 2
+severe : 3
+'''
 
 class Check(lib.basecheck.CheckBase):
 
     def precheck(self):
-        # local_vars = []
-        # timestamp = int(datetime.datetime.now().strftime("%s"))
-        # jsondata = lib.pushdata.JonSon()
-        # jsondata.prepare_data()
-
         try:
             memory_stats = ('MemTotal:', 'MemAvailable:', 'Buffers:', 'Cached:', 'Active:', 'Inactive:')
             memorytimes = {}
@@ -42,21 +42,22 @@ class Check(lib.basecheck.CheckBase):
             if 'mem_available' in memorytimes:
                 mem_used_percent = 100 - ((memorytimes['mem_available'] * 100) / memorytimes['mem_total'])
                 self.local_vars.append({'name': 'mem_used_percent', 'timestamp': self.timestamp, 'value': mem_used_percent, 'chart_type': 'Percent'})
-                if mem_used_percent < warn_percent:
-                    health_value = 0
-                    err_type = 'OK'
-                    health_message = err_type + ': Systems memory usage is ' + str(mem_used_percent) + ' percent'
-                    self.jsondata.send_special("Memory-Usage", self.timestamp, health_value, health_message, err_type)
-                if warn_percent <= mem_used_percent < crit_percent:
-                    err_type = 'WARNING'
-                    health_value = 8
-                    health_message = err_type + ': Systems memory usage is ' + str(mem_used_percent) + ' percent'
-                    self.jsondata.send_special("Memory-Usage", self.timestamp, health_value, health_message, err_type)
-                if mem_used_percent >= crit_percent:
-                    health_value = 16
-                    err_type = 'ERROR'
-                    health_message = err_type + ': Systems memory usage is ' + str(mem_used_percent) + ' percent'
-                    self.jsondata.send_special("Memory-Usage", self.timestamp, health_value, health_message, err_type)
+                if static_alerts:
+                    # if mem_used_percent < warn_percent:
+                    #     health_value = 0
+                    #     err_type = 'OK'
+                    #     health_message = err_type + ': Systems memory usage is ' + str("{0:.2f}".format(mem_used_percent)) + ' percent'
+                    #     self.jsondata.send_special("Memory-Usage", self.timestamp, health_value, health_message, err_type, -self.error_handler)
+                    if warn_percent <= mem_used_percent < crit_percent:
+                        err_type = 'WARNING'
+                        health_value = 8
+                        health_message = err_type + ': Systems memory usage is ' + str("{0:.2f}".format(mem_used_percent)) + ' percent'
+                        self.jsondata.send_special("Memory-Usage", self.timestamp, health_value, health_message, err_type, -self.error_handler)
+                    if mem_used_percent >= crit_percent:
+                        health_value = 16
+                        err_type = 'ERROR'
+                        health_message = err_type + ': Systems memory usage is ' + str("{0:.2f}".format(mem_used_percent)) + ' percent'
+                        self.jsondata.send_special("Memory-Usage", self.timestamp, health_value, health_message, err_type, -self.error_handler)
 
             read_memorystats.close()
             # return local_vars

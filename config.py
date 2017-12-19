@@ -24,7 +24,7 @@ print(bcolors.ENDC + " " + bcolors.ENDC)
 
 url = 'https://api.oddeye.co/oddeye-barlus/put/tsdb'
 sandbox = 'False'
-err_handler = 2
+error_handler = 2
 tsdtype = 'OddEye'
 check_period = 10
 debug_log = 'False'
@@ -79,8 +79,8 @@ parser.add_section('TSDB')
 parser.set('TSDB', 'url', url)
 parser.set('TSDB', 'uuid', uuid)
 parser.set('TSDB', 'sandbox', 'False')
-parser.set('TSDB', 'err_handler', '2')
 parser.set('TSDB', 'tsdtype', 'OddEye')
+parser.set('SelfConfig', 'error_handler', '2')
 parser.set('SelfConfig','check_period_seconds', str(check_period))
 parser.set('SelfConfig', 'pid_file', pid_file)
 parser.set('SelfConfig', 'tmpdir', tmpdir)

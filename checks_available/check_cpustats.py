@@ -13,7 +13,16 @@ import lib.basecheck
 # 6: softirq: servicing softirqs
 
 
+check_type = 'system'
+values_type = 'Percent'
+static_alerts = lib.getconfig.getparam('CPU Stats', 'static_enabled')
+per_cpu = lib.getconfig.getparam('CPU Stats', 'percore_stats')
+warn_level = lib.getconfig.getparam('CPU Stats', 'high')
+crit_level = lib.getconfig.getparam('CPU Stats', 'severe')
+
+
 class Check(lib.basecheck.CheckBase):
+
 
     def calcperraw(self,cpu_stats,rate,timestamp,local_vars,metrinames, device="all"):
         time = cpu_stats[0]+cpu_stats[1]+cpu_stats[2]+cpu_stats[3]
@@ -56,16 +65,9 @@ class Check(lib.basecheck.CheckBase):
 
         self.metrics = ['cpu_user', 'cpu_nice', 'cpu_system', 'cpu_idle', 'cpu_iowait', 'cpu_irq', 'cpu_softirq']
         self.calcperraw(cpu_stats, rate, timestamp, self.local_vars, self.metrics)
-        if self.per_cpu:
+        if per_cpu:
             for index in range(0, len(core_stats)):
                 self.calcperraw(core_stats[index], rate, timestamp, self.local_vars, self.metrics,"core"+str(index))
 
-        self.metrics.append("cpu_load");
+        self.metrics.append("cpu_load")
 
-    def __init__(self):
-        self.check_type = 'system'
-        self.values_type = 'Percent'
-        self.static_alerts = lib.getconfig.getparam('CPU Stats', 'static_alerts')
-        self.per_cpu = lib.getconfig.getparam('CPU Stats', 'per_cpu')
-        self.warn_level = lib.getconfig.getparam('CPU Stats', 'warn_level')
-        self.crit_level = lib.getconfig.getparam('CPU Stats', 'crit_level')

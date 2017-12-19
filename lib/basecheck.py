@@ -18,6 +18,7 @@ class CheckBase:
         self.cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
         self.host_group = lib.getconfig.getparam('SelfConfig', 'host_group')
         self.location = lib.getconfig.getparam('SelfConfig', 'location')
+        self.error_handler = int(lib.getconfig.getparam('SelfConfig', 'error_handler'))
         self.timestamp = int(datetime.datetime.now().strftime("%s"))
 
     def info(self):
@@ -33,6 +34,6 @@ class CheckBase:
         # self.info()
         for k in self.local_vars:
             if 'host' not in k:
-                k['host']=lib.pushdata.hostname
+                k['host'] = lib.pushdata.hostname
         return self.local_vars
 

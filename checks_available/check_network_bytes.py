@@ -1,4 +1,3 @@
-import datetime
 import glob
 import lib.getconfig
 import lib.pushdata
@@ -6,18 +5,14 @@ import lib.record_rate
 import lib.puylogger
 import lib.basecheck
 
-# cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
-check_localhost = False
-rated = True
 check_type = 'system'
-# rate = lib.record_rate.ValueRate()
+check_localhost = lib.getconfig.getparam('Network Stats', 'localhost')
+rated = lib.getconfig.getparam('Network Stats', 'rated')
 
 
 class Check(lib.basecheck.CheckBase):
     
     def precheck(self):
-        local_vars = []
-        # timestamp = int(datetime.datetime.now().strftime("%s"))
         try:
             ifaces = glob.glob("/sys/class/net/*")
             iflist = []
@@ -50,7 +45,6 @@ class Check(lib.basecheck.CheckBase):
 
                 rxb.close()
                 txb.close()
-            # return local_vars
         except Exception as e:
             lib.pushdata.print_error(__name__ , (e))
             pass
