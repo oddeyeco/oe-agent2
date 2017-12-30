@@ -25,10 +25,8 @@ os.chdir("checks_enabled")
 
 checklist = glob.glob("check_*.py")
 
-
-def run_shell_scripts():
-    lib.run_bash.run_shell_scripts()
-
+# def run_shell_scripts():
+#     lib.run_bash.run_shell_scripts()
 
 module_names = []
 for checks in checklist:
@@ -42,35 +40,29 @@ jsondata = lib.pushdata.JonSon()
 
 
 def run_scripts():
-    try:
-        start_gtime = time.time()
-        jsondata.prepare_data()
-        for modol in modules:
-            try:
-                # jsondata.prepare_data()
-                start_time = time.time()
-                a = modol.Check().runcheck()
-                time_elapsed = "{:.9f}".format(time.time() - start_time) + " seconds"
-                message = time_elapsed + ' ' + str(modol).split("'")[1]
-                for b in a:
-                #     if 'reaction' not in b:
-                #         b.update({'reaction': 0})
-                #     for extra_tag in extra_tags:
-                #         if extra_tag not in b:
-                #             b.update({extra_tag: 'None'})
-                    # jsondata.gen_data(b['name'], b['timestamp'], b['value'], lib.pushdata.hostname, b['check_type'], cluster_name, b['reaction'], b['chart_type'])
-                    jsondata.gen_data_json(b, b['host'], cluster_name)
-
-                # lib.puylogger.print_message(json.dumps(jsondata.data, indent=4))
-                lib.puylogger.print_message(message)
-            except Exception as e:
-                lib.puylogger.print_message(str(e))
-        jsondata.put_json()
-        time_elapsed2 = '{:.9f}'.format(time.time() - start_gtime) + ' seconds '
-        lib.puylogger.print_message('Spent ' + time_elapsed2 + 'to complete interation')
-    except Exception as e:
-        lib.puylogger.print_message(str(e))
-
+    if len(modules) > 0:
+        try:
+            start_gtime = time.time()
+            jsondata.prepare_data()
+            for modol in modules:
+                try:
+                    # jsondata.prepare_data()
+                    start_time = time.time()
+                    a = modol.Check().runcheck()
+                    time_elapsed = "{:.9f}".format(time.time() - start_time) + " seconds"
+                    message = time_elapsed + ' ' + str(modol).split("'")[1]
+                    for b in a:
+                        jsondata.gen_data_json(b, b['host'], cluster_name)
+                    lib.puylogger.print_message(message)
+                except Exception as e:
+                    lib.puylogger.print_message(str(e))
+            jsondata.put_json()
+            time_elapsed2 = '{:.9f}'.format(time.time() - start_gtime) + ' seconds '
+            lib.puylogger.print_message('Spent ' + time_elapsed2 + 'to complete interation')
+        except Exception as e:
+            lib.puylogger.print_message(str(e))
+    else:
+        lib.puylogger.print_message(str('None of python modules is enabled'))
 
 def upload_cache():
     lib.upload_cached.cache_uploader()
@@ -86,9 +78,13 @@ class App(Daemon):
                     run_scripts()
                     if lib.puylogger.debug_log:
                         lib.puylogger.print_message(str(run_scripts))
-                    run_shell_scripts()
+                    try:
+                        lib.run_bash.run_shell_scripts()
+                    except Exception as d:
+                        lib.puylogger.print_message(str(d))
+
                     if lib.puylogger.debug_log:
-                        lib.puylogger.print_message(str(run_shell_scripts))
+                        lib.puylogger.print_message(str(lib.run_bash.run_shell_scripts()))
                     if self.hast % 25 == 0:
                           gc.collect()
                           self.hast = 1
@@ -114,7 +110,7 @@ class App(Daemon):
         else:
             while True:
                 run_scripts()
-                run_shell_scripts()
+                lib.run_bash.run_shell_scripts()
                 time.sleep(cron_interval)
 
 

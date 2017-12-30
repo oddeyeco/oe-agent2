@@ -130,30 +130,6 @@ class JonSon(object):
 
             self.data['metric'].append(local_data)
 
-
-    # def gen_data(self, name, timestamp, value, tag_hostname, tag_type, cluster_name, reaction=0, metric_type='None'):
-    #     if tsdb_type == 'KairosDB':
-    #         self.data['metric'].append({"name": name, "timestamp": timestamp * 1000, "value": value, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
-    #     elif tsdb_type == 'OpenTSDB':
-    #         self.data['metric'].append({"metric": name, "timestamp": timestamp, "value": value, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
-    #     elif tsdb_type == 'BlueFlood':
-    #         raise NotImplementedError('BlueFlood is not supported yet')
-    #     elif tsdb_type == 'Carbon':
-    #         self.data.append((cluster_name + '.' + host_group + '.' + path + '.' + name, (timestamp, value)))
-    #     elif tsdb_type == 'InfluxDB':
-    #         nanotime = lambda: int(round(time.time() * 1000000000))
-    #         str_nano = str(nanotime())
-    #         if type(value) is int:
-    #             value = str(value) + 'i'
-    #         else:
-    #             value = str(value)
-    #         self.data.append(name + ',host=' + tag_hostname + ',cluster=' + cluster_name + ',group=' + host_group + ',location=' + location + ',type=' + tag_type + ' value=' + value + ' ' + str_nano + '\n')
-    #     elif tsd_oddeye is True:
-    #         self.data['metric'].append({"metric": name, "timestamp": timestamp, "value": value, "reaction": reaction, "type": metric_type, "tags": {"host": tag_hostname, "type": tag_type, "cluster": cluster_name, "group": host_group, "location": location}})
-    #
-    #     else:
-    #         print ('Please set TSDB type')
-
     def prepare_data(self):
         if tsd_rest is True:
             try:
@@ -238,22 +214,22 @@ class JonSon(object):
                     file = open(filename, "w")
                     file.write(str(data))
                     file.close()
-            except:
-                pass
+            except Exception as e:
+                lib.puylogger.print_message(str(e))
 
     def put_json(self):
         if tsd_oddeye is True:
-            json_data = json.dumps(self.data['metric'])
-            send_data = barlus_style + json_data
-            #zdata = zlib.compress(send_data.encode("utf-8"))
-            self.httt_set_opt(tsdb_url, send_data)
-            self.upload_it(send_data)
-            if lib.puylogger.debug_log:
-                lib.puylogger.print_message('\n' + send_data)
+            if len(self.data['metric']) > 0:
+                json_data = json.dumps(self.data['metric'])
+                send_data = barlus_style + json_data
+                self.httt_set_opt(tsdb_url, send_data)
+                self.upload_it(send_data)
+                if lib.puylogger.debug_log:
+                    lib.puylogger.print_message('\n' + send_data)
+                del send_data
+                del json_data
             del self.data
             self.data = None
-            del send_data
-            del json_data
 
 
         if tsd_rest is True:
@@ -302,8 +278,11 @@ class JonSon(object):
                                    "tags": {"host": hostname,"cluster": cluster_name, "group": host_group}})
                 send_err_msg = json.dumps(error_data)
                 send_error_data = barlus_style + send_err_msg
-                self.httt_set_opt(tsdb_url, send_error_data)
-                self.upload_it(send_error_data)
+                try:
+                    self.httt_set_opt(tsdb_url, send_error_data)
+                    self.upload_it(send_error_data)
+                except Exception as r:
+                    lib.puylogger.print_message(r)
                 if lib.puylogger.debug_log:
                     lib.puylogger.print_message(send_error_data)
                 del error_data

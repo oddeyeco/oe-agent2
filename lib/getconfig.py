@@ -14,3 +14,7 @@ def getparam (key, value):
         return False
     else:
         return v
+
+def getsection(section):
+    o = config.options(section)
+    return o
