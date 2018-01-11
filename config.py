@@ -2,6 +2,9 @@ from ConfigParser import SafeConfigParser
 import os
 import pwd
 import getpass
+import grp
+import sys
+import subprocess
 
 class bcolors:
     HEADER = '\033[95m'
@@ -62,14 +65,18 @@ for root, dirs, files in os.walk(base_dir, topdown=False):
     for name in dirs:
         os.chown((os.path.join(root, name)), uid, gid)
 
-
 conf_system_checks = raw_input("Do you want me to enable basic system checks (yes/no): ")
+systemd_service = raw_input("Do you want to run OddEye agent at system boot (yes/no): ")
+
 while conf_system_checks not in ['yes', 'no']:
     print(bcolors.FAIL + 'Please write yes or no ' + bcolors.FAIL)
     conf_system_checks = raw_input("Do you want me to enable basic system checks (yes/no): ")
 
 parser = SafeConfigParser()
 config_file = 'conf/config.ini'
+service_file = '/lib/systemd/system/oe-agent.service'
+sparser = SafeConfigParser()
+sparser.optionxform= str
 
 parser.read(config_file)
 parser.remove_section('TSDB')
@@ -94,6 +101,27 @@ parser.set('SelfConfig', 'run_user', run_user)
 parser.set('SelfConfig', 'max_cache', '50000')
 parser.set('SelfConfig', 'location', location)
 
+sparser.add_section('Unit')
+sparser.add_section('Install')
+sparser.add_section('Service')
+
+sparser.set('Unit', 'Description', 'OddEye Agent Service')
+sparser.set('Unit', 'After', 'syslog.target')
+sparser.set('Install', 'WantedBy', 'multi-user.target')
+
+groups = [g.gr_name for g in grp.getgrall() if run_user in g.gr_mem]
+gid = pwd.getpwnam(run_user).pw_gid
+group = grp.getgrgid(gid).gr_name
+
+sparser.set('Service', 'Type', 'simple')
+sparser.set('Service', 'User', run_user)
+sparser.set('Service', 'Group', group)
+sparser.set('Service', 'WorkingDirectory', base_dir + '/')
+sparser.set('Service', 'ExecStart', sys.executable + ' ' + base_dir + '/oddeye.py  start')
+sparser.set('Service', 'PIDFile', pid_file)
+
+with open(service_file, 'wb') as servicefile:
+ sparser.write(servicefile)
 
 with open(config_file, 'wb') as configfile:
  parser.write(configfile)
@@ -114,3 +142,15 @@ elif conf_system_checks == 'no':
 else:
     print(bcolors.FAIL + ' ' + bcolors.FAIL)
     print(bcolors.FAIL + 'Failed to enable systems checks, please enable it manually' + bcolors.FAIL)
+
+if systemd_service == 'yes':
+    subprocess.Popen('systemctl daemon-reload', stdout=subprocess.PIPE, shell=True).communicate()
+    subprocess.Popen('systemctl enable oe-agent.service', stdout=subprocess.PIPE, shell=True).communicate()
+    subprocess.Popen('systemctl start oe-agent', stdout=subprocess.PIPE, shell=True).communicate()
+    print(bcolors.OKGREEN + 'Autostart of oe-agent is enabled' + bcolors.OKGREEN)
+elif conf_system_checks == 'no':
+    print(bcolors.OKGREEN + ' ' + bcolors.OKGREEN)
+    print(bcolors.OKGREEN + 'Will not run oe-agent on boot, please manually start it' + bcolors.OKGREEN)
+else:
+    print(bcolors.FAIL + ' ' + bcolors.FAIL)
+    print(bcolors.FAIL + 'Failed to add oe-agent to autostart' + bcolors.FAIL)
