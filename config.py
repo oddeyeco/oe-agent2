@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+
 from ConfigParser import SafeConfigParser
 import os
 import pwd
