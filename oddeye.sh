@@ -58,7 +58,7 @@ PIDFILE=`getValue pid_file`
     ;;
 
     *)
-    echo "Usage: `basename $0` start | stop | restart"
+    echo "Usage: `basename $0` start | stop | restart | price"
     ;;
 
     esac

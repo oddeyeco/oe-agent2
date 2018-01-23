@@ -45,7 +45,7 @@ class bcolors:
     OKGREEN = '\033[92m'
     WARNING = '\033[93m'
     FAIL = '\033[91m'
-    ENDC = '\033[0m'
+    ENDC = '\033[36m'
 
     def disable(self):
         self.HEADER = ''
@@ -84,9 +84,7 @@ runsmonth = 60 / cron_interval * 60 * 24 * 30
 o = (a2 * runsmonth * u_p)
 deq = (o / 100 * 2) + 0.3
 u = o + deq
-print(bcolors.OKBLUE + 'Monthly approximate price for this host is ' + bcolors.WARNING + '{:.2f}'.format(o) +
-      bcolors.OKBLUE + ' OddEye units, which is ' + bcolors.WARNING + '{:.2f}'.format(u) + '$')
 
-# print(bcolors.OKBLUE + 'Please write yes or no ' + bcolors.FAIL + 'jhasdasjh')
-# print('{:.2f}'.format(deq))
-# print(a1, a2)
+print(bcolors.ENDC + 'Monthly approximate price for this host is ' + bcolors.OKGREEN +  '{:.2f}'.format(o) +
+      bcolors.ENDC + 'OddEye units, which is ' + bcolors.OKGREEN + '{:.2f}'.format(u) + '$')
+
