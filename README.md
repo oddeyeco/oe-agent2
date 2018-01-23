@@ -309,5 +309,3 @@ We have created another **OddEye** specific optional parameter. This is to tell 
     jsondata.gen_data(txname, timestamp, value, lib.pushdata.hostname, check_type, cluster_name, reaction, 'Counter')
 
 [Full documentation](https://www.oddeye.co/documentation/)
-
-
