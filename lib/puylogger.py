@@ -31,3 +31,6 @@ logger.propagate = False
 def print_message(message):
     mssg = str(time.strftime("[%F %H %M:%S] ")) + message
     logger.info(mssg)
+
+def print_raw_message(message):
+    logger.info(message)

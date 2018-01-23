@@ -49,4 +49,3 @@ with open(service_file, 'wb') as servicefile:
 subprocess.Popen('systemctl daemon-reload', stdout=subprocess.PIPE, shell=True).communicate()
 subprocess.Popen('systemctl enable oe-agent.service', stdout=subprocess.PIPE, shell=True).communicate()
 subprocess.Popen('systemctl start oe-agent', stdout=subprocess.PIPE, shell=True).communicate()
-

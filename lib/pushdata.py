@@ -178,6 +178,7 @@ class JonSon(object):
         http_oddeye_errors = [406, 411, 415, 424]
         try:
             c.perform()
+
             try:
                 response_code = int(c.getinfo(pycurl.RESPONSE_CODE))
                 response_exists = True
@@ -217,17 +218,20 @@ class JonSon(object):
             except Exception as e:
                 lib.puylogger.print_message(str(e))
 
-    def put_json(self):
-        if tsd_oddeye is True:
+    def put_json(self, runscripts=True):
+        if tsd_oddeye:
             if len(self.data['metric']) > 0:
-                json_data = json.dumps(self.data['metric'])
-                send_data = barlus_style + json_data
-                self.httt_set_opt(tsdb_url, send_data)
-                self.upload_it(send_data)
-                if lib.puylogger.debug_log:
-                    lib.puylogger.print_message('\n' + send_data)
-                del send_data
-                del json_data
+                if runscripts:
+                    json_data = json.dumps(self.data['metric'])
+                    send_data = barlus_style + json_data
+                    self.httt_set_opt(tsdb_url, send_data)
+                    self.upload_it(send_data)
+                    if lib.puylogger.debug_log:
+                        lib.puylogger.print_message('\n' + send_data)
+                    del send_data
+                    del json_data
+                else:
+                    return (len(self.data['metric']))
             del self.data
             self.data = None
 
@@ -264,7 +268,7 @@ class JonSon(object):
                 lib.puylogger.print_message('\n' + line_data)
 
 # ------------------------------------------------------------------------------- #
-    def send_special(self, module, timestamp, value, error_msg, mytype, reaction=0):
+    def send_special(self, module, timestamp, value, error_msg, mytype, reaction=0, runscripts=True):
         try:
             if tsd_oddeye is True:
                 error_data = []
@@ -287,6 +291,8 @@ class JonSon(object):
                     lib.puylogger.print_message(send_error_data)
                 del error_data
                 del send_err_msg
+                if not runscripts:
+                    return len(error_data)
         except:
                 logging.critical(" %s : " % module + 'Cannot send error data')
 # ------------------------------------------------------------------------------- #

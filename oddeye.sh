@@ -52,6 +52,11 @@ PIDFILE=`getValue pid_file`
         echo
     cd $SCRIPT_DIR && ./oddeye.sh start
     ;;
+    price)
+    cd lib
+    su $RUNUSER -s /bin/bash -c "$PYTHON getprice.py"
+    ;;
+
     *)
     echo "Usage: `basename $0` start | stop | restart"
     ;;

@@ -25,8 +25,6 @@ os.chdir("checks_enabled")
 
 checklist = glob.glob("check_*.py")
 
-# def run_shell_scripts():
-#     lib.run_bash.run_shell_scripts()
 
 module_names = []
 for checks in checklist:
@@ -48,12 +46,18 @@ def run_scripts():
                 try:
                     # jsondata.prepare_data()
                     start_time = time.time()
-                    a = modol.Check().runcheck()
+                    aa = modol.Check().runcheck()
                     time_elapsed = "{:.9f}".format(time.time() - start_time) + " seconds"
                     message = time_elapsed + ' ' + str(modol).split("'")[1]
-                    for b in a:
+                    for b in aa:
                         jsondata.gen_data_json(b, b['host'], cluster_name)
                     lib.puylogger.print_message(message)
+                    bb = lib.run_bash.run_shell_scripts()
+                    try:
+                        for c in bb:
+                            jsondata.gen_data_json(c, c['host'], cluster_name)
+                    except Exception as ss:
+                        lib.puylogger.print_message(str(ss))
                 except Exception as e:
                     lib.puylogger.print_message(str(e))
             jsondata.put_json()
@@ -62,7 +66,7 @@ def run_scripts():
         except Exception as e:
             lib.puylogger.print_message(str(e))
     else:
-        lib.puylogger.print_message(str('None of python modules is enabled'))
+        lib.puylogger.print_message(str('Please enable at least on python module'))
 
 def upload_cache():
     lib.upload_cached.cache_uploader()
@@ -78,10 +82,10 @@ class App(Daemon):
                     run_scripts()
                     if lib.puylogger.debug_log:
                         lib.puylogger.print_message(str(run_scripts))
-                    try:
-                        lib.run_bash.run_shell_scripts()
-                    except Exception as d:
-                        lib.puylogger.print_message(str(d))
+                    # try:
+                    #     run_shell_scripts()
+                    # except Exception as d:
+                    #     lib.puylogger.print_message(str(d))
 
                     if lib.puylogger.debug_log:
                         lib.puylogger.print_message(str(lib.run_bash.run_shell_scripts()))
