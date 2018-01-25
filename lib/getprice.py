@@ -37,6 +37,8 @@ jsondata = lib.pushdata.JonSon()
 
 pl = json.loads(lib.commonclient.httpget(__name__, 'https://app.oddeye.co/OddeyeCoconut/getpayinfo'))
 u_p = float(pl['mp'])
+p_f = float(pl['pf'])
+p_p = float(pl['pp'])
 
 
 class bcolors:
@@ -82,9 +84,7 @@ a2 = calcmodules()
 runsmonth = 60 / cron_interval * 60 * 24 * 30
 
 o = (a2 * runsmonth * u_p)
-deq = (o / 100 * 2) + 0.3
-u = o + deq
+deq = o + o * p_p / 100 + p_f
 
-print(bcolors.ENDC + 'Monthly approximate price for this host is ' + bcolors.OKGREEN +  '{:.2f}'.format(o) +
-      bcolors.ENDC + 'OddEye units, which is ' + bcolors.OKGREEN + '{:.2f}'.format(u) + '$')
+print(bcolors.ENDC + 'Monthly approximate price for this host is ' + bcolors.OKGREEN + '{:.2f}'.format(deq) + '$')
 
