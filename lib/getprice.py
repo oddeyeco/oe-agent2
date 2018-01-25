@@ -86,5 +86,5 @@ runsmonth = 60 / cron_interval * 60 * 24 * 30
 o = (a2 * runsmonth * u_p)
 deq = o + o * p_p / 100 + p_f
 
-print(bcolors.ENDC + 'Monthly approximate price for this host is ' + bcolors.OKGREEN + '{:.2f}'.format(deq) + 'USD')
+print(bcolors.ENDC + 'Monthly approximate price for this host is ' + bcolors.OKGREEN + '{:.2f}'.format(deq) + ' USD')
 
