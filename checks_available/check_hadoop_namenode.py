@@ -6,6 +6,7 @@ import lib.basecheck
 import json
 
 hadoop_namenode_url = lib.getconfig.getparam('Hadoop-NameNode', 'jmx')
+hadoop_folders = lib.getconfig.getparam('Hadoop-NameNode', 'folders')
 # cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'hdfs'
 
@@ -15,10 +16,7 @@ class Check(lib.basecheck.CheckBase):
     def precheck(self):
     
         try:
-            # local_vars = []
             hadoop_namenode_stats = json.loads(lib.commonclient.httpget(__name__, hadoop_namenode_url))
-            # rate = lib.record_rate.ValueRate()
-            # timestamp = int(datetime.datetime.now().strftime("%s"))
             stats_keys = hadoop_namenode_stats['beans']
             node_stack_keys = ('CapacityTotal', 'CapacityUsed', 'NonDfsUsedSpace', 'CapacityRemaining','PercentRemaining', 'OpenFileDescriptorCount')
             node_rated_keys = ('CreateFileOps', 'GetBlockLocations', 'FilesRenamed', 'GetListingOps', 'DeleteFileOps', 'FilesDeleted', 'FileInfoOps', 'AddBlockOps', 'TransactionsNumOps', 'ReceivedBytes', 'SentBytes')
@@ -48,8 +46,19 @@ class Check(lib.basecheck.CheckBase):
     
             for key in list(mon_values.keys()):
                 self.local_vars.append({'name': key.lower(), 'timestamp': self.timestamp, 'value': mon_values[key], 'check_type': check_type})
-            # return local_vars
         except Exception as e:
             lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
             pass
-    
+        try:
+            if hadoop_folders == 'None' or hadoop_folders == 'none':
+                pass
+            else:
+                webhdfs_base = hadoop_namenode_url.replace('jmx', '') + 'webhdfs/v1'
+                flist = hadoop_folders.replace(' ', '').split(',')
+                statuses = ['length', 'directoryCount', 'spaceConsumed', 'fileCount']
+                for hdir in flist:
+                    hadoop_namenode_stats = json.loads(lib.commonclient.httpget(__name__, webhdfs_base + hdir + '?op=GETCONTENTSUMMARY'))
+                    for o in statuses:
+                        self.local_vars.append({'name': 'namenode_dir_' + o.lower(), 'timestamp': self.timestamp, 'value': hadoop_namenode_stats['ContentSummary'][o], 'reaction': -3, 'extra_tag': {'hadoop_dir': hdir.strip('/').replace('/', '_')}})
+        except Exception as omg:
+            lib.puylogger.print_message(__name__ + ' Error : ' + str(omg))
