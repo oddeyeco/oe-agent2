@@ -19,8 +19,8 @@ class Check(lib.basecheck.CheckBase):
             raw_data = lib.commonclient.socketget(__name__, buffer_size, redis_host, redis_port, message)
 
             ms = ('connected_clients', 'used_memory', 'used_memory_rss','used_memory_peak' ,
-                'keyspace_hits', 'keyspace_misses', 'uptime_in_seconds','mem_fragmentation_ratio',
-                'rdb_changes_since_last_save', 'rdb_bgsave_in_progress', 'rdb_last_bgsave_time_sec', 'rdb_current_bgsave_time_sec')
+                'uptime_in_seconds','mem_fragmentation_ratio',
+                'rdb_changes_since_last_save', 'rdb_bgsave_in_progress', 'rdb_last_bgsave_time_sec', 'rdb_current_bgsave_time_sec', 'keyspace_hits', 'keyspace_misses')
 
             ms_rated = ('total_commands_processed', 'expired_keys', 'evicted_keys', 'total_net_input_bytes', 'total_net_output_bytes')
 

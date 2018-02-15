@@ -42,14 +42,14 @@ class Check(lib.basecheck.CheckBase):
                     for heap in heap_type:
                         for metr in metr_name:
                             if heap == 'NonHeapMemoryUsage':
-                                key = 'storm_' + port + '_' + 'nonheap_'+ metr
+                                key = 'storm_nonheap_'+ metr
                                 mon_values = jolo_keys[heap][metr]
-                                self.local_vars.append({'name':key, 'timestamp': self.timestamp, 'value':mon_values, 'check_type': check_type})
+                                self.local_vars.append({'name':key, 'timestamp': self.timestamp, 'value':mon_values, 'check_type': check_type, 'extra_tag':{'workerport': port}})
     
                             else:
-                                key = 'storm_' + port + '_' + 'heap_'+ metr
+                                key = 'storm_heap_'+ metr
                                 mon_values = jolo_keys[heap][metr]
-                                self.local_vars.append({'name': key, 'timestamp': self.timestamp, 'value': mon_values, 'check_type': check_type})
+                                self.local_vars.append({'name': key, 'timestamp': self.timestamp, 'value': mon_values, 'check_type': check_type, 'extra_tag':{'workerport': port}})
                     if CMS is True:
                         collector = ('java.lang:name=ParNew,type=GarbageCollector', 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector')
                         for coltype in collector:
@@ -61,9 +61,9 @@ class Check(lib.basecheck.CheckBase):
                             def push_metrics(preffix):
                                 collectiontime_rate = self.rate.record_value_rate('storm_' + port + '_' + ''+preffix+'_collection_time', collectiontime, self.timestamp)
     
-                                self.local_vars.append({'name': 'storm_' + port + '_' + '' + preffix + '_lastgcinfo', 'timestamp': self.timestamp, 'value': lastgcinfo, 'check_type': check_type})
-                                self.local_vars.append({'name': 'storm_' + port + '_' + '' + preffix + '_collection_count', 'timestamp': self.timestamp, 'value': collectioncount, 'check_type': check_type})
-                                self.local_vars.append({'name': 'storm_' + port + '_' + '' + preffix + '_collection_time', 'timestamp': self.timestamp, 'value': collectiontime_rate, 'check_type': check_type})
+                                self.local_vars.append({'name': 'storm_' + preffix + '_lastgcinfo', 'timestamp': self.timestamp, 'value': lastgcinfo, 'check_type': check_type, 'extra_tag':{'workerport': port}})
+                                self.local_vars.append({'name': 'storm_' + preffix + '_collection_count', 'timestamp': self.timestamp, 'value': collectioncount, 'check_type': check_type, 'extra_tag':{'workerport': port}})
+                                self.local_vars.append({'name': 'storm_' + preffix + '_collection_time', 'timestamp': self.timestamp, 'value': collectiontime_rate, 'check_type': check_type, 'extra_tag':{'workerport': port}})
     
     
                             if coltype == 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector':
@@ -93,9 +93,8 @@ class Check(lib.basecheck.CheckBase):
                             if k is 1:
                                 value = j['value'][name]['duration']
                                 v = check_null(value)
-                                m_name = 'storm_' + port + '_' + 'g1_young_lastgcinfo'
-                            self.local_vars.append({'name': m_name, 'timestamp': self.timestamp, 'value': v, 'check_type': check_type})
-    
+                            self.local_vars.append({'name': 'storm_g1_young_lastgcinfo', 'timestamp': self.timestamp, 'value': v, 'check_type': check_type, 'extra_tag':{'workerport': port}})
+
                         metr_keys = ('CollectionTime', 'CollectionCount')
                         for k, v in enumerate(gc_g1):
                             j = json.loads(lib.commonclient.httpget(__name__, storm_url + v))
@@ -109,11 +108,11 @@ class Check(lib.basecheck.CheckBase):
                                     v = check_null(value)
                                     rate_key = vl+type
                                     collectiontime_rate = self.rate.record_value_rate('storm_' + port + '_' + '' + rate_key, v, self.timestamp)
-                                    self.local_vars.append({'name': 'storm_' + port + '_' + 'g1' + type + vl.lower(), 'timestamp': self.timestamp, 'value': collectiontime_rate, 'chart_type': 'Rate', 'check_type': check_type})
+                                    self.local_vars.append({'name': 'storm_g1' + type + vl.lower(), 'timestamp': self.timestamp, 'value': collectiontime_rate, 'chart_type': 'Rate', 'check_type': check_type, 'extra_tag':{'workerport': port}})
                                 if ky is 1:
                                     value = j['value'][vl]
                                     v = check_null(value)
-                                    self.local_vars.append({'name': 'storm_' + port + '_' + 'g1' + type + vl.lower(), 'timestamp': self.timestamp, 'value': v, 'check_type': check_type, 'reaction': -3})
+                                    self.local_vars.append({'name': 'storm_g1' + type + vl.lower(), 'timestamp': self.timestamp, 'value': v, 'check_type': check_type, 'reaction': -3, 'extra_tag':{'workerport': port}})
                 except Exception as e:
                     lib.puylogger.print_message(__name__ + ' Error : ' + str(e) + ' ' + str(port))
                     pass
@@ -123,3 +122,5 @@ class Check(lib.basecheck.CheckBase):
             pass
     
     
+# self.local_vars.append({'name':  rxname, 'timestamp': self.timestamp, 'value':rxrate, 'chart_type': 'Rate', 'check_type': check_type, 'reaction': 0, 'extra_tag':{'device': nic}})
+# self.local_vars.append({'name': 'storm_' + port + '_' + 'g1' + type + vl.lower(), 'timestamp': self.timestamp, 'value': collectiontime_rate, 'chart_type': 'Rate', 'check_type': check_type})

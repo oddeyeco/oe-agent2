@@ -18,7 +18,6 @@ class Check(lib.basecheck.CheckBase):
 
     def precheck(self):
         try:
-            # lib.puylogger.print_message(stats_url + '/java.lang:type=GarbageCollector,name=*')
             data_dict = json.loads(lib.commonclient.httpget(__name__, stats_url + '/java.lang:type=GarbageCollector,name=*', activemq_auth))
             ConcurrentMarkSweep = 'java.lang:name=ConcurrentMarkSweep,type=GarbageCollector'
             G1Gc = 'java.lang:name=G1 Young Generation,type=GarbageCollector'
@@ -31,7 +30,6 @@ class Check(lib.basecheck.CheckBase):
             else:
                 CMS = False
                 G1 = False
-    
             heam_mem = 'java.lang:type=Memory'
             jolo_json = json.loads(lib.commonclient.httpget(__name__, stats_url + '/' + heam_mem, activemq_auth))
             jolo_keys = jolo_json['value']
