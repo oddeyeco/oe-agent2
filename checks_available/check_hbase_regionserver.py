@@ -21,7 +21,7 @@ class Check(lib.basecheck.CheckBase):
             node_stuck_keys=('GcCount', 'HeapMemoryUsage', 'OpenFileDescriptorCount',
                              'blockCacheCount', 'blockCacheSize', 'blockCacheFreeSize', 'blockCacheExpressHitPercent', 'blockCountHitPercent',
                              'slowAppendCount', 'slowGetCount', 'slowPutCount', 'slowIncrementCount', 'slowDeleteCount',
-                             'memStoreSize', 'regionCount', 'storeFileSize', 'storeFileCount', 'hlogFileCount', 'hlogFileSize', 'percentFilesLocal')
+                             'memStoreSize', 'regionCount', 'storeFileSize', 'storeFileCount', 'hlogFileCount', 'hlogFileSize', 'percentFilesLocal', 'blockCountHitPercent')
 
             for stats_x in range(0, len(stats_keys)):
                 for k, v in enumerate(('java.lang:type=GarbageCollector,name=ConcurrentMarkSweep', 'java.lang:type=GarbageCollector,name=ParNew')):
