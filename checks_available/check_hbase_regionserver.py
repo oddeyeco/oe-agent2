@@ -3,18 +3,15 @@ import lib.commonclient
 import lib.puylogger
 import lib.getconfig
 import lib.basecheck
-# import datetime
 import json
 
 
 hbase_region_url = lib.getconfig.getparam('HBase-Region', 'jmx')
-# cluster_name = lib.getconfig.getparam('SelfConfig', 'cluster_name')
 check_type = 'hbase'
 
 class Check(lib.basecheck.CheckBase):
 
     def precheck(self):
-        # local_vars = []
         try:
             stats_json = json.loads(lib.commonclient.httpget(__name__, hbase_region_url))
             stats_keys = stats_json['beans']
@@ -23,10 +20,9 @@ class Check(lib.basecheck.CheckBase):
                              'blockCacheHitCount', 'blockCacheMissCount', 'blockCacheEvictionCount')
             node_stuck_keys=('GcCount', 'HeapMemoryUsage', 'OpenFileDescriptorCount',
                              'blockCacheCount', 'blockCacheSize', 'blockCacheFreeSize', 'blockCacheExpressHitPercent', 'blockCountHitPercent',
-                             'slowAppendCount', 'slowGetCount', 'slowPutCount', 'slowIncrementCount', 'slowDeleteCount')
-            # rate=lib.record_rate.ValueRate()
-            # timestamp = int(datetime.datetime.now().strftime("%s"))
-    
+                             'slowAppendCount', 'slowGetCount', 'slowPutCount', 'slowIncrementCount', 'slowDeleteCount',
+                             'memStoreSize', 'regionCount', 'storeFileSize', 'storeFileCount', 'hlogFileCount', 'hlogFileSize', 'percentFilesLocal')
+
             for stats_x in range(0, len(stats_keys)):
                 for k, v in enumerate(('java.lang:type=GarbageCollector,name=ConcurrentMarkSweep', 'java.lang:type=GarbageCollector,name=ParNew')):
                     if v in stats_keys[stats_x]['name']:
@@ -78,7 +74,6 @@ class Check(lib.basecheck.CheckBase):
                         else:
                             self.local_vars.append({'name': 'hregion_node_'+values.lower(), 'timestamp': self.timestamp, 'value': stats_keys[stats_index][values], 'check_type': check_type})
     
-            # return  local_vars
         except Exception as e:
             lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
             pass
