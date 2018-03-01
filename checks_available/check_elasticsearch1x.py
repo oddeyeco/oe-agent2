@@ -24,13 +24,12 @@ class Check(lib.basecheck.CheckBase):
 
             global_stats = host + '/_stats/docs,store'
             global_json = json.loads(lib.commonclient.httpget(__name__, global_stats))
-            self.local_vars.append({'name': 'elasticsearch_total_shards', 'timestamp': self.timestamp, 'value': global_json['_shards']['total'], 'check_type': check_type})
             alldocs = global_json['_all']['primaries']['docs']['count']
             docsinrate = self.rate.record_value_rate('es_total_docs_in', alldocs, self.timestamp)
             self.local_vars.append({'name': 'elasticsearch_cluster_docs', 'timestamp': self.timestamp, 'value': alldocs, 'check_type': check_type})
             self.local_vars.append({'name': 'elasticsearch_cluster_ingest_rate', 'timestamp': self.timestamp, 'value': docsinrate, 'check_type': check_type})
             self.local_vars.append({'name': 'elasticsearch_cluster_shards', 'timestamp': self.timestamp, 'value': global_json['_shards']['total'], 'check_type': check_type})
-            self.local_vars.append({'name': 'elasticsearch_cluster_storage_useg', 'timestamp': self.timestamp, 'value': global_json['_all']['total']['store']['size_in_bytes'], 'check_type': check_type})
+            self.local_vars.append({'name': 'elasticsearch_cluster_storage_usage', 'timestamp': self.timestamp, 'value': global_json['_all']['total']['store']['size_in_bytes'], 'check_type': check_type})
 
             def send_special():
                 eshealth_status = host + '/_cluster/health'
