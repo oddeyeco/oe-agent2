@@ -13,14 +13,7 @@ warn_percent = float(lib.getconfig.getparam('Disk Stats', 'high'))
 crit_percent = float(lib.getconfig.getparam('Disk Stats', 'severe'))
 static_alerts = lib.getconfig.getparam('Disk Stats', 'static_enabled')
 rated = True
-# io_warning_percent = 40
 
-'''
-[Disk Stats]
-static_enabled: True
-high : 80
-severe : 90
-'''
 class Check(lib.basecheck.CheckBase):
 
     def precheck(self):
@@ -38,17 +31,15 @@ class Check(lib.basecheck.CheckBase):
                 stats = statsfile.readline().split()
                 read_bytes = int(stats[2]) * int(value)
                 write_bytes = int(stats[6]) * int(value)
-                # reads = 'drive_' + key + '_bytes_read'
-                # writes = 'drive_' + key + '_bytes_write'
                 if rated is True:
                     read_rate = rate.record_value_rate('drive_reads_' + key, read_bytes, self.timestamp)
                     write_rate = rate.record_value_rate('drive_writes_' + key, write_bytes, self.timestamp)
-                    self.local_vars.append({'name': 'drive_reads', 'timestamp': self.timestamp, 'value': read_rate, 'reaction': reaction, 'extra_tag':{'device': key}})
-                    self.local_vars.append({'name': 'drive_writes', 'timestamp': self.timestamp, 'value': write_rate, 'reaction': reaction, 'extra_tag':{'device': key}})
+                    self.local_vars.append({'name': 'drive_reads', 'timestamp': self.timestamp, 'value': read_rate, 'reaction': reaction, 'extra_tag':{'drive': key}})
+                    self.local_vars.append({'name': 'drive_writes', 'timestamp': self.timestamp, 'value': write_rate, 'reaction': reaction, 'extra_tag':{'drive': key}})
 
                 else:
-                    self.local_vars.append({'name': 'drive_reads', 'timestamp': self.timestamp, 'value': read_bytes, 'reaction': reaction, 'extra_tag':{'device': key}})
-                    self.local_vars.append({'name': 'drive_writes', 'timestamp': self.timestamp, 'value': write_bytes, 'reaction': reaction, 'extra_tag':{'device': key}})
+                    self.local_vars.append({'name': 'drive_reads', 'timestamp': self.timestamp, 'value': read_bytes, 'reaction': reaction, 'extra_tag':{'drive': key}})
+                    self.local_vars.append({'name': 'drive_writes', 'timestamp': self.timestamp, 'value': write_bytes, 'reaction': reaction, 'extra_tag':{'drive': key}})
 
                 statsfile.close()
 
@@ -56,9 +47,9 @@ class Check(lib.basecheck.CheckBase):
             mount = open('/proc/mounts', 'r')
 
             for l in mount:
-                if l[0] == '/':
-                    l = l.split()
-                    d.append(l[1])
+                olo = l.split()
+                if '/' in olo[0]:
+                    d.append(olo[1])
 
             mount.close()
 
@@ -77,11 +68,6 @@ class Check(lib.basecheck.CheckBase):
                 else:
                     name = u.strip('/').replace('/', '_')
                 if static_alerts:
-                    # if float(mrtrics[3]) < warn_percent:
-                    #     health_value = 0
-                    #     err_type = 'OK'
-                    #     health_message = err_type + ': Storage usage of ' + u + ' is at ' + str(mrtrics[3]) + ' percent of available  space'
-                    #     self.jsondata.send_special("Disk-Usage-" + name, self.timestamp, health_value, health_message, err_type, -self.error_handler)
                     if warn_percent <= float(mrtrics[3]) < crit_percent:
                         err_type = 'WARNING'
                         health_value = 8
@@ -93,9 +79,9 @@ class Check(lib.basecheck.CheckBase):
                         health_message = err_type + ': Storage usage of ' + u + ' is at ' + str(mrtrics[3]) + ' percent of available  space'
                         self.jsondata.send_special("Disk-Usage-" + name, self.timestamp, health_value, health_message, err_type, -self.error_handler)
 
-                self.local_vars.append({'name': 'drive_bytes_used', 'timestamp': self.timestamp, 'value': mrtrics[1], 'reaction': reaction , 'extra_tag':{'device': name}})
-                self.local_vars.append({'name': 'drive_bytes_available', 'timestamp': self.timestamp, 'value': mrtrics[2], 'reaction': reaction, 'extra_tag': {'device': name}})
-                self.local_vars.append({'name': 'drive_percent_used','timestamp': self.timestamp, 'value': mrtrics[3], 'chart_type': 'Percent', 'extra_tag': {'device': name}})
+                self.local_vars.append({'name': 'drive_bytes_used', 'timestamp': self.timestamp, 'value': mrtrics[1], 'reaction': reaction , 'extra_tag':{'mountpoint': name}})
+                self.local_vars.append({'name': 'drive_bytes_available', 'timestamp': self.timestamp, 'value': mrtrics[2], 'reaction': reaction, 'extra_tag': {'mountpoint': name}})
+                self.local_vars.append({'name': 'drive_percent_used','timestamp': self.timestamp, 'value': mrtrics[3], 'chart_type': 'Percent', 'extra_tag': {'mountpoint': name}})
 
 
             proc_stats = open('/proc/diskstats')
@@ -107,11 +93,9 @@ class Check(lib.basecheck.CheckBase):
                     if regexp.search(name) is None:
                         value = fields[12]
                         reqrate = rate.record_value_rate(name, value, self.timestamp)
-                        # if isinstance(reqrate, int):
-                        diskrate = reqrate/10
-                        self.local_vars.append({'name': 'drive_io_percent_used', 'timestamp': self.timestamp, 'value': diskrate,  'chart_type': 'Percent', 'extra_tag': {'device': fields[2]}})
+                        diskrate = '{:.2f}'.format(reqrate/10)
+                        self.local_vars.append({'name': 'drive_io_percent_used', 'timestamp': self.timestamp, 'value': diskrate,  'chart_type': 'Percent', 'extra_tag': {'drive': fields[2]}})
             proc_stats.close()
-            # return  local_vars
         except Exception as e:
             lib.pushdata.print_error(__name__ , (e))
             pass
