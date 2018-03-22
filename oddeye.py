@@ -25,7 +25,7 @@ os.chdir("checks_enabled")
 
 checklist = glob.glob("check_*.py")
 
-
+# T1 , 0 12
 module_names = []
 for checks in checklist:
     module_names.append(checks.split('.')[0])
