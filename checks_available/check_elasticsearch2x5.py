@@ -72,6 +72,8 @@ class Check(lib.basecheck.CheckBase):
                         'merge_size':stats_json['nodes'][node_keys]['indices']['merges']['total_size_in_bytes'],
                         'refresh_time':stats_json['nodes'][node_keys]['indices']['refresh']['total_time_in_millis'],
                         'query_cache_evictions':stats_json['nodes'][node_keys]['indices']['query_cache']['evictions'],
+                        'query_cache_hit': stats_json['nodes'][node_keys]['indices']['query_cache']['hit_count'],
+                        'query_cache_mis': stats_json['nodes'][node_keys]['indices']['query_cache']['miss_count'],
                         'get_time':stats_json['nodes'][node_keys]['indices']['get']['time_in_millis'],
                         'gc_young_time_ms':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['young']['collection_time_in_millis'],
                         'gc_old_time_ms':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['old']['collection_time_in_millis'],
