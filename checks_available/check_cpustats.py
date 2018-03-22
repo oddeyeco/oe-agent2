@@ -24,18 +24,18 @@ crit_level = lib.getconfig.getparam('CPU Stats', 'severe')
 class Check(lib.basecheck.CheckBase):
 
 
-    def calcperraw(self,cpu_stats,rate,timestamp,local_vars,metrinames, device="all"):
+    def calcperraw(self,cpu_stats,rate,timestamp,local_vars,metrinames, core="all"):
         time = cpu_stats[0]+cpu_stats[1]+cpu_stats[2]+cpu_stats[3]
-        rate_time = rate.record_value_delta("time"+device, time)
+        rate_time = rate.record_value_delta("time"+core, time)
         if (rate_time==0):
             return
-        rate_cpu_time = rate.record_value_delta("cpu_load"+device, cpu_stats[0] + cpu_stats[1] + cpu_stats[2])
+        rate_cpu_time = rate.record_value_delta("cpu_load"+core, cpu_stats[0] + cpu_stats[1] + cpu_stats[2])
         cpu_load = rate_cpu_time / rate_time * 100;
         local_vars.append(
-            {'name': "cpu_load", 'timestamp': timestamp, 'value': cpu_load, 'chart_type': self.values_type, 'reaction': 0, 'extra_tag':{'device': device}})
+            {'name': "cpu_load", 'timestamp': timestamp, 'value': cpu_load, 'chart_type': self.values_type, 'reaction': 0, 'extra_tag':{'core': core}})
         try:
             for index in range(0, len(metrinames)):
-                name = metrinames[index]+device
+                name = metrinames[index]+core
                 value = cpu_stats[index]
                 if metrinames[index] == 'cpu_user' or metrinames[index] == 'cpu_iowait':
                     reaction = 0
@@ -44,7 +44,7 @@ class Check(lib.basecheck.CheckBase):
 
                 values_rate = rate.record_value_delta(name, value)
                 values_percent = (values_rate / rate_time *100)
-                local_vars.append({'name': metrinames[index], 'timestamp': timestamp, 'value': values_percent, 'chart_type': self.values_type, 'reaction': reaction, 'check_type': self.check_type, 'extra_tag':{'device': device}})
+                local_vars.append({'name': metrinames[index], 'timestamp': timestamp, 'value': values_percent, 'chart_type': self.values_type, 'reaction': reaction, 'check_type': self.check_type, 'extra_tag':{'core': core}})
         except Exception as e:
             lib.pushdata.print_error(__name__ , (e))
             pass
