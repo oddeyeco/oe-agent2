@@ -8,6 +8,7 @@ import lib.basecheck
 import lib.getconfig
 import lib.puylogger
 import lib.record_rate
+import ast
 
 
 try:
@@ -25,7 +26,12 @@ except:
 mysql_host = lib.getconfig.getparam('MySQL', 'host')
 mysql_user = lib.getconfig.getparam('MySQL', 'user')
 mysql_pass = lib.getconfig.getparam('MySQL', 'pass')
+
+advanced = lib.getconfig.getparam('MySQL', 'advanced')
 check_type = 'mysql'
+
+if advanced:
+    custom_querry = ast.literal_eval(lib.getconfig.getparam('MySQL', 'custom_query'))
 
 
 class Check(lib.basecheck.CheckBase):
@@ -67,8 +73,17 @@ class Check(lib.basecheck.CheckBase):
                 else:
                     vrate = self.rate.record_value_rate('mysql_' + mytype, myvalue, self.timestamp)
                     self.local_vars.append({'name': 'mysql_' + mytype.lower(), 'timestamp': self.timestamp, 'value': vrate, 'check_type': check_type, 'chart_type': 'Rate'})
+
+            if advanced:
+                for i in custom_querry:
+                    cr = db.cursor()
+                    cr.execute(custom_querry[i])
+                    for row in cr.fetchall():
+                        value = float(row[0])
+                        self.local_vars.append({'name': 'mysql_custom_querry', 'timestamp': self.timestamp, 'value': value, 'check_type': check_type, 'extra_tag': {'prettyname': i}})
             cur.close()
             db.close()
         except Exception as e:
             lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
             pass
+
