@@ -17,7 +17,7 @@ class Check(lib.basecheck.CheckBase):
             hadoop_namenode_stats = json.loads(lib.commonclient.httpget(__name__, hadoop_namenode_url))
             stats_keys = hadoop_namenode_stats['beans']
             node_stack_keys = ('CapacityTotal', 'CapacityUsed', 'BlocksTotal', 'MissingBlocks', 'CorruptBlocks', 'UnderReplicatedBlocks', 'PendingReplicationBlocks', 'ScheduledReplicationBlocks', 'BlockCapacity',
-                               'FilesTotal', 'NonDfsUsedSpace', 'CapacityRemaining','PercentRemaining', 'OpenFileDescriptorCount', 'NumStaleDataNodes', 'NumStaleStorages',
+                               'NonDfsUsedSpace', 'CapacityRemaining','PercentRemaining', 'OpenFileDescriptorCount', 'NumStaleDataNodes', 'NumStaleStorages',
                                'NumLiveDataNodes', 'NumDeadDataNodes', 'NumDecomLiveDataNodes', 'NumDecomDeadDataNodes', 'NumDecommissioningDataNodes')
             node_rated_keys = ('CreateFileOps', 'GetBlockLocations', 'FilesRenamed', 'GetListingOps', 'DeleteFileOps', 'FilesDeleted', 'FileInfoOps', 'AddBlockOps', 'TransactionsNumOps', 'ReceivedBytes', 'SentBytes')
             mon_values = {}
