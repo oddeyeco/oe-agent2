@@ -17,7 +17,7 @@ class Check(lib.basecheck.CheckBase):
             p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, universal_newlines=True)
             output, err = p.communicate()
             stats = json.loads(output)
-    
+
             self.local_vars.append({'name': 'ceph_num_bytes', 'timestamp': self.timestamp, 'value': stats['num_bytes'], 'check_type': check_type})
             self.local_vars.append({'name': 'ceph_num_pgs', 'timestamp': self.timestamp, 'value': stats['num_pgs'], 'check_type': check_type})
             self.local_vars.append({'name': 'ceph_raw_bytes', 'timestamp': self.timestamp, 'value': stats['raw_bytes'], 'check_type': check_type})
@@ -38,8 +38,31 @@ class Check(lib.basecheck.CheckBase):
                 self.local_vars.append({'name': 'ceph_write_bytes_sec', 'timestamp': self.timestamp, 'value': stats['write_bytes_sec'], 'check_type': check_type, 'chart_type': 'Rate'})
             else:
                 self.local_vars.append({'name': 'ceph_write_bytes_sec', 'timestamp': self.timestamp, 'value': 0, 'check_type': check_type, 'chart_type': 'Rate'})
-    
-            p.stdout.close()
+            if 'degraded_objects' in stats:
+                self.local_vars.append({'name': 'ceph_degraded_objects', 'timestamp': self.timestamp, 'value': stats['degraded_objects'], 'check_type': check_type})
+            else:
+                self.local_vars.append({'name': 'ceph_degraded_objects', 'timestamp': self.timestamp, 'value': 0, 'check_type': check_type})
+            if 'degraded_ratio' in stats:
+                self.local_vars.append({'name': 'ceph_degraded_ratio', 'timestamp': self.timestamp, 'value': stats['degraded_ratio'], 'check_type': check_type})
+            else:
+                self.local_vars.append({'name': 'ceph_degraded_ratio', 'timestamp': self.timestamp, 'value': 0.0, 'check_type': check_type})
+            if 'degraded_total' in stats:
+                self.local_vars.append({'name': 'ceph_degraded_total', 'timestamp': self.timestamp, 'value': stats['degraded_total'], 'check_type': check_type})
+            else:
+                self.local_vars.append({'name': 'ceph_degraded_total', 'timestamp': self.timestamp, 'value': 0, 'check_type': check_type})
+            if 'recovering_bytes_per_sec' in stats:
+                self.local_vars.append({'name': 'ceph_recovering_bytes_per_sec', 'timestamp': self.timestamp, 'value': stats['recovering_bytes_per_sec'], 'check_type': check_type})
+            else:
+                self.local_vars.append({'name': 'ceph_recovering_bytes_per_sec', 'timestamp': self.timestamp, 'value': 0, 'check_type': check_type})
+            if 'num_objects_recovered' in stats:
+                self.local_vars.append({'name': 'ceph_num_objects_recovered', 'timestamp': self.timestamp, 'value': stats['num_objects_recovered'], 'check_type': check_type})
+            else:
+                self.local_vars.append({'name': 'ceph_num_objects_recovered', 'timestamp': self.timestamp, 'value': 0, 'check_type': check_type})
+            if 'recovering_keys_per_sec' in stats:
+                self.local_vars.append({'name': 'ceph_recovering_keys_per_sec', 'timestamp': self.timestamp, 'value': stats['recovering_keys_per_sec'], 'check_type': check_type})
+            else:
+                self.local_vars.append({'name': 'ceph_recovering_keys_per_sec', 'timestamp': self.timestamp, 'value': 0, 'check_type': check_type})
+
         except Exception as e:
             lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
             pass
