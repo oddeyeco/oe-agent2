@@ -7,10 +7,18 @@ import lib.basecheck
 
 redis_host = lib.getconfig.getparam('Redis', 'host')
 redis_port = int(lib.getconfig.getparam('Redis', 'port'))
+redis_auth = str(lib.getconfig.getparam('Redis', 'auth'))
 check_type = 'redis'
 
 buffer_size = 4096
-message = "INFO\r\n"
+m1 = 'INFO\r\n'
+m2 = 'auth ' + redis_auth + ' \r\n '
+
+if redis_auth == 'False':
+    message = m1
+else:
+    message = m2 + m1
+
 
 class Check(lib.basecheck.CheckBase):
 
