@@ -15,13 +15,14 @@ class Check(lib.basecheck.CheckBase):
         try:
             stats_json = json.loads(lib.commonclient.httpget(__name__, hbase_region_url))
             stats_keys = stats_json['beans']
-            node_rated_keys=('totalRequestCount','readRequestCount','writeRequestCount', 'Delete_num_ops', 'Mutate_num_ops', 'FlushTime_num_ops',
+            node_rated_keys = ('totalRequestCount','readRequestCount','writeRequestCount', 'Delete_num_ops', 'Mutate_num_ops', 'FlushTime_num_ops',
                              'GcTimeMillis','compactedCellsCount', 'majorCompactedCellsCount', 'compactedCellsSize', 'majorCompactedCellsSize',
                              'blockCacheHitCount', 'blockCacheMissCount', 'blockCacheEvictionCount')
-            node_stuck_keys=('GcCount', 'HeapMemoryUsage', 'OpenFileDescriptorCount',
-                             'blockCacheCount', 'blockCacheSize', 'blockCacheFreeSize', 'blockCacheExpressHitPercent', 'blockCountHitPercent',
+            node_stuck_keys = ('GcCount', 'HeapMemoryUsage', 'OpenFileDescriptorCount',
+                             'blockCacheSize', 'blockCacheExpressHitPercent', 'blockCountHitPercent',
                              'slowAppendCount', 'slowGetCount', 'slowPutCount', 'slowIncrementCount', 'slowDeleteCount',
                              'memStoreSize', 'regionCount', 'storeFileSize', 'storeFileCount', 'hlogFileCount', 'hlogFileSize', 'percentFilesLocal', 'blockCountHitPercent')
+            zero_learn_keys = ('blockCacheFreeSize', 'blockCacheCount')
 
             for stats_x in range(0, len(stats_keys)):
                 for k, v in enumerate(('java.lang:type=GarbageCollector,name=ConcurrentMarkSweep', 'java.lang:type=GarbageCollector,name=ParNew')):
@@ -60,7 +61,9 @@ class Check(lib.basecheck.CheckBase):
                             values_rate=self.rate.record_value_rate('hregion_'+values, myvalue, self.timestamp)
                             if values_rate >= 0:
                                 self.local_vars.append({'name': 'hregion_node_'+values.lower(), 'timestamp': self.timestamp, 'value': values_rate, 'check_type': check_type, 'chart_type': 'Rate'})
-    
+                for values in zero_learn_keys:
+                    if values in stats_keys[stats_index]:
+                        self.local_vars.append({'name': 'hregion_node_' + values.lower(), 'timestamp': self.timestamp, 'value': stats_keys[stats_index][values], 'check_type': check_type, 'reaction': -1})
                 for values in node_stuck_keys:
                     if values in stats_keys[stats_index]:
                         if values == 'HeapMemoryUsage':
