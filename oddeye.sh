@@ -37,6 +37,17 @@ PIDFILE=`getValue pid_file`
     su $RUNUSER -s /bin/bash -c "$PYTHON oddeye.py start"
     ;;
 
+    systemd)
+    if [ ! -d  $TMPDIR ];
+        then
+            mkdir $TMPDIR
+            chown $RUNUSER $TMPDIR
+            chmod 755 $TMPDIR
+    fi
+    su $RUNUSER -s /bin/bash -c "$PYTHON oddeye.py systemd"
+    ;;
+
+
     stop)
     su $RUNUSER -s /bin/bash -c "$PYTHON oddeye.py stop"
     rm -f checks_enabled/*.pyc
@@ -58,7 +69,7 @@ PIDFILE=`getValue pid_file`
     ;;
 
     *)
-    echo "Usage: `basename $0` start | stop | restart | price"
+    echo "Usage: `basename $0` start | stop | restart| systemd | price"
     ;;
 
     esac

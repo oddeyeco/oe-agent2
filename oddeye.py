@@ -25,7 +25,7 @@ os.chdir("checks_enabled")
 
 checklist = glob.glob("check_*.py")
 
-# T1 , 0 12
+
 module_names = []
 for checks in checklist:
     module_names.append(checks.split('.')[0])
@@ -71,51 +71,43 @@ def run_scripts():
 def upload_cache():
     lib.upload_cached.cache_uploader()
 
+def rn(hast):
+    backends = ('OddEye', 'InfluxDB', 'KairosDB', 'OpenTSDB')
+
+    if tsdb_type in backends:
+        def run_normal(hast):
+            while True:
+                run_scripts()
+                if lib.puylogger.debug_log:
+                    lib.puylogger.print_message(str(run_scripts))
+                if lib.puylogger.debug_log:
+                    lib.puylogger.print_message(str(lib.run_bash.run_shell_scripts()))
+                if hast % 25 == 0:
+                      gc.collect()
+                      hast = 1
+                else:
+                    hast += 1
+                time.sleep(cron_interval)
+        def run_cache():
+            while True:
+                upload_cache()
+                if lib.puylogger.debug_log:
+                    lib.puylogger.print_message(str(upload_cache))
+                time.sleep(cron_interval)
+
+        cache = threading.Thread(target=run_cache, name='Run Cache')
+        cache.daemon = True
+        cache.start()
+        run_normal(hast)
+    else:
+        while True:
+            run_scripts()
+            lib.run_bash.run_shell_scripts()
+            time.sleep(cron_interval)
 
 class App(Daemon):
     def run(self):
-        backends = ('OddEye', 'InfluxDB', 'KairosDB', 'OpenTSDB')
-        self.hast = 1
-        if tsdb_type in backends:
-            def run_normal():
-                while True:
-                    run_scripts()
-                    if lib.puylogger.debug_log:
-                        lib.puylogger.print_message(str(run_scripts))
-                    # try:
-                    #     run_shell_scripts()
-                    # except Exception as d:
-                    #     lib.puylogger.print_message(str(d))
-
-                    if lib.puylogger.debug_log:
-                        lib.puylogger.print_message(str(lib.run_bash.run_shell_scripts()))
-                    if self.hast % 25 == 0:
-                          gc.collect()
-                          self.hast = 1
-                    else:
-                        self.hast += 1
-                    time.sleep(cron_interval)
-                    #lib.puylogger.print_message('----------------------------------------')
-
-            def run_cache():
-                while True:
-                    upload_cache()
-                    if lib.puylogger.debug_log:
-                        lib.puylogger.print_message(str(upload_cache))
-                    time.sleep(cron_interval)
-
-
-            cache = threading.Thread(target=run_cache, name='Run Cache')
-            cache.daemon = True
-            cache.start()
-
-            run_normal()
-
-        else:
-            while True:
-                run_scripts()
-                lib.run_bash.run_shell_scripts()
-                time.sleep(cron_interval)
+        rn(1)
 
 
 if __name__ == "__main__":
@@ -125,6 +117,8 @@ if __name__ == "__main__":
                     daemon.start()
             elif 'stop' == sys.argv[1]:
                     daemon.stop()
+            elif 'systemd' == sys.argv[1]:
+                    rn(1)
             elif 'restart' == sys.argv[1]:
                     daemon.restart()
             else:
