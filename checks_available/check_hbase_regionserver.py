@@ -63,7 +63,7 @@ class Check(lib.basecheck.CheckBase):
                                 self.local_vars.append({'name': 'hregion_node_'+values.lower(), 'timestamp': self.timestamp, 'value': values_rate, 'check_type': check_type, 'chart_type': 'Rate'})
                 for values in zero_learn_keys:
                     if values in stats_keys[stats_index]:
-                        self.local_vars.append({'name': 'hregion_node_' + values.lower(), 'timestamp': self.timestamp, 'value': stats_keys[stats_index][values], 'check_type': check_type, 'reaction': -1})
+                        self.local_vars.append({'name': 'hregion_node_' + values.lower(), 'timestamp': self.timestamp, 'value': stats_keys[stats_index][values], 'check_type': check_type, 'reaction': -3})
                 for values in node_stuck_keys:
                     if values in stats_keys[stats_index]:
                         if values == 'HeapMemoryUsage':
