@@ -40,7 +40,7 @@ sparser.set('Service', 'Type', 'simple')
 sparser.set('Service', 'User', run_user)
 sparser.set('Service', 'Group', group)
 sparser.set('Service', 'WorkingDirectory', base_dir + '/')
-sparser.set('Service', 'ExecStart', sys.executable + ' ' + base_dir + '/oddeye.py  start')
+sparser.set('Service', 'ExecStart', sys.executable + ' ' + base_dir + '/oddeye.py systemd')
 sparser.set('Service', 'PIDFile', pid)
 sparser.set('Service', 'Restart', 'on-failure')
 
