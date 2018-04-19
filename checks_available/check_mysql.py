@@ -27,11 +27,11 @@ mysql_host = lib.getconfig.getparam('MySQL', 'host')
 mysql_user = lib.getconfig.getparam('MySQL', 'user')
 mysql_pass = lib.getconfig.getparam('MySQL', 'pass')
 
-advanced = lib.getconfig.getparam('MySQL', 'advanced')
+advanced = lib.getconfig.getparam('MySQL', 'custom')
 check_type = 'mysql'
 
 if advanced:
-    custom_querry = ast.literal_eval(lib.getconfig.getparam('MySQL', 'custom_query'))
+    custom_querry = ast.literal_eval(lib.getconfig.getparam('MySQL', 'query'))
 
 
 class Check(lib.basecheck.CheckBase):
