@@ -17,6 +17,7 @@ class Check(lib.basecheck.CheckBase):
             cassa_cql_metrics = json.loads(lib.commonclient.httpget(__name__, jolokia_url+'/org.apache.cassandra.metrics:type=CQL,name=*'))
             cassa_cache_metrics = json.loads(lib.commonclient.httpget(__name__, jolokia_url+'/org.apache.cassandra.metrics:type=Cache,scope=*,name=*'))
             cassa_copmaction = json.loads(lib.commonclient.httpget(__name__, jolokia_url+'/org.apache.cassandra.metrics:type=Compaction,name=*'))
+            cassa_latency = json.loads(lib.commonclient.httpget(__name__, jolokia_url + '/org.apache.cassandra.metrics:type=ClientRequest,scope=*,name=Latency'))
             cql_statemets = ('PreparedStatementsExecuted', 'RegularStatementsExecuted')
             for cql_statement in cql_statemets:
                 mon_value = cassa_cql_metrics['value']['org.apache.cassandra.metrics:name=' + cql_statement + ',type=CQL']['Count']
@@ -27,7 +28,13 @@ class Check(lib.basecheck.CheckBase):
                     else:
                         value_rate=self.rate.record_value_rate('cql_'+mon_name, mon_value, self.timestamp)
                         self.local_vars.append({'name': mon_name.lower(), 'timestamp': self.timestamp, 'value': value_rate, 'check_type': check_type, 'chart_type': 'Rate'})
-    
+            latency_metrics = ('Read', 'ViewWrite', 'RangeSlice', 'CASRead', 'CASWrite', 'Write')
+
+            for latency_metric in latency_metrics:
+                mon_value = cassa_latency['value']['org.apache.cassandra.metrics:name=Latency,scope='+ latency_metric + ',type=ClientRequest']['OneMinuteRate']
+                mon_name = 'cassa_latency_'+ str(latency_metric).lower()
+                self.local_vars.append({'name': mon_name, 'timestamp': self.timestamp, 'value': mon_value, 'check_type': check_type})
+
             cache_metrics = ('Hits,scope=KeyCache', 'Requests,scope=KeyCache', 'Requests,scope=RowCache', 'Hits,scope=RowCache')
             for cache_metric in cache_metrics:
                 mon_value = cassa_cache_metrics['value']['org.apache.cassandra.metrics:name=' + cache_metric + ',type=Cache']['OneMinuteRate']
