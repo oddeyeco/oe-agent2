@@ -65,7 +65,7 @@ class Check(lib.basecheck.CheckBase):
                             vl = 0
                         key = 'kafka_gc_young_' + name.lower()
                         self.local_vars.append({'name': key, 'timestamp': self.timestamp, 'value': vl, 'check_type': check_type, 'reaction': -3})
-    
+
             for beans in jolo_mbeans:
                 jolo_json = json.loads(lib.commonclient.httpget(__name__, jolokia_url+'/'+beans))
                 jolo_keys = jolo_json['value']
@@ -88,7 +88,7 @@ class Check(lib.basecheck.CheckBase):
                     values_rate = self.rate.record_value_rate(name, value, self.timestamp)
                     if values_rate >= 0:
                         self.local_vars.append({'name': name, 'timestamp': self.timestamp, 'value': values_rate, 'check_type': check_type, 'chart_type': 'Rate'})
-    
+
                 elif beans == 'kafka.server:type=Produce':
                     value= jolo_keys['queue-size']
                     name = 'kafka_queuesize_'+beans.split('=')[1].lower()
@@ -101,16 +101,17 @@ class Check(lib.basecheck.CheckBase):
                         m = 'kafka.server:name=' + bean + ',type=BrokerTopicMetrics'
                         value = jolo_json['value'][m]['OneMinuteRate']
                         self.local_vars.append({'name': 'kafka_' + bean.lower(), 'timestamp': self.timestamp, 'value': value, 'check_type': check_type})
-    
+
             request_metrics = ('Produce', 'JoinGroup', 'FetchFollower', 'GroupCoordinator', 'OffsetCommit',
                                'LeaderAndIsr', 'Offsets', 'OffsetFetch', 'Fetch', 'FetchConsumer')
             lo = json.loads(lib.commonclient.httpget(__name__, jolokia_url + '/kafka.network:name=RequestsPerSec,request=*,type=*'))
             for request_bean in request_metrics:
-                if request_bean in lo:
                     bname = 'kafka.network:name=RequestsPerSec,request=' + request_bean + ',type=RequestMetrics'
-                    counter = lo['value'][bname]['Count']
-                    rated_value = self.rate.record_value_rate('kafka_' + bname, counter, self.timestamp)
-                    self.local_vars.append({'name': 'kafka_' + request_bean.lower(), 'timestamp': self.timestamp, 'value': rated_value, 'check_type': check_type, 'chart_type': 'Rate'})
+                    # lib.puylogger.print_message(bname)
+                    if bname in lo['value']:
+                        counter = lo['value'][bname]['Count']
+                        rated_value = self.rate.record_value_rate('kafka_' + bname, counter, self.timestamp)
+                        self.local_vars.append({'name': 'kafka_' + request_bean.lower(), 'timestamp': self.timestamp, 'value': rated_value, 'check_type': check_type, 'chart_type': 'Rate'})
     
         except Exception as e:
             lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
