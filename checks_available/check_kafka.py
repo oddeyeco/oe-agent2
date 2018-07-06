@@ -82,21 +82,9 @@ class Check(lib.basecheck.CheckBase):
                                 key='kafka_heap_'+ metr
                                 mon_values=jolo_keys[heap][metr]
                                 self.local_vars.append({'name': key, 'timestamp': self.timestamp, 'value': mon_values, 'check_type': check_type})
-                elif beans == 'kafka.server:type=Fetch':
-                    value= jolo_keys['queue-size']
-                    name = 'kafka_queuesize_'+beans.split('=')[1].lower()
-                    values_rate = self.rate.record_value_rate(name, value, self.timestamp)
-                    if values_rate >= 0:
-                        self.local_vars.append({'name': name, 'timestamp': self.timestamp, 'value': values_rate, 'check_type': check_type, 'chart_type': 'Rate'})
-
-                elif beans == 'kafka.server:type=Produce':
-                    value= jolo_keys['queue-size']
-                    name = 'kafka_queuesize_'+beans.split('=')[1].lower()
-                    values_rate = self.rate.record_value_rate(name, value, self.timestamp)
-                    if values_rate >= 0:
-                        self.local_vars.append({'name': name, 'timestamp': self.timestamp, 'value': values_rate, 'check_type': check_type, 'chart_type': 'Rate'})
                 elif beans == 'kafka.server:type=BrokerTopicMetrics,name=*':
-                    beans = ('TotalProduceRequestsPerSec', 'BytesInPerSec', 'BytesOutPerSec', 'BytesRejectedPerSec', 'FailedFetchRequestsPerSec', 'FailedProduceRequestsPerSec', 'MessagesInPerSec')
+                    beans = ('TotalProduceRequestsPerSec', 'TotalFetchRequestsPerSec', 'BytesInPerSec', 'BytesOutPerSec',
+                             'BytesRejectedPerSec', 'FailedFetchRequestsPerSec', 'FailedProduceRequestsPerSec', 'MessagesInPerSec')
                     for bean in beans:
                         m = 'kafka.server:name=' + bean + ',type=BrokerTopicMetrics'
                         value = jolo_json['value'][m]['OneMinuteRate']
@@ -107,7 +95,6 @@ class Check(lib.basecheck.CheckBase):
             lo = json.loads(lib.commonclient.httpget(__name__, jolokia_url + '/kafka.network:name=RequestsPerSec,request=*,type=*'))
             for request_bean in request_metrics:
                     bname = 'kafka.network:name=RequestsPerSec,request=' + request_bean + ',type=RequestMetrics'
-                    # lib.puylogger.print_message(bname)
                     if bname in lo['value']:
                         counter = lo['value'][bname]['Count']
                         rated_value = self.rate.record_value_rate('kafka_' + bname, counter, self.timestamp)
