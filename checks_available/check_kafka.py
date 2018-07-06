@@ -106,10 +106,11 @@ class Check(lib.basecheck.CheckBase):
                                'LeaderAndIsr', 'Offsets', 'OffsetFetch', 'Fetch', 'FetchConsumer')
             lo = json.loads(lib.commonclient.httpget(__name__, jolokia_url + '/kafka.network:name=RequestsPerSec,request=*,type=*'))
             for request_bean in request_metrics:
-                bname = 'kafka.network:name=RequestsPerSec,request=' + request_bean + ',type=RequestMetrics'
-                counter = lo['value'][bname]['Count']
-                rated_value = self.rate.record_value_rate('kafka_' + bname, counter, self.timestamp)
-                self.local_vars.append({'name': 'kafka_' + request_bean.lower(), 'timestamp': self.timestamp, 'value': rated_value, 'check_type': check_type, 'chart_type': 'Rate'})
+                if request_bean in lo:
+                    bname = 'kafka.network:name=RequestsPerSec,request=' + request_bean + ',type=RequestMetrics'
+                    counter = lo['value'][bname]['Count']
+                    rated_value = self.rate.record_value_rate('kafka_' + bname, counter, self.timestamp)
+                    self.local_vars.append({'name': 'kafka_' + request_bean.lower(), 'timestamp': self.timestamp, 'value': rated_value, 'check_type': check_type, 'chart_type': 'Rate'})
     
         except Exception as e:
             lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
