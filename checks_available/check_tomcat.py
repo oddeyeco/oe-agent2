@@ -36,10 +36,10 @@ class Check(lib.basecheck.CheckBase):
                 for serchitem in memstats:
                     if line.startswith(serchitem):
                         metrics=line.split("contents=", 1)[1].replace(')', '').replace('=', ' ').replace('}', '').replace('{', '').replace(',', '').split()
-                        self.local_vars.append({'name': 'tomcat_' + serchitem.replace('MemoryUsage', '').lower() + '_commited', 'timestamp': self.timestamp, 'value': metrics[1], 'check_type': check_type})
-                        self.local_vars.append({'name': 'tomcat_' + serchitem.replace('MemoryUsage', '').lower() + '_init', 'timestamp': self.timestamp, 'value': metrics[3], 'check_type': check_type})
-                        self.local_vars.append({'name': 'tomcat_' + serchitem.replace('MemoryUsage', '').lower() + '_used', 'timestamp': self.timestamp, 'value': metrics[5], 'check_type': check_type})
-                        self.local_vars.append({'name': 'tomcat_' + serchitem.replace('MemoryUsage', '').lower() + '_max', 'timestamp': self.timestamp, 'value': metrics[7], 'check_type': check_type})
+                        x=0
+                        while (x<len(metrics)):
+                            self.local_vars.append({'name': 'tomcat_' + serchitem.replace('MemoryUsage', '').lower() + '_'+metrics[x], 'timestamp': self.timestamp, 'value': metrics[x+1], 'check_type': check_type})
+                            x=x+2
             for line in threadstats:
                 for serchitem in threads:
                     if line.startswith(serchitem):
