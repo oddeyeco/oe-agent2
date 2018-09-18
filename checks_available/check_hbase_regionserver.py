@@ -23,6 +23,7 @@ class Check(lib.basecheck.CheckBase):
                              'slowAppendCount', 'slowGetCount', 'slowPutCount', 'slowIncrementCount', 'slowDeleteCount',
                              'memStoreSize', 'regionCount', 'storeFileSize', 'storeFileCount', 'hlogFileCount', 'hlogFileSize', 'percentFilesLocal', 'blockCountHitPercent')
             zero_learn_keys = ('blockCacheFreeSize', 'blockCacheCount')
+            hedged_reads = ('hedgedReads', 'hedgedReadWins')
 
             for stats_x in range(0, len(stats_keys)):
                 for k, v in enumerate(('java.lang:type=GarbageCollector,name=ConcurrentMarkSweep', 'java.lang:type=GarbageCollector,name=ParNew')):
@@ -64,6 +65,10 @@ class Check(lib.basecheck.CheckBase):
                 for values in zero_learn_keys:
                     if values in stats_keys[stats_index]:
                         self.local_vars.append({'name': 'hregion_node_' + values.lower(), 'timestamp': self.timestamp, 'value': stats_keys[stats_index][values], 'check_type': check_type, 'reaction': -3})
+                for values in hedged_reads:
+                    if values in stats_keys[stats_index]:
+                        if stats_keys[stats_index][values] > 0:
+                            self.local_vars.append({'name': 'hregion_node_' + values.lower(), 'timestamp': self.timestamp, 'value': stats_keys[stats_index][values], 'check_type': check_type})
                 for values in node_stuck_keys:
                     if values in stats_keys[stats_index]:
                         if values == 'HeapMemoryUsage':
