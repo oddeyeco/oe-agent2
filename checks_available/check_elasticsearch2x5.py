@@ -30,34 +30,43 @@ class Check(lib.basecheck.CheckBase):
             self.local_vars.append({'name': 'elasticsearch_cluster_shards', 'timestamp': self.timestamp, 'value': global_json['_shards']['total'], 'check_type': check_type})
             self.local_vars.append({'name': 'elasticsearch_cluster_storage_usage', 'timestamp': self.timestamp, 'value': global_json['_all']['total']['store']['size_in_bytes'], 'check_type': check_type})
 
-            def send_special():
-                eshealth_status = host + '/_cluster/health'
-                try:
-                    eshealth_json = json.loads(lib.commonclient.httpget(__name__, eshealth_status))
-                except:
-                    eshealth_message = "Something is very bad, exited with status:"
-                    health_value = 16
-    
-                status = eshealth_json['status']
-                active_shards = eshealth_json['active_shards']
-                relocating_shards = eshealth_json['relocating_shards']
-                initializing_shards = eshealth_json['initializing_shards']
-                cluster_name = eshealth_json['cluster_name']
-    
-                eshealth_message = 'Cluster: ' + cluster_name + ', Status: ' + status + ', Shards Active: ' + str(active_shards) + ', Relocating: ' + str(relocating_shards) + ', Initializing: ' + str(initializing_shards)
-    
-                if status == 'green':
-                    health_value = 0
-                    err_type = 'OK'
-                elif status == 'yellow':
-                    health_value = 9
-                    err_type = 'WARNING'
-                else:
-                    health_value = 16
-                    err_type = 'ERROR'
-                self.jsondata.send_special("ElasticSearch-Health", self.timestamp, health_value, eshealth_message, err_type)
-            send_special()
-    
+            eshealth_status = host + '/_cluster/health'
+            try:
+                eshealth_json = json.loads(lib.commonclient.httpget(__name__, eshealth_status))
+            except:
+                eshealth_message = "Something is very bad, exited with status:"
+                health_value = 16
+
+            status = eshealth_json['status']
+
+            h1stats= {'cluster' : eshealth_json['cluster_name'], 'status' : eshealth_json['status'],}
+            h2stats= {'active_shards' : eshealth_json['active_shards'], 'relocating_shards': eshealth_json['relocating_shards'], 'initializing_shards': eshealth_json['initializing_shards'] }
+
+            # lib.puylogger.print_message(str(h1stats))
+            # lib.puylogger.print_message(str(h2stats))
+
+            eshealth_message = 'Cluster: ' + h1stats['cluster'] + \
+                               ', Status: ' + h1stats['status'] + \
+                               ', Shards Active: ' + str(h2stats['active_shards']) + \
+                               ', Relocating: ' + str(h2stats['relocating_shards']) + \
+                               ', Initializing: ' + str(h2stats['initializing_shards'])
+
+            if status == 'green':
+                health_value = 0
+                err_type = 'OK'
+            elif status == 'yellow':
+                health_value = 9
+                err_type = 'WARNING'
+            else:
+                health_value = 16
+                err_type = 'ERROR'
+            self.jsondata.send_special("ElasticSearch-Health", self.timestamp, health_value, eshealth_message, err_type)
+
+            # lib.puylogger.print_message(eshealth_message)
+            for k,v in h2stats.items():
+                self.local_vars.append({'name': 'elasticsearch_' + k, 'timestamp': self.timestamp, 'value': v, 'check_type': check_type, 'reaction': reaction})
+                # lib.puylogger.print_message(str(k) + ' ' + str(v))
+
             rated_stats.update({''
                         'search_total':stats_json['nodes'][node_keys]['indices']['search']['query_total'],
                         'index_total':stats_json['nodes'][node_keys]['indices']['indexing']['index_total'],
