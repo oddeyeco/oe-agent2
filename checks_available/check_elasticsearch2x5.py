@@ -35,8 +35,13 @@ class Check(lib.basecheck.CheckBase):
 
             status = eshealth_json['status']
 
-            h1stats= {'cluster' : eshealth_json['cluster_name'], 'status' : eshealth_json['status'],}
-            h2stats= {'active_shards' : eshealth_json['active_shards'], 'relocating_shards': eshealth_json['relocating_shards'], 'initializing_shards': eshealth_json['initializing_shards'] }
+            h1stats = {'cluster': eshealth_json['cluster_name'],
+                       'status' : eshealth_json['status'],}
+            h2stats = {'active_shards': eshealth_json['active_shards'],
+                      'relocating_shards': eshealth_json['relocating_shards'],
+                      'initializing_shards': eshealth_json['initializing_shards'],
+                      'unassigned_shards': eshealth_json['unassigned_shards']
+                      }
 
             eshealth_message = 'Cluster: ' + h1stats['cluster'] + \
                                ', Status: ' + h1stats['status'] + \
