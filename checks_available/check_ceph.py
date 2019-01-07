@@ -15,6 +15,7 @@ class Check(lib.basecheck.CheckBase):
         try:
             command1 = 'ceph -n ' + ceph_client + ' --keyring=' + ceph_keyring + ' -s -f json'
             command2 = 'ceph -n ' + ceph_client + ' --keyring=' + ceph_keyring + ' pg stat -f json'
+            command3 = 'ceph -n ' + ceph_client + ' --keyring=' + ceph_keyring + ' osd df -f json'
 
             p1 = subprocess.Popen(command1, stdout=subprocess.PIPE, shell=True, universal_newlines=True)
             output1, err = p1.communicate()
@@ -25,6 +26,12 @@ class Check(lib.basecheck.CheckBase):
             p2 = subprocess.Popen(command2, stdout=subprocess.PIPE, shell=True, universal_newlines=True)
             output2, err = p2.communicate()
             pgstats = json.loads(output2)
+
+            p3 = subprocess.Popen(command3, stdout=subprocess.PIPE, shell=True, universal_newlines=True)
+            output3, err = p3.communicate()
+            osdstats = json.loads(output3)['nodes']
+
+
 
             if health['overall_status'] == 'HEALTH_OK':
                 health_value = 0
@@ -73,6 +80,18 @@ class Check(lib.basecheck.CheckBase):
                 self.local_vars.append({'name': 'ceph_degraded_total', 'timestamp': self.timestamp, 'value': stats['degraded_total'], 'check_type': check_type})
             else:
                 self.local_vars.append({'name': 'ceph_degraded_total', 'timestamp': self.timestamp, 'value': 0, 'check_type': check_type})
+            if 'misplaced_objects' in stats:
+                self.local_vars.append({'name': 'ceph_misplaced_objects', 'timestamp': self.timestamp, 'value': stats['misplaced_objects'], 'check_type': check_type})
+            else:
+                self.local_vars.append({'name': 'ceph_misplaced_objects', 'timestamp': self.timestamp, 'value': 0, 'check_type': check_type})
+            if 'misplaced_ratio' in stats:
+                self.local_vars.append({'name': 'ceph_misplaced_ratio', 'timestamp': self.timestamp, 'value': stats['misplaced_ratio'], 'check_type': check_type})
+            else:
+                self.local_vars.append({'name': 'ceph_misplaced_ratio', 'timestamp': self.timestamp, 'value': 0.0, 'check_type': check_type})
+            if 'misplaced_total' in stats:
+                self.local_vars.append({'name': 'ceph_misplaced_total', 'timestamp': self.timestamp, 'value': stats['misplaced_total'], 'check_type': check_type})
+            else:
+                self.local_vars.append({'name': 'ceph_misplaced_total', 'timestamp': self.timestamp, 'value': 0, 'check_type': check_type})
             if 'recovering_bytes_per_sec' in stats:
                 self.local_vars.append({'name': 'ceph_recovering_bytes_per_sec', 'timestamp': self.timestamp, 'value': stats['recovering_bytes_per_sec'], 'check_type': check_type})
             else:
@@ -85,6 +104,11 @@ class Check(lib.basecheck.CheckBase):
                 self.local_vars.append({'name': 'ceph_recovering_keys_per_sec', 'timestamp': self.timestamp, 'value': stats['recovering_keys_per_sec'], 'check_type': check_type})
             else:
                 self.local_vars.append({'name': 'ceph_recovering_keys_per_sec', 'timestamp': self.timestamp, 'value': 0, 'check_type': check_type})
+
+            for lenq in range(0, len(osdstats)):
+                space = {'utilization' : osdstats[lenq]['utilization'], 'space_avail' : osdstats[lenq]['kb_avail'], 'space_used': osdstats[lenq]['kb_used']}
+                for k,v in space.items():
+                    self.local_vars.append({'name': 'ceph_osd_' + str(k), 'timestamp': self.timestamp, 'value': v, 'check_type': check_type, 'extra_tag': {'osd_name': osdstats[lenq]['name']}})
 
         except Exception as e:
             lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
