@@ -80,12 +80,35 @@ class Check(lib.basecheck.CheckBase):
                         'query_cache_hit': stats_json['nodes'][node_keys]['indices']['query_cache']['hit_count'],
                         'query_cache_mis': stats_json['nodes'][node_keys]['indices']['query_cache']['miss_count'],
                         'get_time':stats_json['nodes'][node_keys]['indices']['get']['time_in_millis'],
-                        'gc_young_time_ms':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['young']['collection_time_in_millis'],
-                        'gc_old_time_ms':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['old']['collection_time_in_millis'],
                         'gc_old_count':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['old']['collection_count'],
                         'gc_young_count':stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['young']['collection_count'],
                         })
-    
+
+            ogc_young_time_ms = stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['young']['collection_time_in_millis']
+            ogc_old_time_ms = stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['old']['collection_time_in_millis']
+            ogc_young_count = stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['young']['collection_count']
+            ogc_old_count = stats_json['nodes'][node_keys]['jvm']['gc']['collectors']['old']['collection_count']
+
+            ogc_young_time_ms_get_last = self.last.return_last_value('ogc_young_time_ms_get_last', ogc_young_time_ms)
+            ogc_old_time_ms_get_last = self.last.return_last_value('ogc_old_time_ms', ogc_old_time_ms)
+            ogc_young_count_get_last = self.last.return_last_value('ogc_young_count_get_last', ogc_young_count)
+            ogc_old_count_get_last =  self.last.return_last_value('ogc_old_count_get_last', ogc_old_count)
+
+            if ogc_young_time_ms > ogc_young_time_ms_get_last and ogc_young_count > ogc_young_count_get_last:
+                value_y = float("{:.2f}".format((ogc_young_time_ms - ogc_young_time_ms_get_last) / (ogc_young_count - ogc_young_count_get_last)))
+            else:
+                value_y = 0.0
+            self.local_vars.append({'name': 'elasticsearch_gc_young_time_ms', 'timestamp': self.timestamp, 'value': value_y, 'check_type': check_type})
+
+            if ogc_old_time_ms > ogc_old_time_ms_get_last and ogc_old_count > ogc_old_count_get_last:
+                value_o = float("{:.2f}".format((ogc_old_time_ms - ogc_old_time_ms_get_last) / (ogc_old_count - ogc_old_count_get_last)))
+            else:
+                value_o = 0.0
+
+            self.local_vars.append({'name': 'elasticsearch_gc_old_time_ms', 'timestamp': self.timestamp, 'value': value_o, 'check_type': check_type})
+
+            lib.puylogger.print_message('young ' + str(value_y) + ' : ' + 'old ' + str(value_o))
+
             for key, value in list(rated_stats.items()):
                 reqrate=self.rate.record_value_rate('es_'+key, value, self.timestamp)
                 if reqrate >= 0:

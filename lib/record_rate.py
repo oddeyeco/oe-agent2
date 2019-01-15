@@ -58,10 +58,6 @@ class ValueRate(object):
                 push.print_error(__name__, (e))
                 pass
 
-    def update_timestamp(self, timestamp):
-        pass
-
-
 prev_value = {}
 
 
