@@ -19,6 +19,7 @@ class Check(lib.basecheck.CheckBase):
 
             p1 = subprocess.Popen(command1, stdout=subprocess.PIPE, shell=True, universal_newlines=True)
             output1, err = p1.communicate()
+
             s1 = json.loads(output1)
             stats=s1['pgmap']
             health = s1['health']
@@ -43,11 +44,7 @@ class Check(lib.basecheck.CheckBase):
                 health_value = 16
                 err_type = 'ERROR'
 
-            message = health['overall_status']
-            for item in health['summary']:
-                message = message + ', ' + item['summary'].replace('%', ' Percent')
-
-            self.jsondata.send_special("Ceph-Health", self.timestamp, health_value, message, err_type)
+            self.jsondata.send_special("Ceph-Health", self.timestamp, health_value, health['overall_status'], err_type)
 
             self.local_vars.append({'name': 'ceph_bytes_avail', 'timestamp': self.timestamp, 'value': stats['bytes_avail'], 'check_type': check_type})
             self.local_vars.append({'name': 'ceph_bytes_total', 'timestamp': self.timestamp, 'value': stats['bytes_total'], 'check_type': check_type})
