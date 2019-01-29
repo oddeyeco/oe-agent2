@@ -11,7 +11,7 @@ rated = lib.getconfig.getparam('Network Stats', 'rated')
 
 
 class Check(lib.basecheck.CheckBase):
-    
+
     def precheck(self):
         try:
             ifaces = glob.glob("/sys/class/net/*")
@@ -31,20 +31,24 @@ class Check(lib.basecheck.CheckBase):
                 rx = int(rxb.read())
                 tx = int(txb.read())
 
-                if rx is not 0 or tx is not 0:
+                rx_last = self.last.return_last_value('network_rx_last', rx)
+                tx_last = self.last.return_last_value('network_tx_last', tx)
+
+                if rx > rx_last or tx > tx_last:
                     txname = 'bytes_tx'
                     rxname = 'bytes_rx'
                     if rated is True:
                         rxrate = self.rate.record_value_rate(rxname + nic, rx, self.timestamp)
                         txrate = self.rate.record_value_rate(txname + nic, tx, self.timestamp)
-                        self.local_vars.append({'name':rxname, 'timestamp': self.timestamp, 'value':rxrate, 'chart_type': 'Rate', 'check_type': check_type, 'reaction': 0, 'extra_tag':{'device': nic}})
-                        self.local_vars.append({'name':txname, 'timestamp': self.timestamp, 'value':txrate, 'chart_type': 'Rate', 'check_type': check_type, 'reaction': 0, 'extra_tag':{'device': nic}})
+                        self.local_vars.append({'name':rxname, 'timestamp': self.timestamp, 'value':rxrate, 'chart_type': 'Rate', 'check_type': check_type, 'reaction': 0, 'extra_tag':{'interface': nic}})
+                        self.local_vars.append({'name':txname, 'timestamp': self.timestamp, 'value':txrate, 'chart_type': 'Rate', 'check_type': check_type, 'reaction': 0, 'extra_tag':{'interface': nic}})
                     else:
-                        self.local_vars.append({'name':rxname, 'timestamp': self.timestamp, 'value':rxrate, 'chart_type': 'Counter', 'check_type': check_type, 'reaction': 0, 'extra_tag':{'device': nic}})
-                        self.local_vars.append({'name':txname, 'timestamp': self.timestamp, 'value':txrate, 'chart_type': 'Counter', 'check_type': check_type, 'reaction': 0, 'extra_tag':{'device': nic}})
+                        self.local_vars.append({'name':rxname, 'timestamp': self.timestamp, 'value':rxrate, 'chart_type': 'Counter', 'check_type': check_type, 'reaction': 0, 'extra_tag':{'interface': nic}})
+                        self.local_vars.append({'name':txname, 'timestamp': self.timestamp, 'value':txrate, 'chart_type': 'Counter', 'check_type': check_type, 'reaction': 0, 'extra_tag':{'interface': nic}})
 
                 rxb.close()
                 txb.close()
         except Exception as e:
             lib.pushdata.print_error(__name__ , (e))
             pass
+
