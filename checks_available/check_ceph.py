@@ -47,13 +47,19 @@ class Check(lib.basecheck.CheckBase):
             self.jsondata.send_special("Ceph-Health", self.timestamp, health_value, health['overall_status'], err_type)
 
             try:
-                str(health['checks']['PG_DEGRADED']['summary'])
                 s=str(health['checks']['PG_DEGRADED']['summary'])
-                o=s[s.find("(")+1:s.find(")")].replace('%', '')
+                ceph_degraded_percent=s[s.find("(")+1:s.find(")")].replace('%', '')
             except:
-                o='0.0'
+                ceph_degraded_percent='0.0'
 
-            self.local_vars.append({'name': 'ceph_degraded_percent', 'timestamp': self.timestamp, 'value': o, 'check_type': check_type})
+            try:
+                u=str(health['checks']['OBJECT_MISPLACED']['summary'])
+                ceph_misplaced_percent=u[u.find("(")+1:u.find(")")].replace('%', '')
+            except:
+                ceph_misplaced_percent='0.0'
+
+            self.local_vars.append({'name': 'ceph_misplaced_percent', 'timestamp': self.timestamp, 'value': ceph_misplaced_percent, 'check_type': check_type})
+            self.local_vars.append({'name': 'ceph_degraded_percent', 'timestamp': self.timestamp, 'value':ceph_degraded_percent, 'check_type': check_type})
             self.local_vars.append({'name': 'ceph_bytes_avail', 'timestamp': self.timestamp, 'value': stats['bytes_avail'], 'check_type': check_type})
             self.local_vars.append({'name': 'ceph_bytes_total', 'timestamp': self.timestamp, 'value': stats['bytes_total'], 'check_type': check_type})
             self.local_vars.append({'name': 'ceph_bytes_used', 'timestamp': self.timestamp, 'value': stats['bytes_used'], 'check_type': check_type})
