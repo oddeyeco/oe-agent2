@@ -34,13 +34,21 @@ class Check(lib.basecheck.CheckBase):
                 for mm in mmemory:
                     self.local_vars.append({'name': 'fdb_memory_' + mm, 'timestamp': self.timestamp, 'value': s1['cluster']['machines'][key]['memory'][mm], 'check_type': check_type, 'extra_tag': {'node': address}})
 
-            self.local_vars.append({'name': 'fdb_connected_clients', 'timestamp': self.timestamp, 'value': s1['cluster']['clients']['count'], 'check_type': check_type})
-
             for mp in s1['cluster']['data']['moving_data']:
                 self.local_vars.append({'name': 'fdb_moving_data', 'timestamp': self.timestamp, 'value': s1['cluster']['data']['moving_data'][mp], 'check_type': check_type, 'extra_tag': {'fdb_move_type': mp}})
 
+
+            self.local_vars.append({'name': 'fdb_partitions_count', 'timestamp': self.timestamp, 'value': s1['cluster']['data']['partitions_count'], 'check_type': check_type})
+            self.local_vars.append({'name': 'fdb_partitions_size_avg', 'timestamp': self.timestamp, 'value': s1['cluster']['data']['average_partition_size_bytes'], 'check_type': check_type})
+            self.local_vars.append({'name': 'fdb_least_operating_space_bytes_log_server', 'timestamp': self.timestamp, 'value': s1['cluster']['data']['least_operating_space_bytes_log_server'], 'check_type': check_type})
+            self.local_vars.append({'name': 'fdb_least_operating_space_bytes_storage_server', 'timestamp': self.timestamp, 'value': s1['cluster']['data']['least_operating_space_bytes_storage_server'], 'check_type': check_type})
+            self.local_vars.append({'name': 'fdb_latency_commit_seconds', 'timestamp': self.timestamp, 'value': s1['cluster']['latency_probe']['commit_seconds'], 'check_type': check_type})
+            self.local_vars.append({'name': 'fdb_latency_read_seconds', 'timestamp': self.timestamp, 'value': s1['cluster']['latency_probe']['read_seconds'], 'check_type': check_type})
+            self.local_vars.append({'name': 'fdb_connected_clients', 'timestamp': self.timestamp, 'value': s1['cluster']['clients']['count'], 'check_type': check_type})
             self.local_vars.append({'name': 'fdb_total_disk_used_bytes', 'timestamp': self.timestamp, 'value': s1['cluster']['data']['total_disk_used_bytes'], 'check_type': check_type})
             self.local_vars.append({'name': 'fdb_total_kv_size_bytes', 'timestamp': self.timestamp, 'value': s1['cluster']['data']['total_kv_size_bytes'], 'check_type': check_type})
+            self.local_vars.append({'name': 'fdb_worst_queue_bytes_log_server', 'timestamp': self.timestamp, 'value': s1['cluster']['qos']['worst_queue_bytes_log_server'], 'check_type': check_type})
+            self.local_vars.append({'name': 'fdb_worst_queue_bytes_storage_server', 'timestamp': self.timestamp, 'value': s1['cluster']['qos']['worst_queue_bytes_storage_server'], 'check_type': check_type})
 
         except Exception as e:
             lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
