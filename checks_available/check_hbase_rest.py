@@ -15,34 +15,16 @@ class Check(lib.basecheck.CheckBase):
         try:
             stats_json = json.loads(lib.commonclient.httpget(__name__, hbase_rest_url))
             stats_keys = stats_json['beans']
-            for stats_x in range(0, len(stats_keys)):
-                for k, v in enumerate(('java.lang:type=GarbageCollector,name=ConcurrentMarkSweep', 'java.lang:type=GarbageCollector,name=ParNew')):
-                    if v in stats_keys[stats_x]['name']:
-                        if k is 0:
-                            cms_key = 'hrest_cms_lastgcinfo'
-                            cms_value = stats_keys[stats_x]['LastGcInfo']['duration']
-                            self.local_vars.append({'name': cms_key, 'timestamp': self.timestamp, 'value': cms_value, 'check_type': check_type})
-                        if k is 1:
-                            parnew_key = 'hrest_parnew_lastgcinfo'
-                            parnew_value = stats_keys[stats_x]['LastGcInfo']['duration']
-                            self.local_vars.append({'name': parnew_key, 'timestamp': self.timestamp, 'value': parnew_value, 'check_type': check_type})
 
             for stats_x in range(0, len(stats_keys)):
-                for k, v in enumerate(('java.lang:type=GarbageCollector,name=G1 Young Generation', 'java.lang:type=GarbageCollector,name=G1 Old Generation')):
-                    if v in stats_keys[stats_x]['name']:
-                        if k is 0:
-                            g1_young_key = 'hrest_g1_young_lastgcinfo'
-                            g1_young_value = stats_keys[stats_x]['LastGcInfo']['duration']
-                            self.local_vars.append({'name': g1_young_key, 'timestamp': self.timestamp, 'value': g1_young_value, 'check_type': check_type})
-                        if k is 1:
-                            if stats_keys[stats_x]['LastGcInfo'] is not None:
-                                g1_old_key = 'hrest_g1_old_lastgcinfo'
-                                g1_old_value = stats_keys[stats_x]['LastGcInfo']['duration']
-                                self.local_vars.append({'name': g1_old_key, 'timestamp': self.timestamp, 'value': g1_old_value, 'check_type': check_type})
-                            else:
-                                g1_old_key = 'hrest_g1_old_lastgcinfo'
-                                g1_old_value = 0
-                                self.local_vars.append({'name': g1_old_key, 'timestamp': self.timestamp, 'value': g1_old_value, 'check_type': check_type})
+                if 'LastGcInfo' in stats_keys[stats_x]:
+                    if 'duration' in stats_keys[stats_x]['LastGcInfo']:
+                        nam = stats_keys[stats_x]['Name'].replace('ConcurrentMarkSweep', 'cms').replace(' Generation', '').lower().replace(' ', '_')
+                        vle = stats_keys[stats_x]['LastGcInfo']['duration']
+                        self.local_vars.append({'name': 'hrest_lastgcinfo', 'timestamp': self.timestamp, 'value': vle, 'check_type': check_type, 'extra_tag': {'gctype': nam}})
+                        for o in ('CollectionCount', 'CollectionTime'):
+                            vle = stats_keys[stats_x][o]
+                            self.local_vars.append({'name': 'hrest_gc_' + o.lower(), 'timestamp': self.timestamp, 'value': vle, 'check_type': check_type, 'reaction': -1, 'extra_tag': {'gctype': nam}})
 
             thread_metrics = ('TotalStartedThreadCount', 'PeakThreadCount', 'ThreadCount', 'DaemonThreadCount')
             for index in range(0, len(stats_keys)):
@@ -50,7 +32,7 @@ class Check(lib.basecheck.CheckBase):
                     for thread_metric in thread_metrics:
                         self.local_vars.append({'name': 'hrest_' + thread_metric.lower(), 'timestamp': self.timestamp, 'value': stats_keys[index][thread_metric], 'check_type': check_type})
                 if stats_keys[index]['name'] == 'java.lang:type=Memory':
-                    heap_metrics=('max', 'init', 'committed', 'used')
+                    heap_metrics = ('max', 'init', 'committed', 'used')
                     for heap_value in heap_metrics:
                         self.local_vars.append({'name': 'hrest_heap_' + heap_value, 'timestamp': self.timestamp, 'value': stats_keys[index]['HeapMemoryUsage'][heap_value], 'check_type': check_type})
                 if stats_keys[index]['name'] == 'Hadoop:service=HBase,name=REST':
@@ -66,4 +48,3 @@ class Check(lib.basecheck.CheckBase):
         except Exception as e:
             lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
             pass
-
