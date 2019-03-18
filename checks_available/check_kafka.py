@@ -31,40 +31,22 @@ class Check(lib.basecheck.CheckBase):
                          'kafka.network:name=RequestsPerSec,request=FetchConsumer,type=RequestMetrics',
                          'kafka.network:name=RequestsPerSec,request=Produce,type=RequestMetrics'
                          )
-            if G1 is True:
-                gc_young_json = json.loads(lib.commonclient.httpget(__name__, jolokia_url + '/java.lang:name=G1%20Young%20Generation,type=GarbageCollector'))
-                gc_old_json = json.loads(lib.commonclient.httpget(__name__, jolokia_url + '/java.lang:name=G1%20Old%20Generation,type=GarbageCollector'))
-                for name in ('LastGcInfo','CollectionTime','CollectionCount'):
-                    value = gc_old_json['value'][name]
-                    if value is None:
-                        value = 0
-                    if name == 'CollectionTime':
-                        values_rate = self.rate.record_value_rate(name, value, self.timestamp)
-                        key = 'kafka_gc_old_' + name.lower()
-                        self.local_vars.append({'name': key, 'timestamp': self.timestamp, 'value': values_rate, 'check_type': check_type, 'chart_type': 'Rate'})
+
+            data_dict = json.loads(lib.commonclient.httpget(__name__, jolokia_url + '/java.lang:type=GarbageCollector,name=*'))
+
+            for itme in data_dict['value'].items():
+                nme = itme[1]['Name'].replace(' Generation', '').lower().replace(' ', '_').replace('ConcurrentMarkSweep', 'cms')
+                if 'LastGcInfo' in itme[1] and itme[1]['LastGcInfo'] is not None:
+                    vle = itme[1]['LastGcInfo']['duration']
+                else:
+                    vle = 0
+                self.local_vars.append({'name': 'kafka_lastgcinfo', 'timestamp': self.timestamp, 'value': vle, 'check_type': check_type, 'extra_tag': {'gctype': nme}})
+                for o in ('CollectionCount', 'CollectionTime'):
+                    if o in itme[1]:
+                        vle = itme[1][o]
                     else:
-                        key = 'kafka_gc_old_' + name.lower()
-                        self.local_vars.append({'name': key, 'timestamp': self.timestamp, 'value': value, 'check_type': check_type})
-                for name in ('LastGcInfo', 'CollectionTime', 'CollectionCount'):
-                    if name == 'LastGcInfo':
-                        vl = gc_young_json['value'][name]['duration']
-                        if vl is None:
-                            vl = 0
-                        key = 'kafka_gc_young_' + name.lower()
-                        self.local_vars.append({'name': key, 'timestamp': self.timestamp, 'value': vl, 'check_type': check_type})
-                    if name == 'CollectionTime':
-                        vl = gc_young_json['value'][name]
-                        if vl is None:
-                            vl = 0
-                        key = 'kafka_gc_young_' + name.lower()
-                        vl_rate = self.rate.record_value_rate(key, vl, self.timestamp)
-                        self.local_vars.append({'name': key, 'timestamp': self.timestamp, 'value': vl_rate, 'check_type': check_type, 'chart_type': 'Rate'})
-                    if name == 'CollectionCount':
-                        vl = gc_young_json['value'][name]
-                        if vl is None:
-                            vl = 0
-                        key = 'kafka_gc_young_' + name.lower()
-                        self.local_vars.append({'name': key, 'timestamp': self.timestamp, 'value': vl, 'check_type': check_type, 'reaction': -3})
+                        vle = 0
+                    self.local_vars.append({'name': 'kafka_gc_' + o.lower(), 'timestamp': self.timestamp, 'value': vle, 'check_type': check_type, 'reaction': -1, 'extra_tag': {'gctype': nme}})
 
             for beans in jolo_mbeans:
                 jolo_json = json.loads(lib.commonclient.httpget(__name__, jolokia_url+'/'+beans))

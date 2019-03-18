@@ -17,7 +17,7 @@ class Check(lib.basecheck.CheckBase):
             stats_keys = stats_json['beans']
 
             for stats_x in range(0, len(stats_keys)):
-                if 'LastGcInfo' in stats_keys[stats_x]:
+                if 'LastGcInfo' in stats_keys[stats_x] and stats_keys[stats_x]['LastGcInfo'] is not None:
                     if 'duration' in stats_keys[stats_x]['LastGcInfo']:
                         nam = stats_keys[stats_x]['Name'].replace('ConcurrentMarkSweep', 'cms').replace(' Generation', '').lower().replace(' ', '_')
                         vle = stats_keys[stats_x]['LastGcInfo']['duration']

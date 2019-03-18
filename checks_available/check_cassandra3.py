@@ -68,11 +68,7 @@ class Check(lib.basecheck.CheckBase):
             data_dict = json.loads(lib.commonclient.httpget(__name__, jolokia_url + '/java.lang:type=GarbageCollector,name=*'))
 
             for itme in data_dict['value'].items():
-                nme = itme[1]['Name']
-                if nme == 'ConcurrentMarkSweep':
-                    nme = 'cms'
-                else:
-                    nme = nme.lower()
+                nme = itme[1]['Name'].replace(' Generation', '').replace('ConcurrentMarkSweep', 'cms').lower().replace(' ', '_')
                 if 'LastGcInfo' in itme[1]:
                     vle = itme[1]['LastGcInfo']['duration']
                 else:
