@@ -31,8 +31,8 @@ class Check(lib.basecheck.CheckBase):
                 rx = int(rxb.read())
                 tx = int(txb.read())
 
-                rx_last = self.last.return_last_value('network_rx_last', rx)
-                tx_last = self.last.return_last_value('network_tx_last', tx)
+                rx_last = self.last.return_last_value('network_rx_last' + nic, rx)
+                tx_last = self.last.return_last_value('network_tx_last' + nic, tx)
 
                 if rx > rx_last or tx > tx_last:
                     txname = 'bytes_tx'
