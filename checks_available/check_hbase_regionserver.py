@@ -31,25 +31,23 @@ class Check(lib.basecheck.CheckBase):
                     if 'duration' in stats_keys[stats_x]['LastGcInfo']:
                         nam = stats_keys[stats_x]['Name'].replace('ConcurrentMarkSweep', 'cms').replace(' Generation', '').lower().replace(' ', '_')
                         vle = stats_keys[stats_x]['LastGcInfo']['duration']
-                        self.local_vars.append({'name': 'hmaster_lastgcinfo', 'timestamp': self.timestamp, 'value': vle, 'check_type': check_type, 'extra_tag': {'gctype': nam}})
+                        self.local_vars.append({'name': 'hregion_lastgcinfo', 'timestamp': self.timestamp, 'value': vle, 'check_type': check_type, 'extra_tag': {'gctype': nam}})
                         for o in ('CollectionCount', 'CollectionTime'):
                             vle = stats_keys[stats_x][o]
-                            self.local_vars.append({'name': 'hmaster_gc_' + o.lower(), 'timestamp': self.timestamp, 'value': vle, 'check_type': check_type, 'reaction': -1, 'extra_tag': {'gctype': nam}})
+                            self.local_vars.append({'name': 'hregion_gc_' + o.lower(), 'timestamp': self.timestamp, 'value': vle, 'check_type': check_type, 'reaction': -1, 'extra_tag': {'gctype': nam}})
             for stats_index in range(0, len(stats_keys)):
                 for values in node_rated_keys:
                     if values in stats_keys[stats_index]:
-                        if values in node_rated_keys:
-                            myvalue = stats_keys[stats_index][values]
-                            values_rate = self.rate.record_value_rate('hregion_'+values, myvalue, self.timestamp)
-                            if values_rate >= 0:
+                        myvalue = stats_keys[stats_index][values]
+                        values_rate = self.rate.record_value_rate('hregion_'+values, myvalue, self.timestamp)
+                        if values_rate >= 0:
                                 self.local_vars.append({'name': 'hregion_node_'+values.lower(), 'timestamp': self.timestamp, 'value': values_rate, 'check_type': check_type, 'chart_type': 'Rate'})
                 for values in zero_learn_keys_rated:
                     if values in stats_keys[stats_index]:
-                        if values in node_rated_keys:
-                            myvalue = stats_keys[stats_index][values]
-                            values_rate = self.rate.record_value_rate('hregion_'+values, myvalue, self.timestamp)
-                            if values_rate >= 0:
-                                self.local_vars.append({'name': 'hregion_node_'+values.lower(), 'timestamp': self.timestamp, 'value': values_rate, 'check_type': check_type, 'chart_type': 'Rate', 'reaction': -3})
+                        myvalue = stats_keys[stats_index][values]
+                        values_rate = self.rate.record_value_rate('hregion_'+values, myvalue, self.timestamp)
+                        if values_rate >= 0:
+                            self.local_vars.append({'name': 'hregion_node_'+values.lower(), 'timestamp': self.timestamp, 'value': values_rate, 'check_type': check_type, 'chart_type': 'Rate', 'reaction': -3})
                 for values in zero_learn_keys:
                     if values in stats_keys[stats_index]:
                         self.local_vars.append({'name': 'hregion_node_' + values.lower(), 'timestamp': self.timestamp, 'value': stats_keys[stats_index][values], 'check_type': check_type, 'reaction': -3})
