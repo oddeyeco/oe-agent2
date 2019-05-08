@@ -5,7 +5,7 @@ import lib.puylogger
 import lib.basecheck
 import json
 
-marathon_url = lib.getconfig.getparam('Marathon', 'stats')
+marathon_url = lib.getconfig.getparam('Mesos-Marathon', 'stats')
 check_type = 'marathon'
 
 
@@ -25,9 +25,9 @@ class Check(lib.basecheck.CheckBase):
                 if 'marathon.jvm.gc' in k:
                     gcgc = k.split('.')
                     if len(gcgc) is 6:
-                        self.local_vars.append({'name': 'marathon_gc_collections', 'timestamp': self.timestamp, 'value': float(stats_json['gauges'][k]['value']), 'check_type': check_type, 'extra_tag': {'gctype': gcgc[3]}})
+                        self.local_vars.append({'name': 'mesos_marathon_gc_collections', 'timestamp': self.timestamp, 'value': float(stats_json['gauges'][k]['value']), 'check_type': check_type, 'extra_tag': {'gctype': gcgc[3]}})
                     if len(gcgc) is 8:
-                        self.local_vars.append({'name': 'marathon_gc_duration', 'timestamp': self.timestamp, 'value': float(stats_json['gauges'][k]['value']), 'check_type': check_type, 'extra_tag': {'gctype': gcgc[3]}})
+                        self.local_vars.append({'name': 'mesos_marathon_gc_duration', 'timestamp': self.timestamp, 'value': float(stats_json['gauges'][k]['value']), 'check_type': check_type, 'extra_tag': {'gctype': gcgc[3]}})
 
             for gauge in gauges:
                 fsto = gauge.replace('marathon.', '').\
@@ -36,7 +36,7 @@ class Check(lib.basecheck.CheckBase):
                     replace('jvm.memory.non-heap', 'nonheap'). \
                     replace('.bytes', '').\
                     replace('.', '_').replace('-', '_')
-                self.local_vars.append({'name': 'marathon_' + fsto, 'timestamp': self.timestamp, 'value': stats_json['gauges'][gauge]['value'], 'check_type': check_type})
+                self.local_vars.append({'name': 'mesos_marathon_' + fsto, 'timestamp': self.timestamp, 'value': stats_json['gauges'][gauge]['value'], 'check_type': check_type})
 
         except Exception as e:
             lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
