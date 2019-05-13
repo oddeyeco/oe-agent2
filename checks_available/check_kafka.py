@@ -28,8 +28,8 @@ class Check(lib.basecheck.CheckBase):
         try:
             jolo_mbeans = ('java.lang:type=Memory',
                          'kafka.server:type=BrokerTopicMetrics,name=*',
-                         'kafka.network:name=RequestsPerSec,request=FetchConsumer,type=RequestMetrics',
-                         'kafka.network:name=RequestsPerSec,request=Produce,type=RequestMetrics'
+                         'kafka.network:name=*,request=FetchConsumer,type=RequestMetrics',
+                         'kafka.network:name=*,request=Produce,type=RequestMetrics'
                          )
 
             data_dict = json.loads(lib.commonclient.httpget(__name__, jolokia_url + '/java.lang:type=GarbageCollector,name=*'))
@@ -51,6 +51,7 @@ class Check(lib.basecheck.CheckBase):
             for beans in jolo_mbeans:
                 jolo_json = json.loads(lib.commonclient.httpget(__name__, jolokia_url+'/'+beans))
                 jolo_keys = jolo_json['value']
+                # lib.puylogger.print_message(str(jolo_keys))
                 if beans == 'java.lang:type=Memory':
                     metr_name=('used', 'committed')
                     heap_type=('NonHeapMemoryUsage', 'HeapMemoryUsage')
@@ -74,7 +75,7 @@ class Check(lib.basecheck.CheckBase):
 
             request_metrics = ('Produce', 'JoinGroup', 'FetchFollower', 'GroupCoordinator', 'OffsetCommit',
                                'LeaderAndIsr', 'Offsets', 'OffsetFetch', 'Fetch', 'FetchConsumer')
-            lo = json.loads(lib.commonclient.httpget(__name__, jolokia_url + '/kafka.network:name=RequestsPerSec,request=*,type=*'))
+            lo = json.loads(lib.commonclient.httpget(__name__, jolokia_url + '/kafka.network:name=*,request=*,type=*'))
             for request_bean in request_metrics:
                     bname = 'kafka.network:name=RequestsPerSec,request=' + request_bean + ',type=RequestMetrics'
                     if bname in lo['value']:
