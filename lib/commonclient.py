@@ -3,9 +3,6 @@ import socket
 import lib.puylogger
 import lib.pushdata
 
-# import requests
-# from requests.auth import HTTPBasicAuth
-
 
 class CurlBuffer:
    def __init__(self):
@@ -14,19 +11,7 @@ class CurlBuffer:
    def body_callback(self, buf):
        self.contents = self.contents + buf
 
-# def httpget2(name, url, auth=None):
-#     try:
-#         if auth is not None:
-#             response = requests.get(url, auth=HTTPBasicAuth(auth.split(':')[0], auth.split(':')[1]))
-#         else:
-#             response = requests.get(url)
-#         return response.content
-#     except Exception as err:
-#         lib.puylogger.print_message(name + ' ' + str(err))
-#         lib.pushdata.print_error(name, err)
-
-
-def httpget(name, url, auth=None):
+def httpget(name, url, auth=None, headers=None):
     try:
         t = CurlBuffer()
         c = pycurl.Curl()
@@ -39,6 +24,8 @@ def httpget(name, url, auth=None):
         c.setopt(pycurl.NOSIGNAL, 5)
         if auth is not None:
             c.setopt(pycurl.USERPWD, auth)
+        if headers is not None:
+            c.setopt(pycurl.HTTPHEADER, [headers])
         c.perform()
         c.close()
         return t.contents
@@ -62,6 +49,3 @@ def socketget(name, buff, host, port, message):
     except Exception as err:
         lib.puylogger.print_message(name + ' ' + str(err))
         lib.pushdata.print_error(name, err)
-
-# def hostname():
-#     return socket.getfqdn()
