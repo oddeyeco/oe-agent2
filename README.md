@@ -7,7 +7,7 @@ OE-Agent2 is python2 metrics collection daemon for OddEye monitoring suite.
 
 We have developed OE-Agent to support number of other OpenSource backends :
 
-[OpenTDB](#opentsdb)
+[OpenTSDB](#opentsdb)
 
 [KairosDB](#kairosdb)
 
