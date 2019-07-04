@@ -175,7 +175,7 @@ class JonSon(object):
 
     def upload_it(self, data):
         http_response_codes = [100, 101, 102, 200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304, 305, 306, 307, 308]
-        http_oddeye_errors = [406, 411, 415, 424]
+        http_oddeye_errors = [402, 406, 411, 415, 424]
         try:
             c.perform()
 
