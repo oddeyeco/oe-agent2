@@ -107,8 +107,6 @@ class Check(lib.basecheck.CheckBase):
 
             self.local_vars.append({'name': 'elasticsearch_gc_old_time_ms', 'timestamp': self.timestamp, 'value': value_o, 'check_type': check_type})
 
-            lib.puylogger.print_message('young ' + str(value_y) + ' : ' + 'old ' + str(value_o))
-
             for key, value in list(rated_stats.items()):
                 reqrate=self.rate.record_value_rate('es_'+key, value, self.timestamp)
                 if reqrate >= 0:
