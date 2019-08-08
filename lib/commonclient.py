@@ -22,6 +22,8 @@ def httpget(name, url, auth=None, headers=None):
         c.setopt(pycurl.CONNECTTIMEOUT, 10)
         c.setopt(pycurl.TIMEOUT, 10)
         c.setopt(pycurl.NOSIGNAL, 5)
+        c.setopt(pycurl.SSL_VERIFYPEER, 0)
+        c.setopt(pycurl.SSL_VERIFYHOST, 0)
         if auth is not None:
             c.setopt(pycurl.USERPWD, auth)
         if headers is not None:
