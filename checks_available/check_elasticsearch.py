@@ -66,6 +66,7 @@ class Check(lib.basecheck.CheckBase):
             rated_stats.update({''
                         'search_total':stats_json['nodes'][node_keys]['indices']['search']['query_total'],
                         'index_total':stats_json['nodes'][node_keys]['indices']['indexing']['index_total'],
+                        'delete_total': stats_json['nodes'][node_keys]['indices']['indexing']['delete_total'],
                         'refresh_total':stats_json['nodes'][node_keys]['indices']['refresh']['total'],
                         'get_total':stats_json['nodes'][node_keys]['indices']['get']['total'],
                         'fetch_total':stats_json['nodes'][node_keys]['indices']['search']['fetch_total'],

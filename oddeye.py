@@ -105,25 +105,45 @@ def rn(hast):
             lib.run_bash.run_shell_scripts()
             time.sleep(cron_interval)
 
+
 class App(Daemon):
     def run(self):
         rn(1)
+
+
+def check_pid():
+    try:
+        with open(pid_file) as f:
+            os.kill(int(f.read()), 0)
+    except OSError:
+        return False
+    else:
+        return True
+
+
+def remove_orphan():
+    if os.path.exists(pid_file):
+        os.remove(pid_file)
+        lib.puylogger.print_message('OE Agent is not running but pid file exists')
+        lib.puylogger.print_message('Removing orphaned pid file')
 
 
 if __name__ == "__main__":
         daemon = App(pid_file)
         if len(sys.argv) == 2:
             if 'start' == sys.argv[1]:
-                    daemon.start()
+                remove_orphan()
+                daemon.start()
             elif 'stop' == sys.argv[1]:
-                    daemon.stop()
+                daemon.stop()
             elif 'systemd' == sys.argv[1]:
-                    rn(1)
+                remove_orphan()
+                rn(1)
             elif 'restart' == sys.argv[1]:
-                    daemon.restart()
+                daemon.restart()
             else:
-                    print ("Unknown command")
-                    sys.exit(2)
+                print("Unknown command")
+                sys.exit(2)
             sys.exit(0)
         else:
                 print ("usage: %s start|stop|restart" % sys.argv[0])
