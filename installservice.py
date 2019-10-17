@@ -12,7 +12,7 @@ os.chdir(base_dir)
 
 config = ConfigParser.RawConfigParser()
 config_file = 'conf/config.ini'
-systemd_file = '/lib/systemd/system/oe-agent.service'
+systemd_file = '/etc/systemd/system/oe-agent.service'
 config.read(config_file)
 
 pid= config.get('SelfConfig', 'pid_file')
