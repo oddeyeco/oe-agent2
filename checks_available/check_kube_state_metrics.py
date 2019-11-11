@@ -26,16 +26,11 @@ class Check(lib.basecheck.CheckBase):
                     o = re.split('{|} ', c.replace('"', ''))
                     s = dict(item.split("=") for item in o[1].split(","))
                     if o[0].startswith('kube_pod_container'):
-                        self.local_vars.append({'name': o[0], 'timestamp': self.timestamp, 'value': o[-1], 'reaction': -3,
-                                                'extra_tag': {'container': s['container'], 'pod': s['pod']}})
+                        self.local_vars.append({'name': o[0], 'timestamp': self.timestamp, 'value': o[-1], 'reaction': -3, 'extra_tag': {'container': s['container'], 'pod': s['pod']}})
                     elif o[0].startswith('kube_deployment'):
-                        self.local_vars.append({'name': o[0], 'timestamp': self.timestamp, 'value': o[-1], 'reaction': 0,
-                                                'extra_tag': {'deployment': s['deployment']}})
+                        self.local_vars.append({'name': o[0], 'timestamp': self.timestamp, 'value': o[-1], 'reaction': 0, 'extra_tag': {'deployment': s['deployment']}})
                     elif o[0].startswith('kube_endpoint_address'):
-                        self.local_vars.append({'name': o[0], 'timestamp': self.timestamp, 'value': o[-1], 'reaction': 0,
-                                                'extra_tag': {'endpoint': s['endpoint']}})
-                    else:
-                        lib.puylogger.print_message(str(a[0]))
+                        self.local_vars.append({'name': o[0], 'timestamp': self.timestamp, 'value': o[-1], 'reaction': 0, 'extra_tag': {'endpoint': s['endpoint']}})
         except Exception as e:
             lib.puylogger.print_message(__name__ + ' Error : ' + str(e))
             pass
