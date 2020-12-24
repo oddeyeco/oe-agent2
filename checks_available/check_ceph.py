@@ -32,20 +32,22 @@ class Check(lib.basecheck.CheckBase):
             output3, err = p3.communicate()
             osdstats = json.loads(output3)['nodes']
 
+            if 'status' in health.keys():
+                hs = health['status']
+            else:
+                hs = health['overall_status']
 
-
-            if health['overall_status'] == 'HEALTH_OK':
+            if hs == 'HEALTH_OK':
                 health_value = 0
                 err_type = 'OK'
-            elif health['overall_status'] == 'HEALTH_WARN':
+            elif hs == 'HEALTH_WARN':
                 health_value = 9
                 err_type = 'WARNING'
             else:
                 health_value = 16
                 err_type = 'ERROR'
 
-            self.jsondata.send_special("Ceph-Health", self.timestamp, health_value, health['overall_status'], err_type)
-
+            self.jsondata.send_special("Ceph-Health", self.timestamp, health_value, hs, err_type)
             try:
                 s=str(health['checks']['PG_DEGRADED']['summary'])
                 ceph_degraded_percent=s[s.find("(")+1:s.find(")")].replace('%', '')
